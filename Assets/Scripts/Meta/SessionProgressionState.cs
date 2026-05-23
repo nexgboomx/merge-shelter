@@ -33,6 +33,7 @@ namespace MergeShelter.Meta
 
         private readonly CurrencyWallet _wallet;
         private readonly ShelterUpgrade _shelterUpgrade;
+        private readonly DailyReward _dailyReward;
         private PendingLevelReward _pendingReward;
 
         public int HighestUnlockedLevel { get; private set; }
@@ -46,11 +47,19 @@ namespace MergeShelter.Meta
         public bool CanAffordShelterUpgrade => Coins >= ShelterUpgradeCost;
         public bool HasPendingReward => !_pendingReward.IsEmpty;
         public PendingLevelReward PendingReward => _pendingReward;
+        public bool CanClaimDailyReward => _dailyReward.CanClaim;
+        public bool HasClaimedDailyReward => _dailyReward.HasClaimed;
+        public int DailyRewardCoins => _dailyReward.CoinReward;
+        public int DailyRewardParts => _dailyReward.PartsReward;
 
-        public SessionProgressionState(CurrencyWallet wallet = null, ShelterUpgrade shelterUpgrade = null)
+        public SessionProgressionState(
+            CurrencyWallet wallet = null,
+            ShelterUpgrade shelterUpgrade = null,
+            DailyReward dailyReward = null)
         {
             _wallet = wallet ?? new CurrencyWallet();
             _shelterUpgrade = shelterUpgrade ?? new ShelterUpgrade();
+            _dailyReward = dailyReward ?? new DailyReward();
             HighestUnlockedLevel = FirstLevel;
             SelectedLevel = FirstLevel;
             _pendingReward = default;
@@ -128,6 +137,11 @@ namespace MergeShelter.Meta
             UnlockThroughLevel(reward.LevelId + 1);
             _pendingReward = default;
             return true;
+        }
+
+        public bool TryClaimDailyReward(out DailyRewardClaim reward)
+        {
+            return _dailyReward.TryClaim(_wallet, out reward);
         }
     }
 }

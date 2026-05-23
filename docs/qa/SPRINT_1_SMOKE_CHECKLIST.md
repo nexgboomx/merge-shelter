@@ -86,6 +86,15 @@ This checklist is the minimum quality gate for the first playable prototype.
 - Validated through PlayMode smoke: Level 1 win, Claim Reward, Level 2 unlock, Next Level starts Level 2, Retry after defeat, Upgrade Shelter button appears, upgrade is blocked without enough coins, upgrade succeeds with enough coins, and upgraded shelter max HP is visible in the HUD.
 - Remaining known issues: no P0/P1 blockers found in automated smoke; full Level 1-10 manual sequence and 10-minute prototype loop remain not run.
 
+## Sprint 3 Daily Reward Notes - 2026-05-23
+
+- Unity version: 6000.3.16f1.
+- Compile check: batch project open completed without C# compile errors.
+- EditMode tests: 30 passed, 0 failed.
+- PlayMode tests: 6 passed, 0 failed.
+- Coverage includes session-start daily reward availability, coin/part grant, double-claim block, Daily Reward button visibility, button hiding after claim, HUD claimed state, and `daily_reward_claimed` analytics.
+- Remaining known issues: no real date persistence by design; daily reward resets with each prototype session.
+
 ## Severity Rules
 
 | Severity | Definition |

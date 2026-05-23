@@ -79,6 +79,38 @@ namespace MergeShelter.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator DailyRewardButton_ClaimsOnceAndUpdatesHud()
+        {
+            yield return LoadPrototypeScene();
+
+            var controller = Object.FindObjectOfType<PrototypeGameController>();
+            Assert.NotNull(controller);
+            var dailyRewardButton = FindButton("DailyRewardButton");
+            Assert.NotNull(dailyRewardButton);
+
+            Assert.IsTrue(controller.CanClaimDailyReward);
+            Assert.IsFalse(controller.HasClaimedDailyReward);
+            Assert.IsTrue(dailyRewardButton.gameObject.activeSelf);
+
+            var rewardCoins = controller.DailyRewardCoins;
+            var rewardParts = controller.DailyRewardParts;
+            dailyRewardButton.onClick.Invoke();
+            yield return null;
+
+            Assert.AreEqual(rewardCoins, controller.Coins);
+            Assert.AreEqual(rewardParts, controller.Parts);
+            Assert.IsFalse(controller.CanClaimDailyReward);
+            Assert.IsTrue(controller.HasClaimedDailyReward);
+            Assert.IsFalse(dailyRewardButton.gameObject.activeSelf);
+            Assert.That(GetResultText().text, Does.Contain("Daily reward claimed"));
+            Assert.That(GetWalletText().text, Does.Contain("claimed"));
+
+            Assert.IsFalse(controller.ClaimDailyReward());
+            Assert.AreEqual(rewardCoins, controller.Coins);
+            Assert.AreEqual(rewardParts, controller.Parts);
+        }
+
+        [UnityTest]
         public IEnumerator RewardClaim_UnlocksLevelTwoAndNextLevelButtonStartsIt()
         {
             yield return LoadPrototypeScene();

@@ -19,6 +19,7 @@ namespace MergeShelter.UI
         [SerializeField] private Button nextLevelButton;
         [SerializeField] private Button retryButton;
         [SerializeField] private Button upgradeShelterButton;
+        [SerializeField] private Button dailyRewardButton;
         [SerializeField] private int cellSize = 72;
         [SerializeField] private int cellSpacing = 6;
 
@@ -199,6 +200,9 @@ namespace MergeShelter.UI
             if (upgradeShelterButton == null)
                 upgradeShelterButton = CreateActionButton("UpgradeShelterButton", "Upgrade Shelter", new Vector2(210f, -280f), new Color(0.45f, 0.35f, 0.14f));
 
+            if (dailyRewardButton == null)
+                dailyRewardButton = CreateActionButton("DailyRewardButton", "Daily Reward", new Vector2(-210f, -280f), new Color(0.3f, 0.33f, 0.65f));
+
             claimRewardButton.onClick.RemoveListener(OnClaimRewardClicked);
             claimRewardButton.onClick.AddListener(OnClaimRewardClicked);
             nextLevelButton.onClick.RemoveListener(OnNextLevelClicked);
@@ -207,6 +211,8 @@ namespace MergeShelter.UI
             retryButton.onClick.AddListener(OnRetryClicked);
             upgradeShelterButton.onClick.RemoveListener(OnUpgradeShelterClicked);
             upgradeShelterButton.onClick.AddListener(OnUpgradeShelterClicked);
+            dailyRewardButton.onClick.RemoveListener(OnDailyRewardClicked);
+            dailyRewardButton.onClick.AddListener(OnDailyRewardClicked);
             RefreshActionButtons();
         }
 
@@ -287,6 +293,12 @@ namespace MergeShelter.UI
             RefreshActionButtons();
         }
 
+        private void OnDailyRewardClicked()
+        {
+            gameController?.ClaimDailyReward();
+            RefreshActionButtons();
+        }
+
         private void RefreshCells()
         {
             if (gameController == null)
@@ -319,6 +331,9 @@ namespace MergeShelter.UI
 
             if (upgradeShelterButton != null)
                 upgradeShelterButton.gameObject.SetActive(true);
+
+            if (dailyRewardButton != null)
+                dailyRewardButton.gameObject.SetActive(gameController.CanClaimDailyReward);
         }
 
         private Font GetDefaultFont()

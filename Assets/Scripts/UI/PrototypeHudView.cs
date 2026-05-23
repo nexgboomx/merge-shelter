@@ -49,15 +49,25 @@ namespace MergeShelter.UI
                 walletText.text = $"Coins: {coins} | Parts: {parts}";
         }
 
-        public void SetProgression(int coins, int parts, int shelterUpgradeLevel, int upgradeCost, bool canAffordUpgrade)
+        public void SetProgression(
+            int coins,
+            int parts,
+            int shelterUpgradeLevel,
+            int upgradeCost,
+            bool canAffordUpgrade,
+            bool canClaimDailyReward = false,
+            bool hasClaimedDailyReward = false,
+            int dailyRewardCoins = 0,
+            int dailyRewardParts = 0)
         {
             if (walletText == null)
                 return;
 
             walletText.verticalOverflow = VerticalWrapMode.Overflow;
             var affordText = canAffordUpgrade ? "can afford" : $"need {upgradeCost - coins} more";
+            var dailyRewardStatus = hasClaimedDailyReward ? "claimed" : canClaimDailyReward ? "available" : "unavailable";
             walletText.text =
-                $"Coins: {coins} | Parts: {parts}\nShelter Lv {shelterUpgradeLevel} | Upgrade: {upgradeCost} coins ({affordText})";
+                $"Coins: {coins} | Parts: {parts}\nShelter Lv {shelterUpgradeLevel} | Upgrade: {upgradeCost} coins ({affordText})\nDaily Reward: +{dailyRewardCoins} coins, +{dailyRewardParts} parts ({dailyRewardStatus})";
         }
     }
 }

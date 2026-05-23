@@ -48,6 +48,10 @@ namespace MergeShelter.Core
         public int ShelterUpgradeLevel => _progression.ShelterUpgradeLevel;
         public int ShelterUpgradeCost => _progression.ShelterUpgradeCost;
         public bool CanAffordShelterUpgrade => _progression.CanAffordShelterUpgrade;
+        public bool CanClaimDailyReward => _progression.CanClaimDailyReward;
+        public bool HasClaimedDailyReward => _progression.HasClaimedDailyReward;
+        public int DailyRewardCoins => _progression.DailyRewardCoins;
+        public int DailyRewardParts => _progression.DailyRewardParts;
         public int CurrentShelterMaxHp => _shelter?.MaxHealth ?? GetShelterMaxHp();
         public bool IsLevelEnded => _levelEnded;
         public bool HasPendingReward => _progression.HasPendingReward;
@@ -137,6 +141,28 @@ namespace MergeShelter.Core
             RefreshHud();
             var nextLevelMessage = CanStartNextLevel ? $" Level {_progression.SelectedLevel + 1} unlocked." : string.Empty;
             hudView?.SetResult($"Reward claimed: +{reward.Coins} coins, +{reward.Parts} parts.{nextLevelMessage}");
+            ProgressionChanged?.Invoke();
+            return true;
+        }
+
+        public bool ClaimDailyReward()
+        {
+            if (!_progression.TryClaimDailyReward(out var reward))
+            {
+                RefreshHud();
+                hudView?.SetResult("Daily reward already claimed this session.");
+                ProgressionChanged?.Invoke();
+                return false;
+            }
+
+            _analytics.Track("daily_reward_claimed", new Dictionary<string, object>
+            {
+                ["coins"] = reward.Coins,
+                ["parts"] = reward.Parts
+            });
+
+            RefreshHud();
+            hudView?.SetResult($"Daily reward claimed: +{reward.Coins} coins, +{reward.Parts} parts.");
             ProgressionChanged?.Invoke();
             return true;
         }
@@ -373,7 +399,11 @@ namespace MergeShelter.Core
                 _progression.Parts,
                 _progression.ShelterUpgradeLevel,
                 _progression.ShelterUpgradeCost,
-                _progression.CanAffordShelterUpgrade);
+                _progression.CanAffordShelterUpgrade,
+                _progression.CanClaimDailyReward,
+                _progression.HasClaimedDailyReward,
+                _progression.DailyRewardCoins,
+                _progression.DailyRewardParts);
         }
 
         private int GetShelterMaxHp()
