@@ -28,9 +28,9 @@ This checklist is the minimum quality gate for the first playable prototype.
 
 | ID | Test | Expected Result | Status |
 |---|---|---|---|
-| QA-020 | Complete Level 1 | Level 2 unlocks or can be selected | Not Run |
+| QA-020 | Complete Level 1 | Level 2 unlocks or can be selected | Pass - Sprint 2 PlayMode smoke claims Level 1 reward and unlocks Level 2 |
 | QA-021 | Play Level 1-10 sequentially | No blocker prevents progress | Not Run |
-| QA-022 | Claim reward | Prototype coins increase | Not Run |
+| QA-022 | Claim reward | Prototype coins increase | Pass - Sprint 2 PlayMode smoke grants coins on Claim Reward |
 
 ## Analytics Check
 
@@ -56,6 +56,35 @@ This checklist is the minimum quality gate for the first playable prototype.
 - `Assets/Scripts/MergeShelter.asmdef` compiles with `UnityEngine.UI` scripts using an explicit `UnityEngine.UI` reference.
 - `Assets/Tests/EditMode/MergeShelter.EditModeTests.asmdef` compiles and EditMode tests pass: 14 passed, 0 failed.
 - `Assets/Tests/PlayMode/MergeShelter.PlayModeTests.asmdef` compiles with an explicit `UnityEngine.UI` reference and PlayMode smoke tests pass: 2 passed, 0 failed.
+
+## Sprint 2 Progression State Notes - 2026-05-23
+
+- Session progression state model added for issue #17.
+- EditMode tests pass: 23 passed, 0 failed.
+- Existing PlayMode smoke tests pass: 2 passed, 0 failed.
+- Model coverage includes level 1 new-player state, locked level rejection, unlocked selection, coin/part spend safety, shelter upgrade level tracking, and pending reward store/clear/claim.
+
+## Sprint 2 Reward Claim Notes - 2026-05-23
+
+- Reward claim and level unlock flow added for issue #18.
+- EditMode tests pass: 24 passed, 0 failed.
+- PlayMode tests pass: 4 passed, 0 failed.
+- PlayMode coverage includes locked Level 2 selection rejection, Claim Reward button visibility, double-claim rejection, Level 1 reward unlocking Level 2, Next Level starting Level 2, and Retry restarting the selected failed level.
+
+## Sprint 2 Shelter Upgrade Notes - 2026-05-23
+
+- Shelter upgrade flow added for issue #19.
+- EditMode tests pass: 27 passed, 0 failed.
+- PlayMode tests pass: 5 passed, 0 failed.
+- Coverage includes insufficient-coin blocking, successful coin spend, increasing upgrade cost, HUD upgrade status, `shelter_upgraded` analytics, and upgraded shelter max HP on the next level.
+
+## Sprint 2 Progression Smoke Notes - 2026-05-23
+
+- Unity version: 6000.3.16f1.
+- EditMode tests: 27 passed, 0 failed.
+- PlayMode tests: 5 passed, 0 failed.
+- Validated through PlayMode smoke: Level 1 win, Claim Reward, Level 2 unlock, Next Level starts Level 2, Retry after defeat, Upgrade Shelter button appears, upgrade is blocked without enough coins, upgrade succeeds with enough coins, and upgraded shelter max HP is visible in the HUD.
+- Remaining known issues: no P0/P1 blockers found in automated smoke; full Level 1-10 manual sequence and 10-minute prototype loop remain not run.
 
 ## Severity Rules
 

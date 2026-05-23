@@ -48,5 +48,16 @@ namespace MergeShelter.UI
             if (walletText != null)
                 walletText.text = $"Coins: {coins} | Parts: {parts}";
         }
+
+        public void SetProgression(int coins, int parts, int shelterUpgradeLevel, int upgradeCost, bool canAffordUpgrade)
+        {
+            if (walletText == null)
+                return;
+
+            walletText.verticalOverflow = VerticalWrapMode.Overflow;
+            var affordText = canAffordUpgrade ? "can afford" : $"need {upgradeCost - coins} more";
+            walletText.text =
+                $"Coins: {coins} | Parts: {parts}\nShelter Lv {shelterUpgradeLevel} | Upgrade: {upgradeCost} coins ({affordText})";
+        }
     }
 }

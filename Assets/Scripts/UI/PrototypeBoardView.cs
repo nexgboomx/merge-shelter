@@ -15,6 +15,10 @@ namespace MergeShelter.UI
         [SerializeField] private PrototypeGameController gameController;
         [SerializeField] private RectTransform boardRoot;
         [SerializeField] private Button startWaveButton;
+        [SerializeField] private Button claimRewardButton;
+        [SerializeField] private Button nextLevelButton;
+        [SerializeField] private Button retryButton;
+        [SerializeField] private Button upgradeShelterButton;
         [SerializeField] private int cellSize = 72;
         [SerializeField] private int cellSpacing = 6;
 
@@ -27,6 +31,7 @@ namespace MergeShelter.UI
             ResolveController();
             BuildBoard();
             BuildStartWaveButton();
+            BuildProgressionButtons();
         }
 
         private void OnEnable()
@@ -43,7 +48,10 @@ namespace MergeShelter.UI
         private void OnDisable()
         {
             if (_subscribedController != null)
+            {
                 _subscribedController.BoardChanged -= RefreshCells;
+                _subscribedController.ProgressionChanged -= RefreshActionButtons;
+            }
 
             _subscribedController = null;
         }
@@ -62,12 +70,18 @@ namespace MergeShelter.UI
                 return;
 
             if (_subscribedController != null)
+            {
                 _subscribedController.BoardChanged -= RefreshCells;
+                _subscribedController.ProgressionChanged -= RefreshActionButtons;
+            }
 
             _subscribedController = gameController;
 
             if (_subscribedController != null)
+            {
                 _subscribedController.BoardChanged += RefreshCells;
+                _subscribedController.ProgressionChanged += RefreshActionButtons;
+            }
         }
 
         private void BuildBoard()
@@ -171,9 +185,44 @@ namespace MergeShelter.UI
             startWaveButton.onClick.AddListener(OnStartWaveClicked);
         }
 
+        private void BuildProgressionButtons()
+        {
+            if (claimRewardButton == null)
+                claimRewardButton = CreateActionButton("ClaimRewardButton", "Claim Reward", new Vector2(0f, -280f), new Color(0.2f, 0.45f, 0.72f));
+
+            if (nextLevelButton == null)
+                nextLevelButton = CreateActionButton("NextLevelButton", "Next Level", new Vector2(0f, -330f), new Color(0.2f, 0.48f, 0.3f));
+
+            if (retryButton == null)
+                retryButton = CreateActionButton("RetryButton", "Retry", new Vector2(0f, -280f), new Color(0.52f, 0.28f, 0.18f));
+
+            if (upgradeShelterButton == null)
+                upgradeShelterButton = CreateActionButton("UpgradeShelterButton", "Upgrade Shelter", new Vector2(210f, -280f), new Color(0.45f, 0.35f, 0.14f));
+
+            claimRewardButton.onClick.RemoveListener(OnClaimRewardClicked);
+            claimRewardButton.onClick.AddListener(OnClaimRewardClicked);
+            nextLevelButton.onClick.RemoveListener(OnNextLevelClicked);
+            nextLevelButton.onClick.AddListener(OnNextLevelClicked);
+            retryButton.onClick.RemoveListener(OnRetryClicked);
+            retryButton.onClick.AddListener(OnRetryClicked);
+            upgradeShelterButton.onClick.RemoveListener(OnUpgradeShelterClicked);
+            upgradeShelterButton.onClick.AddListener(OnUpgradeShelterClicked);
+            RefreshActionButtons();
+        }
+
         private Button CreateStartWaveButton()
         {
-            var buttonObject = new GameObject("StartWaveButton", typeof(RectTransform));
+            var boardHeight = BoardModel.DefaultHeight * cellSize + (BoardModel.DefaultHeight - 1) * cellSpacing;
+            return CreateActionButton(
+                "StartWaveButton",
+                "Start Wave",
+                new Vector2(0f, -(boardHeight * 0.5f + 40f)),
+                new Color(0.13f, 0.42f, 0.32f));
+        }
+
+        private Button CreateActionButton(string name, string labelText, Vector2 anchoredPosition, Color backgroundColor)
+        {
+            var buttonObject = new GameObject(name, typeof(RectTransform));
             buttonObject.transform.SetParent(transform, false);
 
             var rectTransform = buttonObject.GetComponent<RectTransform>();
@@ -181,18 +230,16 @@ namespace MergeShelter.UI
             rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
             rectTransform.pivot = new Vector2(0.5f, 0.5f);
             rectTransform.sizeDelta = new Vector2(180f, 44f);
-
-            var boardHeight = BoardModel.DefaultHeight * cellSize + (BoardModel.DefaultHeight - 1) * cellSpacing;
-            rectTransform.anchoredPosition = new Vector2(0f, -(boardHeight * 0.5f + 40f));
+            rectTransform.anchoredPosition = anchoredPosition;
 
             var background = buttonObject.AddComponent<Image>();
-            background.color = new Color(0.13f, 0.42f, 0.32f);
+            background.color = backgroundColor;
 
             var button = buttonObject.AddComponent<Button>();
             button.targetGraphic = background;
 
             var label = CreateCellLabel(buttonObject.transform);
-            label.text = "Start Wave";
+            label.text = labelText;
             label.fontSize = 20;
             label.resizeTextMaxSize = 20;
 
@@ -211,6 +258,33 @@ namespace MergeShelter.UI
         private void OnStartWaveClicked()
         {
             gameController?.StartWave();
+            RefreshActionButtons();
+        }
+
+        private void OnClaimRewardClicked()
+        {
+            gameController?.ClaimReward();
+            RefreshActionButtons();
+        }
+
+        private void OnNextLevelClicked()
+        {
+            gameController?.StartNextLevel();
+            RefreshCells();
+            RefreshActionButtons();
+        }
+
+        private void OnRetryClicked()
+        {
+            gameController?.RetryLevel();
+            RefreshCells();
+            RefreshActionButtons();
+        }
+
+        private void OnUpgradeShelterClicked()
+        {
+            gameController?.UpgradeShelter();
+            RefreshActionButtons();
         }
 
         private void RefreshCells()
@@ -224,6 +298,27 @@ namespace MergeShelter.UI
                 cell.Label.text = FormatTileLabel(tile);
                 cell.Background.color = GetTileColor(tile);
             }
+        }
+
+        private void RefreshActionButtons()
+        {
+            if (gameController == null)
+                return;
+
+            if (startWaveButton != null)
+                startWaveButton.gameObject.SetActive(!gameController.IsLevelEnded);
+
+            if (claimRewardButton != null)
+                claimRewardButton.gameObject.SetActive(gameController.CanClaimReward);
+
+            if (nextLevelButton != null)
+                nextLevelButton.gameObject.SetActive(gameController.CanStartNextLevel);
+
+            if (retryButton != null)
+                retryButton.gameObject.SetActive(gameController.CanRetryLevel);
+
+            if (upgradeShelterButton != null)
+                upgradeShelterButton.gameObject.SetActive(true);
         }
 
         private Font GetDefaultFont()
