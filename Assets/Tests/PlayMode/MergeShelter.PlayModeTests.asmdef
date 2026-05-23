@@ -1,0 +1,19 @@
+{
+    "name": "MergeShelter.PlayModeTests",
+    "rootNamespace": "MergeShelter.Tests.PlayMode",
+    "references": [
+        "MergeShelter"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ],
+    "noEngineReferences": false
+}
