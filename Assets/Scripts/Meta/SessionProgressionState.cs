@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using MergeShelter.Economy;
 
 namespace MergeShelter.Meta
@@ -34,6 +35,7 @@ namespace MergeShelter.Meta
         private readonly CurrencyWallet _wallet;
         private readonly ShelterUpgrade _shelterUpgrade;
         private readonly DailyReward _dailyReward;
+        private readonly DailyQuestModel _dailyQuests;
         private PendingLevelReward _pendingReward;
 
         public int HighestUnlockedLevel { get; private set; }
@@ -51,15 +53,19 @@ namespace MergeShelter.Meta
         public bool HasClaimedDailyReward => _dailyReward.HasClaimed;
         public int DailyRewardCoins => _dailyReward.CoinReward;
         public int DailyRewardParts => _dailyReward.PartsReward;
+        public bool HasClaimableDailyQuest => _dailyQuests.HasClaimableQuest;
+        public IReadOnlyList<DailyQuestState> DailyQuests => _dailyQuests.GetQuestStates();
 
         public SessionProgressionState(
             CurrencyWallet wallet = null,
             ShelterUpgrade shelterUpgrade = null,
-            DailyReward dailyReward = null)
+            DailyReward dailyReward = null,
+            DailyQuestModel dailyQuests = null)
         {
             _wallet = wallet ?? new CurrencyWallet();
             _shelterUpgrade = shelterUpgrade ?? new ShelterUpgrade();
             _dailyReward = dailyReward ?? new DailyReward();
+            _dailyQuests = dailyQuests ?? new DailyQuestModel();
             HighestUnlockedLevel = FirstLevel;
             SelectedLevel = FirstLevel;
             _pendingReward = default;
@@ -142,6 +148,16 @@ namespace MergeShelter.Meta
         public bool TryClaimDailyReward(out DailyRewardClaim reward)
         {
             return _dailyReward.TryClaim(_wallet, out reward);
+        }
+
+        public bool TryAddDailyQuestProgress(string questId, int amount, out DailyQuestProgressResult result)
+        {
+            return _dailyQuests.TryAddProgress(questId, amount, out result);
+        }
+
+        public bool TryClaimDailyQuest(out DailyQuestClaimResult result)
+        {
+            return _dailyQuests.TryClaimFirstCompleted(_wallet, out result);
         }
     }
 }

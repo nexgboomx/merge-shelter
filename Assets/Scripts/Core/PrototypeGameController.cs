@@ -52,6 +52,8 @@ namespace MergeShelter.Core
         public bool HasClaimedDailyReward => _progression.HasClaimedDailyReward;
         public int DailyRewardCoins => _progression.DailyRewardCoins;
         public int DailyRewardParts => _progression.DailyRewardParts;
+        public bool CanClaimQuest => _progression.HasClaimableDailyQuest;
+        public IReadOnlyList<DailyQuestState> DailyQuests => _progression.DailyQuests;
         public int CurrentShelterMaxHp => _shelter?.MaxHealth ?? GetShelterMaxHp();
         public bool IsLevelEnded => _levelEnded;
         public bool HasPendingReward => _progression.HasPendingReward;
@@ -138,9 +140,10 @@ namespace MergeShelter.Core
                 });
             }
 
+            var questProgress = RecordQuestProgress(DailyQuestModel.ClaimRewardQuestId, 1);
             RefreshHud();
             var nextLevelMessage = CanStartNextLevel ? $" Level {_progression.SelectedLevel + 1} unlocked." : string.Empty;
-            hudView?.SetResult($"Reward claimed: +{reward.Coins} coins, +{reward.Parts} parts.{nextLevelMessage}");
+            hudView?.SetResult($"Reward claimed: +{reward.Coins} coins, +{reward.Parts} parts.{nextLevelMessage}{FormatQuestCompletionSuffix(questProgress)}");
             ProgressionChanged?.Invoke();
             return true;
         }
@@ -163,6 +166,30 @@ namespace MergeShelter.Core
 
             RefreshHud();
             hudView?.SetResult($"Daily reward claimed: +{reward.Coins} coins, +{reward.Parts} parts.");
+            ProgressionChanged?.Invoke();
+            return true;
+        }
+
+        public bool ClaimQuest()
+        {
+            if (!_progression.TryClaimDailyQuest(out var reward))
+            {
+                RefreshHud();
+                hudView?.SetResult("No completed daily quest is ready to claim.");
+                ProgressionChanged?.Invoke();
+                return false;
+            }
+
+            _analytics.Track("quest_claimed", new Dictionary<string, object>
+            {
+                ["quest_id"] = reward.QuestId,
+                ["title"] = reward.Title,
+                ["coins"] = reward.Coins,
+                ["parts"] = reward.Parts
+            });
+
+            RefreshHud();
+            hudView?.SetResult($"Quest claimed: {reward.Title}. +{reward.Coins} coins, +{reward.Parts} parts.");
             ProgressionChanged?.Invoke();
             return true;
         }
@@ -283,6 +310,7 @@ namespace MergeShelter.Core
                 ["cell_y"] = y
             });
 
+            string resultMessage;
             if (_mergeResolver.TryResolveMerge(_board, position, out var mergedTile))
             {
                 _analytics.Track("merge_success", new Dictionary<string, object>
@@ -292,16 +320,19 @@ namespace MergeShelter.Core
                     ["to_tier"] = mergedTile.Tier,
                     ["merge_size"] = 3
                 });
-                hudView?.SetResult($"Merged {mergedTile.Type} into tier {mergedTile.Tier}!");
+                resultMessage = $"Merged {mergedTile.Type} into tier {mergedTile.Tier}!";
             }
             else
             {
-                hudView?.SetResult("Tile placed. Build toward a merge of 3.");
+                resultMessage = "Tile placed. Build toward a merge of 3.";
             }
 
+            var questProgress = RecordQuestProgress(DailyQuestModel.PlaceTilesQuestId, 1);
             _nextTile = _tileGenerator.GenerateNextTile();
             RefreshHud();
+            hudView?.SetResult($"{resultMessage}{FormatQuestCompletionSuffix(questProgress)}");
             BoardChanged?.Invoke();
+            ProgressionChanged?.Invoke();
             return true;
         }
 
@@ -359,12 +390,13 @@ namespace MergeShelter.Core
                 ["reward_pending"] = rewardStored
             });
 
+            var questProgress = RecordQuestProgress(DailyQuestModel.CompleteLevelQuestId, 1);
             RefreshHud();
             var explanation = _lastBoardEvaluation?.ResultExplanation ?? "Victory!";
             var rewardMessage = rewardStored
                 ? $" Reward pending: +{_currentLevel.CoinReward} coins, +{_currentLevel.PartsReward} parts."
                 : " Reward is already pending.";
-            hudView?.SetResult($"{explanation}{rewardMessage}");
+            hudView?.SetResult($"{explanation}{rewardMessage}{FormatQuestCompletionSuffix(questProgress)}");
             ProgressionChanged?.Invoke();
         }
 
@@ -403,12 +435,46 @@ namespace MergeShelter.Core
                 _progression.CanClaimDailyReward,
                 _progression.HasClaimedDailyReward,
                 _progression.DailyRewardCoins,
-                _progression.DailyRewardParts);
+                _progression.DailyRewardParts,
+                _progression.DailyQuests);
         }
 
         private int GetShelterMaxHp()
         {
             return _progression.GetShelterMaxHealth(shelterMaxHp);
+        }
+
+        private DailyQuestProgressResult RecordQuestProgress(string questId, int amount)
+        {
+            if (!_progression.TryAddDailyQuestProgress(questId, amount, out var progress))
+                return default;
+
+            _analytics.Track("quest_progress", new Dictionary<string, object>
+            {
+                ["quest_id"] = progress.QuestId,
+                ["title"] = progress.Title,
+                ["progress"] = progress.Progress,
+                ["target"] = progress.Target,
+                ["completed"] = progress.Completed
+            });
+
+            if (progress.NewlyCompleted)
+            {
+                _analytics.Track("quest_completed", new Dictionary<string, object>
+                {
+                    ["quest_id"] = progress.QuestId,
+                    ["title"] = progress.Title,
+                    ["reward_coins"] = progress.RewardCoins,
+                    ["reward_parts"] = progress.RewardParts
+                });
+            }
+
+            return progress;
+        }
+
+        private static string FormatQuestCompletionSuffix(DailyQuestProgressResult progress)
+        {
+            return progress.NewlyCompleted ? $" Quest complete: {progress.Title}." : string.Empty;
         }
 
         private void UnsubscribeWaveEvents()

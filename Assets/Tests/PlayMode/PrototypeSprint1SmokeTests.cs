@@ -2,6 +2,7 @@ using System.Collections;
 using System.Reflection;
 using MergeShelter.Board;
 using MergeShelter.Core;
+using MergeShelter.Meta;
 using MergeShelter.UI;
 using NUnit.Framework;
 using UnityEngine;
@@ -108,6 +109,45 @@ namespace MergeShelter.Tests.PlayMode
             Assert.IsFalse(controller.ClaimDailyReward());
             Assert.AreEqual(rewardCoins, controller.Coins);
             Assert.AreEqual(rewardParts, controller.Parts);
+        }
+
+        [UnityTest]
+        public IEnumerator DailyQuestButton_ClaimsFirstCompletedQuest()
+        {
+            yield return LoadPrototypeScene();
+
+            var controller = Object.FindObjectOfType<PrototypeGameController>();
+            Assert.NotNull(controller);
+            var claimQuestButton = FindButton("ClaimQuestButton");
+            Assert.NotNull(claimQuestButton);
+            Assert.IsFalse(claimQuestButton.gameObject.activeSelf);
+
+            for (var i = 0; i < 10; i++)
+            {
+                Assert.IsTrue(controller.TryPlaceNextTile(i % controller.BoardWidth, i / controller.BoardWidth));
+                yield return null;
+            }
+
+            var placeQuest = GetQuest(controller, DailyQuestModel.PlaceTilesQuestId);
+            Assert.IsTrue(placeQuest.Completed);
+            Assert.IsFalse(placeQuest.Claimed);
+            Assert.IsTrue(controller.CanClaimQuest);
+            Assert.IsTrue(claimQuestButton.gameObject.activeSelf);
+            Assert.That(GetWalletText().text, Does.Contain("Place 10 Tiles 10/10 ready"));
+
+            var startingCoins = controller.Coins;
+            var startingParts = controller.Parts;
+            claimQuestButton.onClick.Invoke();
+            yield return null;
+
+            Assert.AreEqual(startingCoins + placeQuest.RewardCoins, controller.Coins);
+            Assert.AreEqual(startingParts + placeQuest.RewardParts, controller.Parts);
+            placeQuest = GetQuest(controller, DailyQuestModel.PlaceTilesQuestId);
+            Assert.IsTrue(placeQuest.Claimed);
+            Assert.IsFalse(controller.CanClaimQuest);
+            Assert.IsFalse(claimQuestButton.gameObject.activeSelf);
+            Assert.That(GetResultText().text, Does.Contain("Quest claimed"));
+            Assert.That(GetWalletText().text, Does.Contain("Place 10 Tiles 10/10 claimed"));
         }
 
         [UnityTest]
@@ -287,6 +327,18 @@ namespace MergeShelter.Tests.PlayMode
             var field = typeof(PrototypeGameController).GetField("_board", BindingFlags.Instance | BindingFlags.NonPublic);
             Assert.NotNull(field);
             return (BoardModel)field.GetValue(controller);
+        }
+
+        private static DailyQuestState GetQuest(PrototypeGameController controller, string questId)
+        {
+            foreach (var quest in controller.DailyQuests)
+            {
+                if (quest.QuestId == questId)
+                    return quest;
+            }
+
+            Assert.Fail($"Quest not found: {questId}");
+            return default;
         }
 
         private static void SetStrongLevelOneBoard(PrototypeGameController controller)

@@ -20,6 +20,7 @@ namespace MergeShelter.UI
         [SerializeField] private Button retryButton;
         [SerializeField] private Button upgradeShelterButton;
         [SerializeField] private Button dailyRewardButton;
+        [SerializeField] private Button claimQuestButton;
         [SerializeField] private int cellSize = 72;
         [SerializeField] private int cellSpacing = 6;
 
@@ -203,6 +204,9 @@ namespace MergeShelter.UI
             if (dailyRewardButton == null)
                 dailyRewardButton = CreateActionButton("DailyRewardButton", "Daily Reward", new Vector2(-210f, -280f), new Color(0.3f, 0.33f, 0.65f));
 
+            if (claimQuestButton == null)
+                claimQuestButton = CreateActionButton("ClaimQuestButton", "Claim Quest", new Vector2(210f, -330f), new Color(0.33f, 0.42f, 0.2f));
+
             claimRewardButton.onClick.RemoveListener(OnClaimRewardClicked);
             claimRewardButton.onClick.AddListener(OnClaimRewardClicked);
             nextLevelButton.onClick.RemoveListener(OnNextLevelClicked);
@@ -213,6 +217,8 @@ namespace MergeShelter.UI
             upgradeShelterButton.onClick.AddListener(OnUpgradeShelterClicked);
             dailyRewardButton.onClick.RemoveListener(OnDailyRewardClicked);
             dailyRewardButton.onClick.AddListener(OnDailyRewardClicked);
+            claimQuestButton.onClick.RemoveListener(OnClaimQuestClicked);
+            claimQuestButton.onClick.AddListener(OnClaimQuestClicked);
             RefreshActionButtons();
         }
 
@@ -299,6 +305,12 @@ namespace MergeShelter.UI
             RefreshActionButtons();
         }
 
+        private void OnClaimQuestClicked()
+        {
+            gameController?.ClaimQuest();
+            RefreshActionButtons();
+        }
+
         private void RefreshCells()
         {
             if (gameController == null)
@@ -334,6 +346,9 @@ namespace MergeShelter.UI
 
             if (dailyRewardButton != null)
                 dailyRewardButton.gameObject.SetActive(gameController.CanClaimDailyReward);
+
+            if (claimQuestButton != null)
+                claimQuestButton.gameObject.SetActive(gameController.CanClaimQuest);
         }
 
         private Font GetDefaultFont()

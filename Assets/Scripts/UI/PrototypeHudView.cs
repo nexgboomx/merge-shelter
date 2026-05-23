@@ -1,4 +1,7 @@
+using System.Collections.Generic;
+using System.Text;
 using MergeShelter.Board;
+using MergeShelter.Meta;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -58,7 +61,8 @@ namespace MergeShelter.UI
             bool canClaimDailyReward = false,
             bool hasClaimedDailyReward = false,
             int dailyRewardCoins = 0,
-            int dailyRewardParts = 0)
+            int dailyRewardParts = 0,
+            IReadOnlyList<DailyQuestState> dailyQuests = null)
         {
             if (walletText == null)
                 return;
@@ -67,7 +71,34 @@ namespace MergeShelter.UI
             var affordText = canAffordUpgrade ? "can afford" : $"need {upgradeCost - coins} more";
             var dailyRewardStatus = hasClaimedDailyReward ? "claimed" : canClaimDailyReward ? "available" : "unavailable";
             walletText.text =
-                $"Coins: {coins} | Parts: {parts}\nShelter Lv {shelterUpgradeLevel} | Upgrade: {upgradeCost} coins ({affordText})\nDaily Reward: +{dailyRewardCoins} coins, +{dailyRewardParts} parts ({dailyRewardStatus})";
+                $"Coins: {coins} | Parts: {parts}\nShelter Lv {shelterUpgradeLevel} | Upgrade: {upgradeCost} coins ({affordText})\nDaily Reward: +{dailyRewardCoins} coins, +{dailyRewardParts} parts ({dailyRewardStatus})\n{FormatQuestStatus(dailyQuests)}";
+        }
+
+        private static string FormatQuestStatus(IReadOnlyList<DailyQuestState> dailyQuests)
+        {
+            if (dailyQuests == null || dailyQuests.Count == 0)
+                return "Daily Quests: none";
+
+            var builder = new StringBuilder("Daily Quests: ");
+            for (var i = 0; i < dailyQuests.Count; i++)
+            {
+                var quest = dailyQuests[i];
+                if (i > 0)
+                    builder.Append(" | ");
+
+                builder.Append(quest.Title);
+                builder.Append(' ');
+                builder.Append(quest.Progress);
+                builder.Append('/');
+                builder.Append(quest.Target);
+
+                if (quest.Claimed)
+                    builder.Append(" claimed");
+                else if (quest.Completed)
+                    builder.Append(" ready");
+            }
+
+            return builder.ToString();
         }
     }
 }

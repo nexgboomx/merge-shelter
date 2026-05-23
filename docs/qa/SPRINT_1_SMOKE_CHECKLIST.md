@@ -95,6 +95,15 @@ This checklist is the minimum quality gate for the first playable prototype.
 - Coverage includes session-start daily reward availability, coin/part grant, double-claim block, Daily Reward button visibility, button hiding after claim, HUD claimed state, and `daily_reward_claimed` analytics.
 - Remaining known issues: no real date persistence by design; daily reward resets with each prototype session.
 
+## Sprint 3 Daily Quest Notes - 2026-05-23
+
+- Unity version: 6000.3.16f1.
+- Compile check: batch project open completed without C# compile errors.
+- EditMode tests: 35 passed, 0 failed.
+- PlayMode tests: 7 passed, 0 failed.
+- Coverage includes Place 10 Tiles, Complete 1 Level, Claim 1 Reward quest completion, single-claim reward grants, uncompleted claim blocking, HUD quest status, Claim Quest button visibility, and `quest_progress` / `quest_completed` / `quest_claimed` analytics hooks.
+- Remaining known issues: quests are session-only by design and reset when the prototype session restarts.
+
 ## Severity Rules
 
 | Severity | Definition |
