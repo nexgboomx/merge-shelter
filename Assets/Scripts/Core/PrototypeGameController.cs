@@ -25,12 +25,14 @@ namespace MergeShelter.Core
         private readonly MergeResolver _mergeResolver = new();
         private readonly PrototypeTileGenerator _tileGenerator = new();
         private readonly CurrencyWallet _wallet = new();
+        private readonly PrototypeBoardEvaluator _boardEvaluator = new();
 
         private IAnalyticsService _analytics;
         private IReadOnlyList<LevelDefinition> _levels;
         private LevelDefinition _currentLevel;
         private ShelterHealth _shelter;
         private WaveManager _waveManager;
+        private PrototypeBoardEvaluationResult _lastBoardEvaluation;
         private TileData _nextTile;
         private int _coins;
         private int _parts;
@@ -132,14 +134,19 @@ namespace MergeShelter.Core
             if (_levelEnded)
                 return;
 
+            _lastBoardEvaluation = _boardEvaluator.Evaluate(_board, _currentLevel.Enemies);
+
             _analytics.Track("wave_start", new Dictionary<string, object>
             {
                 ["level_id"] = _currentLevel.LevelId,
                 ["wave_id"] = 1,
-                ["enemy_count"] = _currentLevel.Enemies.Count
+                ["enemy_count"] = _currentLevel.Enemies.Count,
+                ["enemy_pressure"] = _lastBoardEvaluation.EnemyPressure,
+                ["total_protection"] = _lastBoardEvaluation.TotalProtection,
+                ["net_damage"] = _lastBoardEvaluation.NetDamage
             });
 
-            _waveManager.StartWave(_currentLevel.Enemies);
+            _waveManager.StartWave(_currentLevel.Enemies, _lastBoardEvaluation.NetDamage);
         }
 
         private void OnShelterChanged(int current, int max)
@@ -168,19 +175,25 @@ namespace MergeShelter.Core
             });
 
             RefreshHud();
-            hudView?.SetResult($"Victory! +{_currentLevel.CoinReward} coins, +{_currentLevel.PartsReward} parts.");
+            var explanation = _lastBoardEvaluation?.ResultExplanation ?? "Victory!";
+            hudView?.SetResult($"{explanation} +{_currentLevel.CoinReward} coins, +{_currentLevel.PartsReward} parts.");
         }
 
         private void OnWaveFailed(int wave)
         {
             _levelEnded = true;
+            var failReason = _lastBoardEvaluation?.FailReason;
+            if (string.IsNullOrEmpty(failReason))
+                failReason = PrototypeBoardEvaluator.Unknown;
+
             _analytics.Track("level_fail", new Dictionary<string, object>
             {
                 ["level_id"] = _currentLevel.LevelId,
-                ["fail_reason"] = "overwhelmed"
+                ["fail_reason"] = failReason
             });
             RefreshHud();
-            hudView?.SetResult("Defeat. Your shelter was overwhelmed. Try stronger merges before the wave.");
+            hudView?.SetResult(_lastBoardEvaluation?.ResultExplanation ??
+                               "Defeat. Your shelter was overwhelmed. Try stronger merges before the wave.");
         }
 
         private void RefreshHud()

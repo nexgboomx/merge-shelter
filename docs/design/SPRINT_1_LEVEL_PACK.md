@@ -18,6 +18,8 @@ This file defines the first 10 playable prototype levels for Merge Shelter. The 
 | Food | Restores shelter HP | Higher tier restores more HP |
 | Energy | Charges emergency skill | Higher tier gives more charge |
 
+Sprint 1 wave resolution uses a single deterministic board check before combat. Each occupied tile contributes `tier * tier` value to its role, so merged tier 2 and tier 3 tiles matter more than several unmerged tier 1 tiles. Enemy pressure is compared against total Wood defense, Metal attack, Food healing, and Energy shield value to produce the wave's shelter damage and failure explanation.
+
 ## Enemy Types for Sprint 1
 
 | Enemy | Role | HP | Damage | Speed | First Appears |
