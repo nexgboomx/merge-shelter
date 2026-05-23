@@ -21,6 +21,15 @@ namespace MergeShelter.Combat
 
         public void StartWave(IReadOnlyList<EnemyData> enemies)
         {
+            var totalDamage = 0;
+            foreach (var enemy in enemies)
+                totalDamage += enemy.Damage;
+
+            StartWave(enemies, totalDamage);
+        }
+
+        public void StartWave(IReadOnlyList<EnemyData> enemies, int incomingDamage)
+        {
             if (IsRunning)
                 return;
 
@@ -28,12 +37,7 @@ namespace MergeShelter.Combat
             CurrentWave++;
             WaveStarted?.Invoke(CurrentWave);
 
-            // Prototype simulation: total damage = enemy damage sum.
-            var totalDamage = 0;
-            foreach (var enemy in enemies)
-                totalDamage += enemy.Damage;
-
-            _shelter.Damage(totalDamage);
+            _shelter.Damage(incomingDamage);
 
             IsRunning = false;
 
