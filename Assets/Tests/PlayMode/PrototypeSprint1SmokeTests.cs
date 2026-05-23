@@ -206,6 +206,7 @@ namespace MergeShelter.Tests.PlayMode
 
             Assert.AreEqual(3, controller.CurrentLevelId);
             Assert.Greater(controller.CurrentShelterMaxHp, 100);
+            Assert.That(GetShelterHpText().text, Does.Contain("125/125"));
         }
 
         private static IEnumerator LoadPrototypeScene()
@@ -229,6 +230,13 @@ namespace MergeShelter.Tests.PlayMode
             var walletText = GameObject.Find("WalletText")?.GetComponent<Text>();
             Assert.NotNull(walletText);
             return walletText;
+        }
+
+        private static Text GetShelterHpText()
+        {
+            var shelterHpText = GameObject.Find("ShelterHpText")?.GetComponent<Text>();
+            Assert.NotNull(shelterHpText);
+            return shelterHpText;
         }
 
         private static Button FindButton(string name)

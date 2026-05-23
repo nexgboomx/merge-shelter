@@ -28,9 +28,9 @@ This checklist is the minimum quality gate for the first playable prototype.
 
 | ID | Test | Expected Result | Status |
 |---|---|---|---|
-| QA-020 | Complete Level 1 | Level 2 unlocks or can be selected | Not Run |
+| QA-020 | Complete Level 1 | Level 2 unlocks or can be selected | Pass - Sprint 2 PlayMode smoke claims Level 1 reward and unlocks Level 2 |
 | QA-021 | Play Level 1-10 sequentially | No blocker prevents progress | Not Run |
-| QA-022 | Claim reward | Prototype coins increase | Not Run |
+| QA-022 | Claim reward | Prototype coins increase | Pass - Sprint 2 PlayMode smoke grants coins on Claim Reward |
 
 ## Analytics Check
 
@@ -77,6 +77,14 @@ This checklist is the minimum quality gate for the first playable prototype.
 - EditMode tests pass: 27 passed, 0 failed.
 - PlayMode tests pass: 5 passed, 0 failed.
 - Coverage includes insufficient-coin blocking, successful coin spend, increasing upgrade cost, HUD upgrade status, `shelter_upgraded` analytics, and upgraded shelter max HP on the next level.
+
+## Sprint 2 Progression Smoke Notes - 2026-05-23
+
+- Unity version: 6000.3.16f1.
+- EditMode tests: 27 passed, 0 failed.
+- PlayMode tests: 5 passed, 0 failed.
+- Validated through PlayMode smoke: Level 1 win, Claim Reward, Level 2 unlock, Next Level starts Level 2, Retry after defeat, Upgrade Shelter button appears, upgrade is blocked without enough coins, upgrade succeeds with enough coins, and upgraded shelter max HP is visible in the HUD.
+- Remaining known issues: no P0/P1 blockers found in automated smoke; full Level 1-10 manual sequence and 10-minute prototype loop remain not run.
 
 ## Severity Rules
 
