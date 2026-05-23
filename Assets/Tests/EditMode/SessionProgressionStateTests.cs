@@ -193,5 +193,32 @@ namespace MergeShelter.Tests.EditMode
             Assert.AreEqual(2, progression.Parts);
             Assert.AreEqual(2, progression.HighestUnlockedLevel);
         }
+
+        [Test]
+        public void TryDoublePendingReward_DoublesCoinsAndParts()
+        {
+            var progression = new SessionProgressionState();
+            progression.TryStorePendingReward(1, 70, 2);
+
+            var doubled = progression.TryDoublePendingReward(out var reward);
+
+            Assert.IsTrue(doubled);
+            Assert.AreEqual(1, reward.LevelId);
+            Assert.AreEqual(140, reward.Coins);
+            Assert.AreEqual(4, reward.Parts);
+            Assert.AreEqual(140, progression.PendingReward.Coins);
+            Assert.AreEqual(4, progression.PendingReward.Parts);
+        }
+
+        [Test]
+        public void TryDoublePendingReward_BlockedWithoutPendingReward()
+        {
+            var progression = new SessionProgressionState();
+
+            var doubled = progression.TryDoublePendingReward(out var reward);
+
+            Assert.IsFalse(doubled);
+            Assert.IsTrue(reward.IsEmpty);
+        }
     }
 }

@@ -145,6 +145,20 @@ namespace MergeShelter.Meta
             return true;
         }
 
+        public bool TryDoublePendingReward(out PendingLevelReward reward)
+        {
+            reward = default;
+            if (!HasPendingReward)
+                return false;
+
+            _pendingReward = new PendingLevelReward(
+                _pendingReward.LevelId,
+                _pendingReward.Coins * 2,
+                _pendingReward.Parts * 2);
+            reward = _pendingReward;
+            return true;
+        }
+
         public bool TryClaimDailyReward(out DailyRewardClaim reward)
         {
             return _dailyReward.TryClaim(_wallet, out reward);

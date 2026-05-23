@@ -104,6 +104,15 @@ This checklist is the minimum quality gate for the first playable prototype.
 - Coverage includes Place 10 Tiles, Complete 1 Level, Claim 1 Reward quest completion, single-claim reward grants, uncompleted claim blocking, HUD quest status, Claim Quest button visibility, and `quest_progress` / `quest_completed` / `quest_claimed` analytics hooks.
 - Remaining known issues: quests are session-only by design and reset when the prototype session restarts.
 
+## Sprint 3 Rewarded Mock Notes - 2026-05-23
+
+- Unity version: 6000.3.16f1.
+- Compile check: batch project open completed without C# compile errors.
+- EditMode tests: 37 passed, 0 failed.
+- PlayMode tests: 9 passed, 0 failed.
+- Coverage includes Double Reward button visibility, one-use double reward, pending coin/part doubling before claim, Revive button visibility after defeat, one-use revive result handling, playable restart after revive, and `ad_offer_preview` / `ad_mock_started` / `ad_mock_completed` / `reward_doubled` / `revive_used` analytics hooks.
+- Remaining known issues: rewarded ads are synchronous session-only mocks by design; no real ad SDK or network ad readiness is integrated.
+
 ## Severity Rules
 
 | Severity | Definition |

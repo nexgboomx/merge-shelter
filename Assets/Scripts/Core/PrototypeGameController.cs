@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using MergeShelter.Ads;
 using MergeShelter.Analytics;
 using MergeShelter.Board;
 using MergeShelter.Combat;
@@ -26,6 +27,7 @@ namespace MergeShelter.Core
         private readonly PrototypeTileGenerator _tileGenerator = new();
         private readonly PrototypeBoardEvaluator _boardEvaluator = new();
         private readonly SessionProgressionState _progression = new();
+        private readonly IAdService _adService = new MockRewardedAdService();
 
         private IAnalyticsService _analytics;
         private IReadOnlyList<LevelDefinition> _levels;
@@ -37,6 +39,10 @@ namespace MergeShelter.Core
         private bool _levelEnded;
         private bool _lastLevelWon;
         private bool _lastLevelFailed;
+        private bool _rewardDoubleUsedThisResult;
+        private bool _reviveUsedThisResult;
+        private bool _rewardDoubleOfferPreviewed;
+        private bool _reviveOfferPreviewed;
 
         public int BoardWidth => _board.Width;
         public int BoardHeight => _board.Height;
@@ -57,7 +63,20 @@ namespace MergeShelter.Core
         public int CurrentShelterMaxHp => _shelter?.MaxHealth ?? GetShelterMaxHp();
         public bool IsLevelEnded => _levelEnded;
         public bool HasPendingReward => _progression.HasPendingReward;
+        public int PendingRewardCoins => _progression.PendingReward.Coins;
+        public int PendingRewardParts => _progression.PendingReward.Parts;
         public bool CanClaimReward => _levelEnded && _lastLevelWon && _progression.HasPendingReward;
+        public bool CanDoubleReward =>
+            _levelEnded &&
+            _lastLevelWon &&
+            _progression.HasPendingReward &&
+            !_rewardDoubleUsedThisResult &&
+            _adService.IsRewardedReady(AdPlacement.RewardDouble);
+        public bool CanRevive =>
+            _levelEnded &&
+            _lastLevelFailed &&
+            !_reviveUsedThisResult &&
+            _adService.IsRewardedReady(AdPlacement.Revive);
         public bool CanStartNextLevel =>
             _levels != null &&
             _levelEnded &&
@@ -194,6 +213,71 @@ namespace MergeShelter.Core
             return true;
         }
 
+        public bool DoubleReward()
+        {
+            if (!CanDoubleReward)
+            {
+                RefreshHud();
+                hudView?.SetResult("Double Reward is not available for this result.");
+                ProgressionChanged?.Invoke();
+                return false;
+            }
+
+            if (!ShowMockRewardedAd(AdPlacement.RewardDouble))
+            {
+                RefreshHud();
+                hudView?.SetResult("Double Reward mock ad was not completed.");
+                ProgressionChanged?.Invoke();
+                return false;
+            }
+
+            if (!_progression.TryDoublePendingReward(out var reward))
+                return false;
+
+            _rewardDoubleUsedThisResult = true;
+            _analytics.Track("reward_doubled", new Dictionary<string, object>
+            {
+                ["level_id"] = reward.LevelId,
+                ["coins_pending"] = reward.Coins,
+                ["parts_pending"] = reward.Parts
+            });
+
+            RefreshHud();
+            hudView?.SetResult($"Reward doubled. Pending reward: +{reward.Coins} coins, +{reward.Parts} parts.");
+            ProgressionChanged?.Invoke();
+            return true;
+        }
+
+        public bool Revive()
+        {
+            if (!CanRevive)
+            {
+                RefreshHud();
+                hudView?.SetResult("Revive is not available for this result.");
+                ProgressionChanged?.Invoke();
+                return false;
+            }
+
+            if (!ShowMockRewardedAd(AdPlacement.Revive))
+            {
+                RefreshHud();
+                hudView?.SetResult("Revive mock ad was not completed.");
+                ProgressionChanged?.Invoke();
+                return false;
+            }
+
+            _reviveUsedThisResult = true;
+            _analytics.Track("revive_used", new Dictionary<string, object>
+            {
+                ["level_id"] = _currentLevel.LevelId
+            });
+
+            StartSelectedLevel();
+            hudView?.SetResult("Revive used. Level restarted with a fresh shelter.");
+            ProgressionChanged?.Invoke();
+            return true;
+        }
+
         public bool UpgradeShelter()
         {
             var cost = _progression.ShelterUpgradeCost;
@@ -265,6 +349,10 @@ namespace MergeShelter.Core
             _levelEnded = false;
             _lastLevelWon = false;
             _lastLevelFailed = false;
+            _rewardDoubleUsedThisResult = false;
+            _reviveUsedThisResult = false;
+            _rewardDoubleOfferPreviewed = false;
+            _reviveOfferPreviewed = false;
 
             _shelter.Changed += OnShelterChanged;
             _waveManager.WaveCompleted += OnWaveCompleted;
@@ -397,6 +485,7 @@ namespace MergeShelter.Core
                 ? $" Reward pending: +{_currentLevel.CoinReward} coins, +{_currentLevel.PartsReward} parts."
                 : " Reward is already pending.";
             hudView?.SetResult($"{explanation}{rewardMessage}{FormatQuestCompletionSuffix(questProgress)}");
+            PreviewAvailableAdOffers();
             ProgressionChanged?.Invoke();
         }
 
@@ -417,6 +506,7 @@ namespace MergeShelter.Core
             RefreshHud();
             hudView?.SetResult(_lastBoardEvaluation?.ResultExplanation ??
                                "Defeat. Your shelter was overwhelmed. Try stronger merges before the wave.");
+            PreviewAvailableAdOffers();
             ProgressionChanged?.Invoke();
         }
 
@@ -475,6 +565,53 @@ namespace MergeShelter.Core
         private static string FormatQuestCompletionSuffix(DailyQuestProgressResult progress)
         {
             return progress.NewlyCompleted ? $" Quest complete: {progress.Title}." : string.Empty;
+        }
+
+        private bool ShowMockRewardedAd(AdPlacement placement)
+        {
+            _analytics.Track("ad_mock_started", new Dictionary<string, object>
+            {
+                ["placement"] = placement.ToString(),
+                ["level_id"] = _currentLevel.LevelId
+            });
+
+            var completed = false;
+            _adService.ShowRewarded(placement, success =>
+            {
+                completed = success;
+                _analytics.Track("ad_mock_completed", new Dictionary<string, object>
+                {
+                    ["placement"] = placement.ToString(),
+                    ["level_id"] = _currentLevel.LevelId,
+                    ["success"] = success
+                });
+            });
+
+            return completed;
+        }
+
+        private void PreviewAvailableAdOffers()
+        {
+            if (CanDoubleReward && !_rewardDoubleOfferPreviewed)
+            {
+                TrackAdOfferPreview(AdPlacement.RewardDouble);
+                _rewardDoubleOfferPreviewed = true;
+            }
+
+            if (CanRevive && !_reviveOfferPreviewed)
+            {
+                TrackAdOfferPreview(AdPlacement.Revive);
+                _reviveOfferPreviewed = true;
+            }
+        }
+
+        private void TrackAdOfferPreview(AdPlacement placement)
+        {
+            _analytics.Track("ad_offer_preview", new Dictionary<string, object>
+            {
+                ["placement"] = placement.ToString(),
+                ["level_id"] = _currentLevel.LevelId
+            });
         }
 
         private void UnsubscribeWaveEvents()

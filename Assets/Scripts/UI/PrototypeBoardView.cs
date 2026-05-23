@@ -21,6 +21,8 @@ namespace MergeShelter.UI
         [SerializeField] private Button upgradeShelterButton;
         [SerializeField] private Button dailyRewardButton;
         [SerializeField] private Button claimQuestButton;
+        [SerializeField] private Button doubleRewardButton;
+        [SerializeField] private Button reviveButton;
         [SerializeField] private int cellSize = 72;
         [SerializeField] private int cellSpacing = 6;
 
@@ -207,6 +209,12 @@ namespace MergeShelter.UI
             if (claimQuestButton == null)
                 claimQuestButton = CreateActionButton("ClaimQuestButton", "Claim Quest", new Vector2(210f, -330f), new Color(0.33f, 0.42f, 0.2f));
 
+            if (doubleRewardButton == null)
+                doubleRewardButton = CreateActionButton("DoubleRewardButton", "Double Reward", new Vector2(-210f, -330f), new Color(0.42f, 0.24f, 0.55f));
+
+            if (reviveButton == null)
+                reviveButton = CreateActionButton("ReviveButton", "Revive", new Vector2(-210f, -330f), new Color(0.48f, 0.22f, 0.28f));
+
             claimRewardButton.onClick.RemoveListener(OnClaimRewardClicked);
             claimRewardButton.onClick.AddListener(OnClaimRewardClicked);
             nextLevelButton.onClick.RemoveListener(OnNextLevelClicked);
@@ -219,6 +227,10 @@ namespace MergeShelter.UI
             dailyRewardButton.onClick.AddListener(OnDailyRewardClicked);
             claimQuestButton.onClick.RemoveListener(OnClaimQuestClicked);
             claimQuestButton.onClick.AddListener(OnClaimQuestClicked);
+            doubleRewardButton.onClick.RemoveListener(OnDoubleRewardClicked);
+            doubleRewardButton.onClick.AddListener(OnDoubleRewardClicked);
+            reviveButton.onClick.RemoveListener(OnReviveClicked);
+            reviveButton.onClick.AddListener(OnReviveClicked);
             RefreshActionButtons();
         }
 
@@ -311,6 +323,19 @@ namespace MergeShelter.UI
             RefreshActionButtons();
         }
 
+        private void OnDoubleRewardClicked()
+        {
+            gameController?.DoubleReward();
+            RefreshActionButtons();
+        }
+
+        private void OnReviveClicked()
+        {
+            gameController?.Revive();
+            RefreshCells();
+            RefreshActionButtons();
+        }
+
         private void RefreshCells()
         {
             if (gameController == null)
@@ -349,6 +374,12 @@ namespace MergeShelter.UI
 
             if (claimQuestButton != null)
                 claimQuestButton.gameObject.SetActive(gameController.CanClaimQuest);
+
+            if (doubleRewardButton != null)
+                doubleRewardButton.gameObject.SetActive(gameController.CanDoubleReward);
+
+            if (reviveButton != null)
+                reviveButton.gameObject.SetActive(gameController.CanRevive);
         }
 
         private Font GetDefaultFont()

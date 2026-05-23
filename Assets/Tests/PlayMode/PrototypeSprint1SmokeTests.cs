@@ -151,6 +151,89 @@ namespace MergeShelter.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator DoubleRewardButton_DoublesPendingRewardOnceBeforeClaim()
+        {
+            yield return LoadPrototypeScene();
+
+            var controller = Object.FindObjectOfType<PrototypeGameController>();
+            Assert.NotNull(controller);
+            controller.StartLevel(9);
+
+            var doubleRewardButton = FindButton("DoubleRewardButton");
+            Assert.NotNull(doubleRewardButton);
+            Assert.IsFalse(controller.CanDoubleReward);
+            Assert.IsFalse(doubleRewardButton.gameObject.activeSelf);
+
+            SetStrongLevelTenBoard(controller);
+            controller.StartWave();
+            yield return null;
+
+            Assert.IsTrue(controller.HasPendingReward);
+            Assert.IsTrue(controller.CanDoubleReward);
+            Assert.IsTrue(doubleRewardButton.gameObject.activeSelf);
+            Assert.AreEqual(250, controller.PendingRewardCoins);
+            Assert.AreEqual(5, controller.PendingRewardParts);
+
+            doubleRewardButton.onClick.Invoke();
+            yield return null;
+
+            Assert.IsFalse(controller.CanDoubleReward);
+            Assert.IsFalse(doubleRewardButton.gameObject.activeSelf);
+            Assert.AreEqual(500, controller.PendingRewardCoins);
+            Assert.AreEqual(10, controller.PendingRewardParts);
+            Assert.That(GetResultText().text, Does.Contain("Reward doubled"));
+            Assert.IsFalse(controller.DoubleReward());
+            Assert.AreEqual(500, controller.PendingRewardCoins);
+            Assert.AreEqual(10, controller.PendingRewardParts);
+
+            Assert.IsTrue(controller.ClaimReward());
+            yield return null;
+
+            Assert.AreEqual(500, controller.Coins);
+            Assert.AreEqual(10, controller.Parts);
+            Assert.IsFalse(controller.HasPendingReward);
+            Assert.IsFalse(controller.CanDoubleReward);
+        }
+
+        [UnityTest]
+        public IEnumerator ReviveButton_RestartsFailedLevelOnce()
+        {
+            yield return LoadPrototypeScene();
+
+            var controller = Object.FindObjectOfType<PrototypeGameController>();
+            Assert.NotNull(controller);
+            controller.StartLevel(9);
+
+            var reviveButton = FindButton("ReviveButton");
+            var startWaveButton = FindButton("StartWaveButton");
+            Assert.NotNull(reviveButton);
+            Assert.NotNull(startWaveButton);
+            Assert.IsFalse(controller.CanRevive);
+            Assert.IsFalse(reviveButton.gameObject.activeSelf);
+
+            controller.StartWave();
+            yield return null;
+
+            Assert.IsTrue(controller.IsLevelEnded);
+            Assert.IsTrue(controller.CanRevive);
+            Assert.IsTrue(reviveButton.gameObject.activeSelf);
+            Assert.IsFalse(startWaveButton.gameObject.activeSelf);
+
+            reviveButton.onClick.Invoke();
+            yield return null;
+
+            Assert.AreEqual(10, controller.CurrentLevelId);
+            Assert.AreEqual(10, controller.SelectedLevel);
+            Assert.IsFalse(controller.IsLevelEnded);
+            Assert.IsFalse(controller.CanRevive);
+            Assert.IsFalse(reviveButton.gameObject.activeSelf);
+            Assert.IsTrue(startWaveButton.gameObject.activeSelf);
+            Assert.IsTrue(controller.GetTileAt(0, 0).IsEmpty);
+            Assert.That(GetResultText().text, Does.Contain("Revive used"));
+            Assert.IsFalse(controller.Revive());
+        }
+
+        [UnityTest]
         public IEnumerator RewardClaim_UnlocksLevelTwoAndNextLevelButtonStartsIt()
         {
             yield return LoadPrototypeScene();
@@ -345,6 +428,15 @@ namespace MergeShelter.Tests.PlayMode
         {
             var board = GetBoard(controller);
             board.SetTile(new BoardPosition(0, 0), new TileData(TileType.Wood, 3));
+        }
+
+        private static void SetStrongLevelTenBoard(PrototypeGameController controller)
+        {
+            var board = GetBoard(controller);
+            board.SetTile(new BoardPosition(0, 0), new TileData(TileType.Wood, 3));
+            board.SetTile(new BoardPosition(1, 0), new TileData(TileType.Metal, 3));
+            board.SetTile(new BoardPosition(2, 0), new TileData(TileType.Food, 3));
+            board.SetTile(new BoardPosition(3, 0), new TileData(TileType.Energy, 3));
         }
 
         private static IEnumerator WinCurrentLevelAndClaim(PrototypeGameController controller)
