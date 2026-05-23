@@ -64,6 +64,13 @@ This checklist is the minimum quality gate for the first playable prototype.
 - Existing PlayMode smoke tests pass: 2 passed, 0 failed.
 - Model coverage includes level 1 new-player state, locked level rejection, unlocked selection, coin/part spend safety, shelter upgrade level tracking, and pending reward store/clear/claim.
 
+## Sprint 2 Reward Claim Notes - 2026-05-23
+
+- Reward claim and level unlock flow added for issue #18.
+- EditMode tests pass: 24 passed, 0 failed.
+- PlayMode tests pass: 4 passed, 0 failed.
+- PlayMode coverage includes locked Level 2 selection rejection, Claim Reward button visibility, double-claim rejection, Level 1 reward unlocking Level 2, Next Level starting Level 2, and Retry restarting the selected failed level.
+
 ## Severity Rules
 
 | Severity | Definition |
