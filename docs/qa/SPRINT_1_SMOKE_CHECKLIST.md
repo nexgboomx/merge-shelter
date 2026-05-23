@@ -57,6 +57,13 @@ This checklist is the minimum quality gate for the first playable prototype.
 - `Assets/Tests/EditMode/MergeShelter.EditModeTests.asmdef` compiles and EditMode tests pass: 14 passed, 0 failed.
 - `Assets/Tests/PlayMode/MergeShelter.PlayModeTests.asmdef` compiles with an explicit `UnityEngine.UI` reference and PlayMode smoke tests pass: 2 passed, 0 failed.
 
+## Sprint 2 Progression State Notes - 2026-05-23
+
+- Session progression state model added for issue #17.
+- EditMode tests pass: 23 passed, 0 failed.
+- Existing PlayMode smoke tests pass: 2 passed, 0 failed.
+- Model coverage includes level 1 new-player state, locked level rejection, unlocked selection, coin/part spend safety, shelter upgrade level tracking, and pending reward store/clear/claim.
+
 ## Severity Rules
 
 | Severity | Definition |
