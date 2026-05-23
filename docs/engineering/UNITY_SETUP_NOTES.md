@@ -36,32 +36,25 @@ Recommended hierarchy:
   - NextTileText
   - ResultText
   - WalletText
-- BoardRoot
-  - 36 prototype cell buttons or sprites
+  - BoardRoot (PrototypeBoardView)
 
 Attach:
 
 - `PrototypeGameController` to `PrototypeGame`
 - `PrototypeHudView` to a HUD object under `Canvas`
+- `PrototypeBoardView` to `BoardRoot` under `Canvas`
 
 Wire the HUD text fields in the inspector.
+Wire `PrototypeBoardView.gameController` to `PrototypeGameController`, or let the view find it at runtime.
 
 ## Temporary Input Method
-Until the board visual controller is implemented, test placement by adding UI buttons or debug calls that invoke:
+`PrototypeBoardView` creates the 6x6 board and Start Wave button at runtime. For quick debugging, placement can still be invoked with:
 
 `PrototypeGameController.TryPlaceNextTile(x, y)`
 
 Then add a button to call:
 
 `PrototypeGameController.StartWave()`
-
-## Next Engineering Step
-Implement a `PrototypeBoardView` MonoBehaviour that:
-
-- Creates 36 cell buttons at runtime
-- Maps each button to board coordinates
-- Calls `TryPlaceNextTile(x, y)`
-- Updates visible tile labels after placement and merge
 
 ## Important Note
 The current scripts are prototype-first. They are intentionally simple and should be refactored after the core loop is validated.

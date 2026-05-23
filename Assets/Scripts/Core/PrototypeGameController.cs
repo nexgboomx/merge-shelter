@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using MergeShelter.Analytics;
 using MergeShelter.Board;
@@ -35,6 +36,11 @@ namespace MergeShelter.Core
         private int _parts;
         private bool _levelEnded;
 
+        public int BoardWidth => _board.Width;
+        public int BoardHeight => _board.Height;
+
+        public event Action BoardChanged;
+
         private void Awake()
         {
             _analytics = new DebugAnalyticsService();
@@ -64,6 +70,7 @@ namespace MergeShelter.Core
             _nextTile = _tileGenerator.GenerateNextTile();
             RefreshHud();
             hudView?.SetResult("Place tiles, merge, then start the wave.");
+            BoardChanged?.Invoke();
         }
 
         public bool TryPlaceNextTile(int x, int y)
@@ -111,7 +118,13 @@ namespace MergeShelter.Core
 
             _nextTile = _tileGenerator.GenerateNextTile();
             RefreshHud();
+            BoardChanged?.Invoke();
             return true;
+        }
+
+        public TileData GetTileAt(int x, int y)
+        {
+            return _board.GetTile(new BoardPosition(x, y));
         }
 
         public void StartWave()
