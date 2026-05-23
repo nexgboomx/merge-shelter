@@ -90,6 +90,49 @@ namespace MergeShelter.Tests.EditMode
         }
 
         [Test]
+        public void ShelterUpgrade_BlockedWhenCoinsAreInsufficient()
+        {
+            var progression = new SessionProgressionState();
+            var startingCoins = progression.ShelterUpgradeCost - 1;
+            progression.AddCurrency(CurrencyType.Coins, startingCoins);
+
+            var upgraded = progression.TryUpgradeShelter();
+
+            Assert.IsFalse(upgraded);
+            Assert.AreEqual(1, progression.ShelterUpgradeLevel);
+            Assert.AreEqual(startingCoins, progression.Coins);
+            Assert.IsFalse(progression.CanAffordShelterUpgrade);
+        }
+
+        [Test]
+        public void ShelterUpgrade_SpendsCoinsAndIncreasesCost()
+        {
+            var progression = new SessionProgressionState();
+            var firstCost = progression.ShelterUpgradeCost;
+            progression.AddCurrency(CurrencyType.Coins, firstCost + 200);
+
+            var upgraded = progression.TryUpgradeShelter();
+
+            Assert.IsTrue(upgraded);
+            Assert.AreEqual(2, progression.ShelterUpgradeLevel);
+            Assert.AreEqual(200, progression.Coins);
+            Assert.Greater(progression.ShelterUpgradeCost, firstCost);
+        }
+
+        [Test]
+        public void ShelterUpgrade_IncreasesMaxHealth()
+        {
+            var progression = new SessionProgressionState();
+            var baseMaxHealth = progression.GetShelterMaxHealth(100);
+            progression.AddCurrency(CurrencyType.Coins, progression.ShelterUpgradeCost);
+
+            progression.TryUpgradeShelter();
+
+            Assert.Greater(progression.GetShelterMaxHealth(100), baseMaxHealth);
+            Assert.AreEqual(25, progression.ShelterMaxHealthBonus);
+        }
+
+        [Test]
         public void PendingReward_CanBeStoredAndCleared()
         {
             var progression = new SessionProgressionState();

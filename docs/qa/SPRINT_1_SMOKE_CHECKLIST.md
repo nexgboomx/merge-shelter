@@ -71,6 +71,13 @@ This checklist is the minimum quality gate for the first playable prototype.
 - PlayMode tests pass: 4 passed, 0 failed.
 - PlayMode coverage includes locked Level 2 selection rejection, Claim Reward button visibility, double-claim rejection, Level 1 reward unlocking Level 2, Next Level starting Level 2, and Retry restarting the selected failed level.
 
+## Sprint 2 Shelter Upgrade Notes - 2026-05-23
+
+- Shelter upgrade flow added for issue #19.
+- EditMode tests pass: 27 passed, 0 failed.
+- PlayMode tests pass: 5 passed, 0 failed.
+- Coverage includes insufficient-coin blocking, successful coin spend, increasing upgrade cost, HUD upgrade status, `shelter_upgraded` analytics, and upgraded shelter max HP on the next level.
+
 ## Severity Rules
 
 | Severity | Definition |

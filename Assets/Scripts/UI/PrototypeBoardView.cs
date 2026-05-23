@@ -18,6 +18,7 @@ namespace MergeShelter.UI
         [SerializeField] private Button claimRewardButton;
         [SerializeField] private Button nextLevelButton;
         [SerializeField] private Button retryButton;
+        [SerializeField] private Button upgradeShelterButton;
         [SerializeField] private int cellSize = 72;
         [SerializeField] private int cellSpacing = 6;
 
@@ -195,12 +196,17 @@ namespace MergeShelter.UI
             if (retryButton == null)
                 retryButton = CreateActionButton("RetryButton", "Retry", new Vector2(0f, -280f), new Color(0.52f, 0.28f, 0.18f));
 
+            if (upgradeShelterButton == null)
+                upgradeShelterButton = CreateActionButton("UpgradeShelterButton", "Upgrade Shelter", new Vector2(210f, -280f), new Color(0.45f, 0.35f, 0.14f));
+
             claimRewardButton.onClick.RemoveListener(OnClaimRewardClicked);
             claimRewardButton.onClick.AddListener(OnClaimRewardClicked);
             nextLevelButton.onClick.RemoveListener(OnNextLevelClicked);
             nextLevelButton.onClick.AddListener(OnNextLevelClicked);
             retryButton.onClick.RemoveListener(OnRetryClicked);
             retryButton.onClick.AddListener(OnRetryClicked);
+            upgradeShelterButton.onClick.RemoveListener(OnUpgradeShelterClicked);
+            upgradeShelterButton.onClick.AddListener(OnUpgradeShelterClicked);
             RefreshActionButtons();
         }
 
@@ -275,6 +281,12 @@ namespace MergeShelter.UI
             RefreshActionButtons();
         }
 
+        private void OnUpgradeShelterClicked()
+        {
+            gameController?.UpgradeShelter();
+            RefreshActionButtons();
+        }
+
         private void RefreshCells()
         {
             if (gameController == null)
@@ -304,6 +316,9 @@ namespace MergeShelter.UI
 
             if (retryButton != null)
                 retryButton.gameObject.SetActive(gameController.CanRetryLevel);
+
+            if (upgradeShelterButton != null)
+                upgradeShelterButton.gameObject.SetActive(true);
         }
 
         private Font GetDefaultFont()

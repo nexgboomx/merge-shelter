@@ -45,6 +45,10 @@ namespace MergeShelter.Core
         public int HighestUnlockedLevel => _progression.HighestUnlockedLevel;
         public int Coins => _progression.Coins;
         public int Parts => _progression.Parts;
+        public int ShelterUpgradeLevel => _progression.ShelterUpgradeLevel;
+        public int ShelterUpgradeCost => _progression.ShelterUpgradeCost;
+        public bool CanAffordShelterUpgrade => _progression.CanAffordShelterUpgrade;
+        public int CurrentShelterMaxHp => _shelter?.MaxHealth ?? GetShelterMaxHp();
         public bool IsLevelEnded => _levelEnded;
         public bool HasPendingReward => _progression.HasPendingReward;
         public bool CanClaimReward => _levelEnded && _lastLevelWon && _progression.HasPendingReward;
@@ -137,6 +141,35 @@ namespace MergeShelter.Core
             return true;
         }
 
+        public bool UpgradeShelter()
+        {
+            var cost = _progression.ShelterUpgradeCost;
+            var previousLevel = _progression.ShelterUpgradeLevel;
+            if (!_progression.TryUpgradeShelter())
+            {
+                var missingCoins = Mathf.Max(0, cost - _progression.Coins);
+                RefreshHud();
+                hudView?.SetResult($"Upgrade blocked. Need {missingCoins} more coins for Shelter Lv {previousLevel + 1}.");
+                ProgressionChanged?.Invoke();
+                return false;
+            }
+
+            var newLevel = _progression.ShelterUpgradeLevel;
+            _analytics.Track("shelter_upgraded", new Dictionary<string, object>
+            {
+                ["shelter_level"] = newLevel,
+                ["previous_level"] = previousLevel,
+                ["coins_spent"] = cost,
+                ["coins_remaining"] = _progression.Coins,
+                ["max_hp"] = GetShelterMaxHp()
+            });
+
+            RefreshHud();
+            hudView?.SetResult($"Shelter upgraded to Lv {newLevel}. Future waves start with {GetShelterMaxHp()} HP.");
+            ProgressionChanged?.Invoke();
+            return true;
+        }
+
         public bool StartNextLevel()
         {
             if (!CanStartNextLevel)
@@ -173,7 +206,7 @@ namespace MergeShelter.Core
             UnsubscribeWaveEvents();
             _currentLevel = level;
             _board.Clear();
-            _shelter = new ShelterHealth(shelterMaxHp);
+            _shelter = new ShelterHealth(GetShelterMaxHp());
             _waveManager = new WaveManager(_shelter);
             _tileGenerator.Configure(_currentLevel);
             _levelEnded = false;
@@ -335,7 +368,17 @@ namespace MergeShelter.Core
             hudView?.SetTutorial(_currentLevel.TutorialMessage);
             hudView?.SetShelterHp(_shelter.CurrentHealth, _shelter.MaxHealth);
             hudView?.SetNextTile(_nextTile);
-            hudView?.SetWallet(_progression.Coins, _progression.Parts);
+            hudView?.SetProgression(
+                _progression.Coins,
+                _progression.Parts,
+                _progression.ShelterUpgradeLevel,
+                _progression.ShelterUpgradeCost,
+                _progression.CanAffordShelterUpgrade);
+        }
+
+        private int GetShelterMaxHp()
+        {
+            return _progression.GetShelterMaxHealth(shelterMaxHp);
         }
 
         private void UnsubscribeWaveEvents()

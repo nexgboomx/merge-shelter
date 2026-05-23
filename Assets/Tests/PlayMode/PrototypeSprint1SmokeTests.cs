@@ -160,6 +160,54 @@ namespace MergeShelter.Tests.PlayMode
             Assert.IsTrue(controller.GetTileAt(0, 0).IsEmpty);
         }
 
+        [UnityTest]
+        public IEnumerator UpgradeShelterButton_SpendsCoinsAndImprovesNextLevelMaxHp()
+        {
+            yield return LoadPrototypeScene();
+
+            var controller = Object.FindObjectOfType<PrototypeGameController>();
+            Assert.NotNull(controller);
+            controller.StartLevel(0);
+
+            var upgradeButton = FindButton("UpgradeShelterButton");
+            Assert.NotNull(upgradeButton);
+            Assert.IsTrue(upgradeButton.gameObject.activeSelf);
+            Assert.AreEqual(1, controller.ShelterUpgradeLevel);
+            Assert.AreEqual(100, controller.ShelterUpgradeCost);
+            Assert.IsFalse(controller.CanAffordShelterUpgrade);
+
+            upgradeButton.onClick.Invoke();
+            yield return null;
+
+            Assert.AreEqual(1, controller.ShelterUpgradeLevel);
+            Assert.AreEqual(0, controller.Coins);
+            Assert.That(GetResultText().text, Does.Contain("Upgrade blocked"));
+
+            yield return WinCurrentLevelAndClaim(controller);
+            Assert.IsTrue(controller.StartNextLevel());
+            yield return null;
+
+            yield return WinCurrentLevelAndClaim(controller);
+            Assert.AreEqual(120, controller.Coins);
+            Assert.IsTrue(controller.CanAffordShelterUpgrade);
+
+            var previousCost = controller.ShelterUpgradeCost;
+            upgradeButton.onClick.Invoke();
+            yield return null;
+
+            Assert.AreEqual(2, controller.ShelterUpgradeLevel);
+            Assert.AreEqual(20, controller.Coins);
+            Assert.Greater(controller.ShelterUpgradeCost, previousCost);
+            Assert.That(GetResultText().text, Does.Contain("Shelter upgraded"));
+            Assert.That(GetWalletText().text, Does.Contain("Shelter Lv 2"));
+
+            Assert.IsTrue(controller.StartNextLevel());
+            yield return null;
+
+            Assert.AreEqual(3, controller.CurrentLevelId);
+            Assert.Greater(controller.CurrentShelterMaxHp, 100);
+        }
+
         private static IEnumerator LoadPrototypeScene()
         {
             var loadOperation = SceneManager.LoadSceneAsync(SceneName, LoadSceneMode.Single);
@@ -174,6 +222,13 @@ namespace MergeShelter.Tests.PlayMode
             var resultText = GameObject.Find("ResultText")?.GetComponent<Text>();
             Assert.NotNull(resultText);
             return resultText;
+        }
+
+        private static Text GetWalletText()
+        {
+            var walletText = GameObject.Find("WalletText")?.GetComponent<Text>();
+            Assert.NotNull(walletText);
+            return walletText;
         }
 
         private static Button FindButton(string name)
@@ -198,6 +253,16 @@ namespace MergeShelter.Tests.PlayMode
         {
             var board = GetBoard(controller);
             board.SetTile(new BoardPosition(0, 0), new TileData(TileType.Wood, 3));
+        }
+
+        private static IEnumerator WinCurrentLevelAndClaim(PrototypeGameController controller)
+        {
+            SetStrongLevelOneBoard(controller);
+            controller.StartWave();
+            yield return null;
+            Assert.IsTrue(controller.CanClaimReward);
+            Assert.IsTrue(controller.ClaimReward());
+            yield return null;
         }
     }
 }

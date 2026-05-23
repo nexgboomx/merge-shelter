@@ -42,6 +42,8 @@ namespace MergeShelter.Meta
         public int Parts => _wallet.Get(CurrencyType.Parts);
         public int ShelterUpgradeLevel => _shelterUpgrade.Level;
         public int ShelterUpgradeCost => _shelterUpgrade.GetUpgradeCost();
+        public int ShelterMaxHealthBonus => _shelterUpgrade.GetMaxHealthBonus();
+        public bool CanAffordShelterUpgrade => Coins >= ShelterUpgradeCost;
         public bool HasPendingReward => !_pendingReward.IsEmpty;
         public PendingLevelReward PendingReward => _pendingReward;
 
@@ -90,6 +92,11 @@ namespace MergeShelter.Meta
         public bool TryUpgradeShelter()
         {
             return _shelterUpgrade.TryUpgrade(_wallet);
+        }
+
+        public int GetShelterMaxHealth(int baseMaxHealth)
+        {
+            return _shelterUpgrade.GetMaxHealth(baseMaxHealth);
         }
 
         public bool TryStorePendingReward(int levelId, int coins, int parts)
