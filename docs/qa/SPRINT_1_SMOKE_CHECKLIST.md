@@ -7,7 +7,7 @@ This checklist is the minimum quality gate for the first playable prototype.
 
 | ID | Test | Expected Result | Status |
 |---|---|---|---|
-| QA-001 | Open project in Unity | Project opens without compile errors | Pass - Unity 6000.3.16f1 batch open compiles cleanly |
+| QA-001 | Open project in Unity | Project opens without compile errors | Pass - Unity 6000.3.16f1 batch open compiles cleanly; asmdef UI references verified |
 | QA-002 | Open prototype scene | Scene opens without missing script errors | Pass - `Assets/Scenes/PrototypeSprint1.unity` loads in PlayMode smoke |
 | QA-003 | Enter play mode | No immediate exception | Pass - PlayMode smoke tests completed |
 
@@ -29,7 +29,7 @@ This checklist is the minimum quality gate for the first playable prototype.
 | ID | Test | Expected Result | Status |
 |---|---|---|---|
 | QA-020 | Complete Level 1 | Level 2 unlocks or can be selected | Not Run |
-| QA-021 | Play Level 1–10 sequentially | No blocker prevents progress | Not Run |
+| QA-021 | Play Level 1-10 sequentially | No blocker prevents progress | Not Run |
 | QA-022 | Claim reward | Prototype coins increase | Not Run |
 
 ## Analytics Check
@@ -50,6 +50,12 @@ This checklist is the minimum quality gate for the first playable prototype.
 - PlayMode smoke tests: 2 passed, 0 failed.
 - Additional editor smoke validator passed: board cell click placed a tile, Start Wave button updated result text, weak Level 10 board failed, strong Level 10 board won.
 - Progression checks QA-020 through QA-022 remain not run because level unlock/claim flow is not yet implemented as a player-facing sequence.
+
+## Sprint 1 Asmdef Verification Notes - 2026-05-23
+
+- `Assets/Scripts/MergeShelter.asmdef` compiles with `UnityEngine.UI` scripts using an explicit `UnityEngine.UI` reference.
+- `Assets/Tests/EditMode/MergeShelter.EditModeTests.asmdef` compiles and EditMode tests pass: 14 passed, 0 failed.
+- `Assets/Tests/PlayMode/MergeShelter.PlayModeTests.asmdef` compiles with an explicit `UnityEngine.UI` reference and PlayMode smoke tests pass: 2 passed, 0 failed.
 
 ## Severity Rules
 

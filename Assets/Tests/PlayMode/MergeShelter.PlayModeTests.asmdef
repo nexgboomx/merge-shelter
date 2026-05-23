@@ -2,7 +2,8 @@
     "name": "MergeShelter.PlayModeTests",
     "rootNamespace": "MergeShelter.Tests.PlayMode",
     "references": [
-        "MergeShelter"
+        "MergeShelter",
+        "UnityEngine.UI"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
