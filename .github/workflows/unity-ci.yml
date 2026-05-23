@@ -1,0 +1,24 @@
+name: Unity CI Placeholder
+
+on:
+  pull_request:
+  push:
+    branches: [ main, develop ]
+
+jobs:
+  validate-repo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate docs
+        run: |
+          test -f README.md
+          test -f AGENTS.md
+          test -f docs/design/GDD.md
+          echo "Repository documentation is present."
+      - name: Validate C# scripts exist
+        run: |
+          test -f Assets/Scripts/Board/BoardModel.cs
+          test -f Assets/Scripts/Board/MergeResolver.cs
+          test -f Assets/Scripts/Combat/WaveManager.cs
+          echo "Core scripts are present."
