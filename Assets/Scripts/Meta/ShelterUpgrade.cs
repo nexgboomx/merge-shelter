@@ -6,7 +6,15 @@ namespace MergeShelter.Meta
     {
         private const int MaxHealthBonusPerUpgradeLevel = 25;
 
-        public int Level { get; private set; } = 1;
+        public int Level { get; private set; }
+
+        public ShelterUpgrade(int level = 1)
+        {
+            if (level < 1)
+                level = 1;
+
+            Level = level;
+        }
 
         public int GetUpgradeCost()
         {

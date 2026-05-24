@@ -32,7 +32,7 @@ namespace MergeShelter.Meta
         public bool HasClaimed { get; private set; }
         public bool CanClaim => !HasClaimed;
 
-        public DailyReward(int coinReward = DefaultCoinReward, int partsReward = DefaultPartsReward)
+        public DailyReward(int coinReward = DefaultCoinReward, int partsReward = DefaultPartsReward, bool hasClaimed = false)
         {
             if (coinReward < 0)
                 throw new ArgumentOutOfRangeException(nameof(coinReward));
@@ -42,6 +42,7 @@ namespace MergeShelter.Meta
 
             CoinReward = coinReward;
             PartsReward = partsReward;
+            HasClaimed = hasClaimed;
         }
 
         public bool TryClaim(CurrencyWallet wallet, out DailyRewardClaim reward)
