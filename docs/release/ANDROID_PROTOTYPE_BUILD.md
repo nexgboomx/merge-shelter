@@ -84,10 +84,13 @@ The repo includes an Editor-only build entry point for repeatable prototype APK 
   -buildTarget Android `
   -executeMethod MergeShelter.EditorTools.PrototypeAndroidBuild.BuildDebugApk `
   -buildOutputPath Builds\Android\merge-shelter-sprint4-prototype-YYYYMMDD-b001-debug.apk `
+  -androidSdkPath C:\Android\Sdk `
+  -androidNdkPath 'C:\Program Files\Unity\Hub\Editor\6000.3.16f1\Editor\Data\PlaybackEngines\AndroidPlayer\NDK\android-ndk-r27c' `
+  -androidJdkPath 'C:\Program Files\Unity\Hub\Editor\6000.3.16f1\Editor\Data\PlaybackEngines\AndroidPlayer\OpenJDK' `
   -logFile Logs\AndroidPrototypeBuild.log
 ```
 
-The build method uses enabled scenes from `ProjectSettings/EditorBuildSettings.asset`, creates an APK, and enables Unity `Development Build` output for internal QA.
+The build method uses enabled scenes from `ProjectSettings/EditorBuildSettings.asset`, creates an APK, and enables Unity `Development Build` output for internal QA. The Android tool path arguments are optional when Unity's embedded Android SDK is complete, but they are recommended for this workstation because the installed SDK is located at `C:\Android\Sdk`.
 
 ## Debug Signing Notes
 
@@ -166,7 +169,8 @@ If Unity reports `Android SDK not found` and references `cmdline-tools/latest/bi
 
 - Android SDK Command-line Tools latest
 - Android SDK Platform-Tools
-- Android SDK Platform, API 35 or newer
-- Android SDK Build-Tools 35.0.0 or newer
+- Android SDK Platform, API 34 or newer
+- Android SDK Build-Tools 34.0.0 or newer
+- CMake 3.22.1
 
 After repairing the SDK, rerun the batch APK build command and confirm the APK appears under `Builds/Android/`.

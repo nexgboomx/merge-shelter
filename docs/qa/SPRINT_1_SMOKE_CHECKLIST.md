@@ -147,10 +147,12 @@ This checklist is the minimum quality gate for the first playable prototype.
 - EditMode tests: 41 passed, 0 failed.
 - PlayMode tests: 11 passed, 0 failed.
 - Save/load/reset validation: PlayMode coverage passed for coins, parts, highest unlocked level, selected level, shelter upgrade level, daily reward claimed state, daily quest progress/claimed state, and Reset Save returning to new-player Level 1 state.
-- Android build status: attempted development/debug APK at `Builds/Android/merge-shelter-sprint4-prototype-20260524-b001-debug.apk` using `MergeShelter.EditorTools.PrototypeAndroidBuild.BuildDebugApk`; build failed before artifact output because Unity's selected Android SDK is incomplete.
-- Android build blocker: `cmdline-tools/latest/bin/sdkmanager.bat`, `platform-tools`, `platforms`, and `build-tools` are missing from the selected SDK. A user-writable SDK repair was attempted, but package installation stopped at Android SDK license acceptance.
-- Device install status: not run. No APK was produced, `adb` is not on PATH, and Unity's selected SDK does not include `platform-tools/adb.exe`.
-- Remaining known issues: no gameplay P0/P1 blockers found in automated tests. Android packaging remains blocked until Android SDK Command-line Tools latest, Platform-Tools, a platform SDK, and Build-Tools are installed/accepted for the Unity 6000.3.16f1 environment.
+- Android build status: passed after configuring the batch build to use `C:\Android\Sdk` plus Unity's embedded NDK r27c and OpenJDK.
+- APK filename: `merge-shelter-sprint4-prototype-20260524-b005-debug.apk`.
+- APK output path: `Builds/Android/merge-shelter-sprint4-prototype-20260524-b005-debug.apk`.
+- Build type: development/debug APK.
+- Device install status: not run. `adb devices -l` is available through `C:\Android\Sdk\platform-tools\adb.exe`, but no physical Android device is connected.
+- Remaining known issues: no gameplay P0/P1 blockers found in automated tests or APK packaging. Physical Android install and manual device smoke remain pending until a device is connected.
 
 ## Severity Rules
 
