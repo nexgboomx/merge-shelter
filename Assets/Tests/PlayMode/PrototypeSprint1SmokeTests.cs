@@ -714,6 +714,7 @@ namespace MergeShelter.Tests.PlayMode
                 Assert.Greater(rect.height, 20f, $"{textName} should have bounded height.");
                 Assert.AreEqual(HorizontalWrapMode.Wrap, text.horizontalOverflow, $"{textName} should wrap horizontally.");
                 Assert.AreEqual(VerticalWrapMode.Truncate, text.verticalOverflow, $"{textName} should clamp vertically.");
+                Assert.IsFalse(text.resizeTextForBestFit, $"{textName} should avoid Best Fit line collapse on Android.");
                 hudRects[textName] = rect;
             }
 

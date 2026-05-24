@@ -194,6 +194,24 @@ This checklist is the minimum quality gate for the first playable prototype.
 - P0/P1 blockers: P1 blocker for Android physical-device smoke completion: stale Revive button plus second Revive tap caused a persistent black-screen app state and blocked Retry and strong-board Level 10 follow-up validation. P1 UI blocker: HUD/status text overlaps enough to make top-left progression/result text hard to read on SM-S918B.
 - Security note: Testing used only the Merge Shelter package, game-only screenshots/input after foreground verification, approved system-overlay dismissal/refocus actions to return to the game, and did not access personal apps or device data.
 
+## Post-Fix Android Physical Device Smoke Notes - 2026-05-25
+
+- Device: Samsung SM-S918B.
+- Android version/API: Android 16 / API 36.
+- APK filename: `merge-shelter-post-fix-device-debug.apk`.
+- APK output path: `Builds/Android/merge-shelter-post-fix-device-debug.apk`.
+- Install result: latest `main` APK installed successfully with `adb install -r`. A follow-up APK from fix branch `fix/android-hud-text-rendering` was built, but physical reinstall was blocked because the phone returned to `unauthorized` after Unity restarted ADB; user RSA prompt acceptance is required before continuing.
+- Launch result: latest `main` APK launched successfully with `adb shell monkey -p com.DefaultCompany.mergeshelter 1`; foreground was verified as `com.DefaultCompany.mergeshelter/com.unity3d.player.UnityPlayerGameActivity`.
+- Revive fix result: not fully rerun on device. Smoke was stopped before the revive path because HUD text rendering remained a P1 blocker on latest `main`.
+- HUD layout fix result: partial fail on latest `main`. Initial launch layout was improved: top status text, centered board, bounded result area, and bottom buttons were visible and tappable. After repeated progression updates (upgrade blocked, daily reward, ten board taps, quest claim, shelter upgrade), wallet/result text still drew over itself on SM-S918B. A code fix was prepared on `fix/android-hud-text-rendering` to disable Unity UI Best Fit for HUD text and expand bounded wallet/result text areas; automated tests passed, physical verification remains pending device authorization.
+- Full smoke result: partial fail/blocker. Launch, initial board visibility, board taps, upgrade blocked, daily reward one-use behavior by hidden button, daily quest progress, quest claim attempt, and button tapability were exercised before stopping on the HUD text rendering blocker.
+- Save/load result: not rerun after the HUD blocker.
+- Reset Save result: not rerun after the HUD blocker.
+- EditMode tests: latest `main` passed 41/41 before APK build; `fix/android-hud-text-rendering` also passed 41/41.
+- PlayMode tests: latest `main` passed 13/13 before APK build; `fix/android-hud-text-rendering` also passed 13/13.
+- P0/P1 blockers: P1 remains on latest `main` for Android HUD text rendering after repeated progression updates. Branch retest blocker: device authorization is required before reinstalling and physically verifying `fix/android-hud-text-rendering`. No crash, freeze, or black screen was observed in this partial run.
+- Security note: Testing used only the Merge Shelter package, game-only screenshots/input after foreground verification, and safe device metadata commands. No personal apps or device data were accessed.
+
 ## Severity Rules
 
 | Severity | Definition |
