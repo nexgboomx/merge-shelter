@@ -154,6 +154,26 @@ This checklist is the minimum quality gate for the first playable prototype.
 - Device install status: not run. `adb devices -l` is available through `C:\Android\Sdk\platform-tools\adb.exe`, but no physical Android device is connected.
 - Remaining known issues: no gameplay P0/P1 blockers found in automated tests or APK packaging. Physical Android install and manual device smoke remain pending until a device is connected.
 
+## Sprint 4 Android Emulator/Device Smoke Notes - 2026-05-24
+
+- Machine OS: Ubuntu 24.04.3 LTS, Linux 6.17.0-1017-oem x86_64.
+- Unity version: 6000.3.16f1 installed locally with Android Build Support, Android SDK/NDK Tools, and OpenJDK 17.0.18.
+- Test target: not run. `adb devices -l` completed through Unity's embedded Android SDK, but no emulator or physical Android device was connected.
+- Emulator profile/device model: not run.
+- Android API/version: not run on device. Unity Android SDK platforms 34, 35, and 36 are installed.
+- APK filename: `merge-shelter-sprint4-prototype-20260524-b005-debug.apk` expected, but no APK is present in `Builds/Android` on this machine.
+- APK output path: `Builds/Android/merge-shelter-sprint4-prototype-20260524-b005-debug.apk` expected; file not found.
+- Install status: not run because no APK was available and no Android target was connected.
+- Launch status: not run.
+- Manual smoke result: not run.
+- Save/load result: not run on Android.
+- Reset Save result: not run on Android.
+- EditMode tests: not run. Unity batch mode exited before project import with code 198 because no valid Unity Editor license was activated on this machine.
+- PlayMode tests: not run for the same Unity license blocker.
+- Remaining known issues: Unity account/license activation is required before compile validation, automated tests, or a fresh Android APK build can run on this machine. The Sprint 4 APK artifact from the previous machine is not committed to the repo or published as a GitHub release.
+- P0/P1 blockers: environment blocker only; Android gameplay smoke could not be assessed.
+- Physical Android device smoke was not run.
+
 ## Severity Rules
 
 | Severity | Definition |
