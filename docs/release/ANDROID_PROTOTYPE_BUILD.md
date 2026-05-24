@@ -71,6 +71,24 @@ Builds/Android/merge-shelter-sprint4-prototype-YYYYMMDD-b001-debug.apk
 
 Replace `YYYYMMDD` with the build date and increment `b001` when multiple APKs are produced on the same date.
 
+## Batch APK Build
+
+The repo includes an Editor-only build entry point for repeatable prototype APK builds:
+
+```powershell
+& 'C:\Program Files\Unity\Hub\Editor\6000.3.16f1\Editor\Unity.exe' `
+  -batchmode `
+  -nographics `
+  -quit `
+  -projectPath . `
+  -buildTarget Android `
+  -executeMethod MergeShelter.EditorTools.PrototypeAndroidBuild.BuildDebugApk `
+  -buildOutputPath Builds\Android\merge-shelter-sprint4-prototype-YYYYMMDD-b001-debug.apk `
+  -logFile Logs\AndroidPrototypeBuild.log
+```
+
+The build method uses enabled scenes from `ProjectSettings/EditorBuildSettings.asset`, creates an APK, and enables Unity `Development Build` output for internal QA.
+
 ## Debug Signing Notes
 
 - Debug signing is acceptable for Sprint 4.
@@ -141,3 +159,14 @@ Run this checklist on a physical Android device after installing the APK.
 - No real IAP.
 - No backend or remote config.
 - No final art, final app icon, or store metadata.
+
+## Troubleshooting
+
+If Unity reports `Android SDK not found` and references `cmdline-tools/latest/bin/sdkmanager.bat`, reinstall Android SDK and NDK Tools from Unity Hub for the required editor version or configure an SDK that contains:
+
+- Android SDK Command-line Tools latest
+- Android SDK Platform-Tools
+- Android SDK Platform, API 35 or newer
+- Android SDK Build-Tools 35.0.0 or newer
+
+After repairing the SDK, rerun the batch APK build command and confirm the APK appears under `Builds/Android/`.
