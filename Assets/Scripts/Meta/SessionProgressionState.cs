@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using MergeShelter.Economy;
+using MergeShelter.Save;
 
 namespace MergeShelter.Meta
 {
@@ -172,6 +173,33 @@ namespace MergeShelter.Meta
         public bool TryClaimDailyQuest(out DailyQuestClaimResult result)
         {
             return _dailyQuests.TryClaimFirstCompleted(_wallet, out result);
+        }
+
+        public GameSaveData ToSaveData()
+        {
+            return GameSaveData.FromProgression(this);
+        }
+
+        public static SessionProgressionState FromSaveData(GameSaveData saveData)
+        {
+            if (saveData == null)
+                throw new ArgumentNullException(nameof(saveData));
+
+            saveData.EnsureDefaults();
+
+            var wallet = new CurrencyWallet();
+            wallet.Add(CurrencyType.Coins, saveData.Coins);
+            wallet.Add(CurrencyType.Parts, saveData.Parts);
+
+            var progression = new SessionProgressionState(
+                wallet,
+                new ShelterUpgrade(saveData.ShelterUpgradeLevel),
+                new DailyReward(DailyReward.DefaultCoinReward, DailyReward.DefaultPartsReward, saveData.DailyRewardClaimed),
+                new DailyQuestModel(saveData.ToDailyQuestStates()));
+
+            progression.UnlockThroughLevel(saveData.HighestUnlockedLevel);
+            progression.TrySelectLevel(saveData.SelectedLevel);
+            return progression;
         }
     }
 }
