@@ -174,6 +174,26 @@ This checklist is the minimum quality gate for the first playable prototype.
 - P0/P1 blockers: environment blocker only; Android gameplay smoke could not be assessed.
 - Physical Android device smoke was not run.
 
+## Sprint 4 Linux Physical Android Device Smoke Notes - 2026-05-24
+
+- Machine OS: Ubuntu 24.04.3 LTS.
+- Unity version: 6000.3.16f1 (a56f230f6470).
+- Android SDK/ADB path: `/home/phung-truong/Unity/Hub/Editor/6000.3.16f1/Editor/Data/PlaybackEngines/AndroidPlayer/SDK/platform-tools/adb`.
+- Device manufacturer: samsung.
+- Device model: SM-S918B.
+- Android version: 16.
+- Android API level: 36.
+- APK filename: `merge-shelter-sprint4-prototype-linux-device-debug.apk`.
+- APK output path: `Builds/Android/merge-shelter-sprint4-prototype-linux-device-debug.apk`.
+- Install result: passed with `adb install -r`. Installed package was `com.DefaultCompany.mergeshelter`.
+- Launch result: passed with `adb shell monkey -p com.DefaultCompany.mergeshelter 1`; foreground was verified as `com.DefaultCompany.mergeshelter/com.unity3d.player.UnityPlayerGameActivity`.
+- Manual smoke result: partial pass with blockers. Launch, board visibility, tile placement, Start Wave, Claim Reward, Next Level, Daily Reward claim, Daily Reward claimed state, Daily Quest progress, Daily Quest claim rewards, insufficient-coin upgrade block, enough-coin shelter upgrade, Reward Double visibility after pending victory reward, Reward Double one-use doubling, Level 10 weak-board defeat, and first Revive-to-playable-state were validated on device.
+- Save/load result: passed. After force-stopping and relaunching only Merge Shelter, coins/parts, selected/unlocked level, shelter upgrade level, daily reward claimed state, and daily quest claimed state persisted.
+- Reset Save result: passed. Reset Save returned the app to new-player Level 1 with coins/parts reset, Shelter Lv 1, daily reward available, quests at 0 progress, and an empty board.
+- Remaining known issues: severe HUD text overlap/stacking appears on the physical phone after repeated progression updates; the Revive button remained visible after a successful revive; tapping that stale Revive button a second time left the app focused but rendering a persistent black screen. Local failure log captured at `android-device-smoke-logcat.txt`; Merge Shelter/Unity log inspection showed no obvious Java fatal exception, but the app remained visually unusable after relaunch/refocus.
+- P0/P1 blockers: P1 blocker for Android physical-device smoke completion: stale Revive button plus second Revive tap caused a persistent black-screen app state and blocked Retry and strong-board Level 10 follow-up validation. P1 UI blocker: HUD/status text overlaps enough to make top-left progression/result text hard to read on SM-S918B.
+- Security note: Testing used only the Merge Shelter package, game-only screenshots/input after foreground verification, approved system-overlay dismissal/refocus actions to return to the game, and did not access personal apps or device data.
+
 ## Severity Rules
 
 | Severity | Definition |
