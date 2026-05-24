@@ -19,6 +19,10 @@ namespace MergeShelter.UI
         [SerializeField] private Button nextLevelButton;
         [SerializeField] private Button retryButton;
         [SerializeField] private Button upgradeShelterButton;
+        [SerializeField] private Button dailyRewardButton;
+        [SerializeField] private Button claimQuestButton;
+        [SerializeField] private Button doubleRewardButton;
+        [SerializeField] private Button reviveButton;
         [SerializeField] private int cellSize = 72;
         [SerializeField] private int cellSpacing = 6;
 
@@ -199,6 +203,18 @@ namespace MergeShelter.UI
             if (upgradeShelterButton == null)
                 upgradeShelterButton = CreateActionButton("UpgradeShelterButton", "Upgrade Shelter", new Vector2(210f, -280f), new Color(0.45f, 0.35f, 0.14f));
 
+            if (dailyRewardButton == null)
+                dailyRewardButton = CreateActionButton("DailyRewardButton", "Daily Reward", new Vector2(-210f, -280f), new Color(0.3f, 0.33f, 0.65f));
+
+            if (claimQuestButton == null)
+                claimQuestButton = CreateActionButton("ClaimQuestButton", "Claim Quest", new Vector2(210f, -330f), new Color(0.33f, 0.42f, 0.2f));
+
+            if (doubleRewardButton == null)
+                doubleRewardButton = CreateActionButton("DoubleRewardButton", "Double Reward", new Vector2(-210f, -330f), new Color(0.42f, 0.24f, 0.55f));
+
+            if (reviveButton == null)
+                reviveButton = CreateActionButton("ReviveButton", "Revive", new Vector2(-210f, -330f), new Color(0.48f, 0.22f, 0.28f));
+
             claimRewardButton.onClick.RemoveListener(OnClaimRewardClicked);
             claimRewardButton.onClick.AddListener(OnClaimRewardClicked);
             nextLevelButton.onClick.RemoveListener(OnNextLevelClicked);
@@ -207,6 +223,14 @@ namespace MergeShelter.UI
             retryButton.onClick.AddListener(OnRetryClicked);
             upgradeShelterButton.onClick.RemoveListener(OnUpgradeShelterClicked);
             upgradeShelterButton.onClick.AddListener(OnUpgradeShelterClicked);
+            dailyRewardButton.onClick.RemoveListener(OnDailyRewardClicked);
+            dailyRewardButton.onClick.AddListener(OnDailyRewardClicked);
+            claimQuestButton.onClick.RemoveListener(OnClaimQuestClicked);
+            claimQuestButton.onClick.AddListener(OnClaimQuestClicked);
+            doubleRewardButton.onClick.RemoveListener(OnDoubleRewardClicked);
+            doubleRewardButton.onClick.AddListener(OnDoubleRewardClicked);
+            reviveButton.onClick.RemoveListener(OnReviveClicked);
+            reviveButton.onClick.AddListener(OnReviveClicked);
             RefreshActionButtons();
         }
 
@@ -287,6 +311,31 @@ namespace MergeShelter.UI
             RefreshActionButtons();
         }
 
+        private void OnDailyRewardClicked()
+        {
+            gameController?.ClaimDailyReward();
+            RefreshActionButtons();
+        }
+
+        private void OnClaimQuestClicked()
+        {
+            gameController?.ClaimQuest();
+            RefreshActionButtons();
+        }
+
+        private void OnDoubleRewardClicked()
+        {
+            gameController?.DoubleReward();
+            RefreshActionButtons();
+        }
+
+        private void OnReviveClicked()
+        {
+            gameController?.Revive();
+            RefreshCells();
+            RefreshActionButtons();
+        }
+
         private void RefreshCells()
         {
             if (gameController == null)
@@ -319,6 +368,18 @@ namespace MergeShelter.UI
 
             if (upgradeShelterButton != null)
                 upgradeShelterButton.gameObject.SetActive(true);
+
+            if (dailyRewardButton != null)
+                dailyRewardButton.gameObject.SetActive(gameController.CanClaimDailyReward);
+
+            if (claimQuestButton != null)
+                claimQuestButton.gameObject.SetActive(gameController.CanClaimQuest);
+
+            if (doubleRewardButton != null)
+                doubleRewardButton.gameObject.SetActive(gameController.CanDoubleReward);
+
+            if (reviveButton != null)
+                reviveButton.gameObject.SetActive(gameController.CanRevive);
         }
 
         private Font GetDefaultFont()

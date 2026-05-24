@@ -86,6 +86,43 @@ This checklist is the minimum quality gate for the first playable prototype.
 - Validated through PlayMode smoke: Level 1 win, Claim Reward, Level 2 unlock, Next Level starts Level 2, Retry after defeat, Upgrade Shelter button appears, upgrade is blocked without enough coins, upgrade succeeds with enough coins, and upgraded shelter max HP is visible in the HUD.
 - Remaining known issues: no P0/P1 blockers found in automated smoke; full Level 1-10 manual sequence and 10-minute prototype loop remain not run.
 
+## Sprint 3 Daily Reward Notes - 2026-05-23
+
+- Unity version: 6000.3.16f1.
+- Compile check: batch project open completed without C# compile errors.
+- EditMode tests: 30 passed, 0 failed.
+- PlayMode tests: 6 passed, 0 failed.
+- Coverage includes session-start daily reward availability, coin/part grant, double-claim block, Daily Reward button visibility, button hiding after claim, HUD claimed state, and `daily_reward_claimed` analytics.
+- Remaining known issues: no real date persistence by design; daily reward resets with each prototype session.
+
+## Sprint 3 Daily Quest Notes - 2026-05-23
+
+- Unity version: 6000.3.16f1.
+- Compile check: batch project open completed without C# compile errors.
+- EditMode tests: 35 passed, 0 failed.
+- PlayMode tests: 7 passed, 0 failed.
+- Coverage includes Place 10 Tiles, Complete 1 Level, Claim 1 Reward quest completion, single-claim reward grants, uncompleted claim blocking, HUD quest status, Claim Quest button visibility, and `quest_progress` / `quest_completed` / `quest_claimed` analytics hooks.
+- Remaining known issues: quests are session-only by design and reset when the prototype session restarts.
+
+## Sprint 3 Rewarded Mock Notes - 2026-05-23
+
+- Unity version: 6000.3.16f1.
+- Compile check: batch project open completed without C# compile errors.
+- EditMode tests: 37 passed, 0 failed.
+- PlayMode tests: 9 passed, 0 failed.
+- Coverage includes Double Reward button visibility, one-use double reward, pending coin/part doubling before claim, Revive button visibility after defeat, one-use revive result handling, playable restart after revive, and `ad_offer_preview` / `ad_mock_started` / `ad_mock_completed` / `reward_doubled` / `revive_used` analytics hooks.
+- Remaining known issues: rewarded ads are synchronous session-only mocks by design; no real ad SDK or network ad readiness is integrated.
+
+## Sprint 3 Retention Monetization Final Smoke Notes - 2026-05-24
+
+- Unity version: 6000.3.16f1.
+- Compile check: batch project open completed without C# compile errors.
+- EditMode tests: 37 passed, 0 failed.
+- PlayMode tests: 9 passed, 0 failed.
+- Automated validation passed for Daily Reward claim, Daily Reward double-claim block, Daily Quest progress, Daily Quest claim, Reward Double after victory, Reward Double one-use limit, Revive after defeat, and Revive one-use limit.
+- Debug analytics logs observed for `daily_reward_claimed`, `quest_progress`, `quest_completed`, `quest_claimed`, `ad_offer_preview`, `ad_mock_started`, `ad_mock_completed`, `reward_doubled`, and `revive_used`.
+- Remaining known issues: no P0/P1 blockers found in automated smoke. Sprint 3 retention and monetization systems are session-only mocks by design; no real date persistence, real ad SDK, IAP, cloud save, backend, remote config, device matrix pass, or 10-minute manual loop was run.
+
 ## Severity Rules
 
 | Severity | Definition |
