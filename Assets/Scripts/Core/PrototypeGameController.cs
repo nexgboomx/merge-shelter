@@ -278,7 +278,7 @@ namespace MergeShelter.Core
                 ["level_id"] = _currentLevel.LevelId
             });
 
-            StartSelectedLevel();
+            StartSelectedLevel(preserveReviveUsage: true);
             hudView?.SetResult("Revive used. Level restarted with a fresh shelter.");
             ProgressionChanged?.Invoke();
             return true;
@@ -349,15 +349,16 @@ namespace MergeShelter.Core
             return true;
         }
 
-        private void StartSelectedLevel()
+        private void StartSelectedLevel(bool preserveReviveUsage = false)
         {
             var levelIndex = Mathf.Clamp(_progression.SelectedLevel - 1, 0, _levels.Count - 1);
-            StartLevel(_levels[levelIndex]);
+            StartLevel(_levels[levelIndex], preserveReviveUsage);
         }
 
-        private void StartLevel(LevelDefinition level)
+        private void StartLevel(LevelDefinition level, bool preserveReviveUsage = false)
         {
             UnsubscribeWaveEvents();
+            var reviveWasUsed = preserveReviveUsage && _reviveUsedThisResult;
             _currentLevel = level;
             _board.Clear();
             _shelter = new ShelterHealth(GetShelterMaxHp());
@@ -367,7 +368,7 @@ namespace MergeShelter.Core
             _lastLevelWon = false;
             _lastLevelFailed = false;
             _rewardDoubleUsedThisResult = false;
-            _reviveUsedThisResult = false;
+            _reviveUsedThisResult = reviveWasUsed;
             _rewardDoubleOfferPreviewed = false;
             _reviveOfferPreviewed = false;
 

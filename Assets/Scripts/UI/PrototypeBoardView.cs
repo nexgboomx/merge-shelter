@@ -337,8 +337,24 @@ namespace MergeShelter.UI
 
         private void OnReviveClicked()
         {
-            gameController?.Revive();
-            RefreshCells();
+            if (gameController == null)
+                return;
+
+            if (!gameController.CanRevive)
+            {
+                RefreshActionButtons();
+                return;
+            }
+
+            if (reviveButton != null)
+            {
+                reviveButton.interactable = false;
+                reviveButton.gameObject.SetActive(false);
+            }
+
+            if (gameController.Revive())
+                RefreshCells();
+
             RefreshActionButtons();
         }
 
@@ -392,7 +408,11 @@ namespace MergeShelter.UI
                 doubleRewardButton.gameObject.SetActive(gameController.CanDoubleReward);
 
             if (reviveButton != null)
-                reviveButton.gameObject.SetActive(gameController.CanRevive);
+            {
+                var canRevive = gameController.CanRevive;
+                reviveButton.gameObject.SetActive(canRevive);
+                reviveButton.interactable = canRevive;
+            }
 
             if (resetSaveButton != null)
                 resetSaveButton.gameObject.SetActive(true);
