@@ -6,6 +6,7 @@ using MergeShelter.Board;
 using MergeShelter.Combat;
 using MergeShelter.Levels;
 using MergeShelter.Meta;
+using MergeShelter.Save;
 using MergeShelter.UI;
 using UnityEngine;
 
@@ -26,10 +27,11 @@ namespace MergeShelter.Core
         private readonly MergeResolver _mergeResolver = new();
         private readonly PrototypeTileGenerator _tileGenerator = new();
         private readonly PrototypeBoardEvaluator _boardEvaluator = new();
-        private readonly SessionProgressionState _progression = new();
         private readonly IAdService _adService = new MockRewardedAdService();
 
         private IAnalyticsService _analytics;
+        private ISaveService _saveService;
+        private SessionProgressionState _progression;
         private IReadOnlyList<LevelDefinition> _levels;
         private LevelDefinition _currentLevel;
         private ShelterHealth _shelter;
@@ -43,6 +45,8 @@ namespace MergeShelter.Core
         private bool _reviveUsedThisResult;
         private bool _rewardDoubleOfferPreviewed;
         private bool _reviveOfferPreviewed;
+
+        public static string SaveDirectoryOverrideForTests { get; set; }
 
         public int BoardWidth => _board.Width;
         public int BoardHeight => _board.Height;
@@ -92,12 +96,9 @@ namespace MergeShelter.Core
         {
             _analytics = new DebugAnalyticsService();
             _levels = SprintOneLevelCatalog.CreateLevels();
-            var startingLevelId = Mathf.Clamp(startingLevelIndex + 1, SessionProgressionState.FirstLevel, _levels.Count);
-            if (startingLevelId > SessionProgressionState.FirstLevel)
-                _progression.UnlockThroughLevel(startingLevelId);
-
-            _progression.TrySelectLevel(startingLevelId);
-            StartLevel(Mathf.Clamp(startingLevelIndex, 0, _levels.Count - 1));
+            _saveService = CreateSaveService();
+            _progression = LoadProgression();
+            StartSelectedLevel();
         }
 
         public void StartLevel(int levelIndex)
@@ -128,6 +129,7 @@ namespace MergeShelter.Core
             });
 
             StartSelectedLevel();
+            SaveProgression();
             return true;
         }
 
@@ -160,6 +162,7 @@ namespace MergeShelter.Core
             }
 
             var questProgress = RecordQuestProgress(DailyQuestModel.ClaimRewardQuestId, 1);
+            SaveProgression();
             RefreshHud();
             var nextLevelMessage = CanStartNextLevel ? $" Level {_progression.SelectedLevel + 1} unlocked." : string.Empty;
             hudView?.SetResult($"Reward claimed: +{reward.Coins} coins, +{reward.Parts} parts.{nextLevelMessage}{FormatQuestCompletionSuffix(questProgress)}");
@@ -185,6 +188,7 @@ namespace MergeShelter.Core
 
             RefreshHud();
             hudView?.SetResult($"Daily reward claimed: +{reward.Coins} coins, +{reward.Parts} parts.");
+            SaveProgression();
             ProgressionChanged?.Invoke();
             return true;
         }
@@ -209,6 +213,7 @@ namespace MergeShelter.Core
 
             RefreshHud();
             hudView?.SetResult($"Quest claimed: {reward.Title}. +{reward.Coins} coins, +{reward.Parts} parts.");
+            SaveProgression();
             ProgressionChanged?.Invoke();
             return true;
         }
@@ -244,6 +249,7 @@ namespace MergeShelter.Core
 
             RefreshHud();
             hudView?.SetResult($"Reward doubled. Pending reward: +{reward.Coins} coins, +{reward.Parts} parts.");
+            SaveProgression();
             ProgressionChanged?.Invoke();
             return true;
         }
@@ -303,8 +309,19 @@ namespace MergeShelter.Core
 
             RefreshHud();
             hudView?.SetResult($"Shelter upgraded to Lv {newLevel}. Future waves start with {GetShelterMaxHp()} HP.");
+            SaveProgression();
             ProgressionChanged?.Invoke();
             return true;
+        }
+
+        public void ResetSave()
+        {
+            _saveService?.Reset();
+            _progression = new SessionProgressionState();
+            StartSelectedLevel();
+            hudView?.SetResult("Save reset. Progress returned to Level 1.");
+            BoardChanged?.Invoke();
+            ProgressionChanged?.Invoke();
         }
 
         public bool StartNextLevel()
@@ -534,6 +551,36 @@ namespace MergeShelter.Core
             return _progression.GetShelterMaxHealth(shelterMaxHp);
         }
 
+        private static ISaveService CreateSaveService()
+        {
+            return string.IsNullOrWhiteSpace(SaveDirectoryOverrideForTests)
+                ? new LocalJsonSaveService()
+                : new LocalJsonSaveService(SaveDirectoryOverrideForTests);
+        }
+
+        private SessionProgressionState LoadProgression()
+        {
+            if (_saveService != null && _saveService.TryLoad(out var saveData))
+                return SessionProgressionState.FromSaveData(saveData);
+
+            return new SessionProgressionState();
+        }
+
+        private void SaveProgression()
+        {
+            if (_saveService == null || _progression == null)
+                return;
+
+            try
+            {
+                _saveService.Save(_progression.ToSaveData());
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning($"Save failed: {exception.Message}");
+            }
+        }
+
         private DailyQuestProgressResult RecordQuestProgress(string questId, int amount)
         {
             if (!_progression.TryAddDailyQuestProgress(questId, amount, out var progress))
@@ -559,6 +606,7 @@ namespace MergeShelter.Core
                 });
             }
 
+            SaveProgression();
             return progress;
         }
 

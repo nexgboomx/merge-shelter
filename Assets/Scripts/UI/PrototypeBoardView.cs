@@ -23,6 +23,7 @@ namespace MergeShelter.UI
         [SerializeField] private Button claimQuestButton;
         [SerializeField] private Button doubleRewardButton;
         [SerializeField] private Button reviveButton;
+        [SerializeField] private Button resetSaveButton;
         [SerializeField] private int cellSize = 72;
         [SerializeField] private int cellSpacing = 6;
 
@@ -215,6 +216,9 @@ namespace MergeShelter.UI
             if (reviveButton == null)
                 reviveButton = CreateActionButton("ReviveButton", "Revive", new Vector2(-210f, -330f), new Color(0.48f, 0.22f, 0.28f));
 
+            if (resetSaveButton == null)
+                resetSaveButton = CreateActionButton("ResetSaveButton", "Reset Save", new Vector2(0f, -380f), new Color(0.24f, 0.24f, 0.24f));
+
             claimRewardButton.onClick.RemoveListener(OnClaimRewardClicked);
             claimRewardButton.onClick.AddListener(OnClaimRewardClicked);
             nextLevelButton.onClick.RemoveListener(OnNextLevelClicked);
@@ -231,6 +235,8 @@ namespace MergeShelter.UI
             doubleRewardButton.onClick.AddListener(OnDoubleRewardClicked);
             reviveButton.onClick.RemoveListener(OnReviveClicked);
             reviveButton.onClick.AddListener(OnReviveClicked);
+            resetSaveButton.onClick.RemoveListener(OnResetSaveClicked);
+            resetSaveButton.onClick.AddListener(OnResetSaveClicked);
             RefreshActionButtons();
         }
 
@@ -336,6 +342,13 @@ namespace MergeShelter.UI
             RefreshActionButtons();
         }
 
+        private void OnResetSaveClicked()
+        {
+            gameController?.ResetSave();
+            RefreshCells();
+            RefreshActionButtons();
+        }
+
         private void RefreshCells()
         {
             if (gameController == null)
@@ -380,6 +393,9 @@ namespace MergeShelter.UI
 
             if (reviveButton != null)
                 reviveButton.gameObject.SetActive(gameController.CanRevive);
+
+            if (resetSaveButton != null)
+                resetSaveButton.gameObject.SetActive(true);
         }
 
         private Font GetDefaultFont()

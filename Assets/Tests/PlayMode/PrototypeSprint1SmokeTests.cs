@@ -1,20 +1,41 @@
+using System;
 using System.Collections;
+using System.IO;
 using System.Reflection;
 using MergeShelter.Board;
 using MergeShelter.Core;
 using MergeShelter.Meta;
+using MergeShelter.Save;
 using MergeShelter.UI;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using UnityEngine.UI;
+using Object = UnityEngine.Object;
 
 namespace MergeShelter.Tests.PlayMode
 {
     public sealed class PrototypeSprint1SmokeTests
     {
         private const string SceneName = "PrototypeSprint1";
+        private string _tempSaveDirectory;
+
+        [SetUp]
+        public void SetUp()
+        {
+            _tempSaveDirectory = Path.Combine(Path.GetTempPath(), "MergeShelterPlayModeSaveTests", Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(_tempSaveDirectory);
+            PrototypeGameController.SaveDirectoryOverrideForTests = _tempSaveDirectory;
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            PrototypeGameController.SaveDirectoryOverrideForTests = null;
+            if (Directory.Exists(_tempSaveDirectory))
+                Directory.Delete(_tempSaveDirectory, true);
+        }
 
         [UnityTest]
         public IEnumerator PrototypeScene_WiresBoardAndWaveControls()
@@ -148,6 +169,95 @@ namespace MergeShelter.Tests.PlayMode
             Assert.IsFalse(claimQuestButton.gameObject.activeSelf);
             Assert.That(GetResultText().text, Does.Contain("Quest claimed"));
             Assert.That(GetWalletText().text, Does.Contain("Place 10 Tiles 10/10 claimed"));
+        }
+
+        [UnityTest]
+        public IEnumerator SaveLoad_PersistsProgressionAcrossSceneReload()
+        {
+            yield return LoadPrototypeScene();
+
+            var controller = Object.FindObjectOfType<PrototypeGameController>();
+            Assert.NotNull(controller);
+            Assert.IsTrue(controller.ClaimDailyReward());
+
+            for (var i = 0; i < 10; i++)
+            {
+                Assert.IsTrue(controller.TryPlaceNextTile(i % controller.BoardWidth, i / controller.BoardWidth));
+                yield return null;
+            }
+
+            Assert.IsTrue(controller.ClaimQuest());
+            Assert.IsTrue(controller.UpgradeShelter());
+            SetStrongLevelOneBoard(controller);
+            controller.StartWave();
+            yield return null;
+            Assert.IsTrue(controller.ClaimReward());
+            Assert.IsTrue(controller.StartNextLevel());
+            yield return null;
+
+            var expectedCoins = controller.Coins;
+            var expectedParts = controller.Parts;
+            Assert.AreEqual(2, controller.HighestUnlockedLevel);
+            Assert.AreEqual(2, controller.SelectedLevel);
+            Assert.AreEqual(2, controller.ShelterUpgradeLevel);
+            Assert.IsTrue(controller.HasClaimedDailyReward);
+            Assert.IsTrue(GetQuest(controller, DailyQuestModel.PlaceTilesQuestId).Claimed);
+            Assert.IsTrue(new LocalJsonSaveService(_tempSaveDirectory).HasSave());
+
+            yield return LoadPrototypeScene();
+
+            controller = Object.FindObjectOfType<PrototypeGameController>();
+            Assert.NotNull(controller);
+            Assert.AreEqual(expectedCoins, controller.Coins);
+            Assert.AreEqual(expectedParts, controller.Parts);
+            Assert.AreEqual(2, controller.HighestUnlockedLevel);
+            Assert.AreEqual(2, controller.SelectedLevel);
+            Assert.AreEqual(2, controller.CurrentLevelId);
+            Assert.AreEqual(2, controller.ShelterUpgradeLevel);
+            Assert.IsTrue(controller.HasClaimedDailyReward);
+            Assert.IsFalse(controller.CanClaimDailyReward);
+
+            var placeQuest = GetQuest(controller, DailyQuestModel.PlaceTilesQuestId);
+            Assert.AreEqual(10, placeQuest.Progress);
+            Assert.IsTrue(placeQuest.Completed);
+            Assert.IsTrue(placeQuest.Claimed);
+
+            var completeQuest = GetQuest(controller, DailyQuestModel.CompleteLevelQuestId);
+            Assert.AreEqual(1, completeQuest.Progress);
+            Assert.IsTrue(completeQuest.Completed);
+
+            var claimRewardQuest = GetQuest(controller, DailyQuestModel.ClaimRewardQuestId);
+            Assert.AreEqual(1, claimRewardQuest.Progress);
+            Assert.IsTrue(claimRewardQuest.Completed);
+        }
+
+        [UnityTest]
+        public IEnumerator ResetSaveButton_ReturnsToNewPlayerState()
+        {
+            yield return LoadPrototypeScene();
+
+            var controller = Object.FindObjectOfType<PrototypeGameController>();
+            Assert.NotNull(controller);
+            Assert.IsTrue(controller.ClaimDailyReward());
+            Assert.Greater(controller.Coins, 0);
+            Assert.IsTrue(new LocalJsonSaveService(_tempSaveDirectory).HasSave());
+
+            var resetSaveButton = FindButton("ResetSaveButton");
+            Assert.NotNull(resetSaveButton);
+            Assert.IsTrue(resetSaveButton.gameObject.activeSelf);
+
+            resetSaveButton.onClick.Invoke();
+            yield return null;
+
+            AssertNewPlayerState(controller);
+            Assert.IsFalse(new LocalJsonSaveService(_tempSaveDirectory).HasSave());
+            Assert.That(GetResultText().text, Does.Contain("Save reset"));
+
+            yield return LoadPrototypeScene();
+
+            controller = Object.FindObjectOfType<PrototypeGameController>();
+            Assert.NotNull(controller);
+            AssertNewPlayerState(controller);
         }
 
         [UnityTest]
@@ -422,6 +532,22 @@ namespace MergeShelter.Tests.PlayMode
 
             Assert.Fail($"Quest not found: {questId}");
             return default;
+        }
+
+        private static void AssertNewPlayerState(PrototypeGameController controller)
+        {
+            Assert.AreEqual(1, controller.CurrentLevelId);
+            Assert.AreEqual(1, controller.SelectedLevel);
+            Assert.AreEqual(1, controller.HighestUnlockedLevel);
+            Assert.AreEqual(0, controller.Coins);
+            Assert.AreEqual(0, controller.Parts);
+            Assert.AreEqual(1, controller.ShelterUpgradeLevel);
+            Assert.IsTrue(controller.CanClaimDailyReward);
+            Assert.IsFalse(controller.HasClaimedDailyReward);
+            Assert.AreEqual(0, GetQuest(controller, DailyQuestModel.PlaceTilesQuestId).Progress);
+            Assert.AreEqual(0, GetQuest(controller, DailyQuestModel.CompleteLevelQuestId).Progress);
+            Assert.AreEqual(0, GetQuest(controller, DailyQuestModel.ClaimRewardQuestId).Progress);
+            Assert.IsTrue(controller.GetTileAt(0, 0).IsEmpty);
         }
 
         private static void SetStrongLevelOneBoard(PrototypeGameController controller)

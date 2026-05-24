@@ -123,6 +123,15 @@ This checklist is the minimum quality gate for the first playable prototype.
 - Debug analytics logs observed for `daily_reward_claimed`, `quest_progress`, `quest_completed`, `quest_claimed`, `ad_offer_preview`, `ad_mock_started`, `ad_mock_completed`, `reward_doubled`, and `revive_used`.
 - Remaining known issues: no P0/P1 blockers found in automated smoke. Sprint 3 retention and monetization systems are session-only mocks by design; no real date persistence, real ad SDK, IAP, cloud save, backend, remote config, device matrix pass, or 10-minute manual loop was run.
 
+## Sprint 4 Save Wiring Notes - 2026-05-24
+
+- Unity version: 6000.3.16f1.
+- Compile check: batch project open completed without C# compile errors.
+- EditMode tests: 41 passed, 0 failed.
+- PlayMode tests: 11 passed, 0 failed.
+- Automated validation covers save load on startup, coins/highest unlocked/shelter upgrade/daily reward/daily quest persistence across scene reload, save-on-change hooks, Reset Save button behavior, and reset returning to new-player Level 1 state.
+- Remaining known issues: save is local JSON only by design; no cloud save, account login, encryption, backend, real IAP, or real ad SDK is integrated.
+
 ## Severity Rules
 
 | Severity | Definition |
