@@ -12,6 +12,15 @@ namespace MergeShelter.UI
     /// </summary>
     public sealed class PrototypeBoardView : MonoBehaviour
     {
+        private const float ReferenceWidth = 720f;
+        private const float ReferenceHeight = 1280f;
+        private const float BoardVerticalOffset = 64f;
+        private const float ButtonWidth = 200f;
+        private const float ButtonHeight = 44f;
+        private const float ButtonColumnSpacing = 20f;
+        private const float ButtonBottomRow = 32f;
+        private const float ButtonRowSpacing = 52f;
+
         [SerializeField] private PrototypeGameController gameController;
         [SerializeField] private RectTransform boardRoot;
         [SerializeField] private Button startWaveButton;
@@ -30,13 +39,23 @@ namespace MergeShelter.UI
         private readonly List<CellView> _cells = new();
         private PrototypeGameController _subscribedController;
         private Font _defaultFont;
+        private bool _isApplyingLayout;
 
         private void Awake()
         {
             ResolveController();
+            ConfigureCanvasScaler();
+            ConfigureViewRoot();
             BuildBoard();
             BuildStartWaveButton();
             BuildProgressionButtons();
+            ApplyPhoneSafeLayout();
+        }
+
+        private void OnRectTransformDimensionsChange()
+        {
+            if (!_isApplyingLayout)
+                ApplyPhoneSafeLayout();
         }
 
         private void OnEnable()
@@ -129,6 +148,10 @@ namespace MergeShelter.UI
 
             var totalWidth = width * cellSize + (width - 1) * cellSpacing;
             var totalHeight = height * cellSize + (height - 1) * cellSpacing;
+            boardRoot.anchorMin = new Vector2(0.5f, 0.5f);
+            boardRoot.anchorMax = new Vector2(0.5f, 0.5f);
+            boardRoot.pivot = new Vector2(0.5f, 0.5f);
+            boardRoot.anchoredPosition = new Vector2(0f, BoardVerticalOffset);
             boardRoot.sizeDelta = new Vector2(totalWidth, totalHeight);
             return boardRoot;
         }
@@ -259,7 +282,7 @@ namespace MergeShelter.UI
             rectTransform.anchorMin = new Vector2(0.5f, 0.5f);
             rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
             rectTransform.pivot = new Vector2(0.5f, 0.5f);
-            rectTransform.sizeDelta = new Vector2(180f, 44f);
+            rectTransform.sizeDelta = new Vector2(ButtonWidth, ButtonHeight);
             rectTransform.anchoredPosition = anchoredPosition;
 
             var background = buttonObject.AddComponent<Image>();
@@ -416,6 +439,86 @@ namespace MergeShelter.UI
 
             if (resetSaveButton != null)
                 resetSaveButton.gameObject.SetActive(true);
+
+            ApplyPhoneSafeLayout();
+        }
+
+        private void ApplyPhoneSafeLayout()
+        {
+            if (_isApplyingLayout)
+                return;
+
+            _isApplyingLayout = true;
+            try
+            {
+                ConfigureCanvasScaler();
+                ConfigureViewRoot();
+
+                if (boardRoot != null)
+                {
+                    boardRoot.anchorMin = new Vector2(0.5f, 0.5f);
+                    boardRoot.anchorMax = new Vector2(0.5f, 0.5f);
+                    boardRoot.pivot = new Vector2(0.5f, 0.5f);
+                    boardRoot.anchoredPosition = new Vector2(0f, BoardVerticalOffset);
+                }
+
+                PlaceActionButton(dailyRewardButton, -1, 0);
+                PlaceActionButton(upgradeShelterButton, 0, 0);
+                PlaceActionButton(resetSaveButton, 1, 0);
+                PlaceActionButton(claimQuestButton, -1, 1);
+                PlaceActionButton(startWaveButton, 0, 1);
+                PlaceActionButton(nextLevelButton, 1, 1);
+                PlaceActionButton(doubleRewardButton, -1, 2);
+                PlaceActionButton(claimRewardButton, 0, 2);
+                PlaceActionButton(retryButton, 1, 2);
+                PlaceActionButton(reviveButton, 0, 3);
+            }
+            finally
+            {
+                _isApplyingLayout = false;
+            }
+        }
+
+        private void ConfigureCanvasScaler()
+        {
+            var canvas = GetComponentInParent<Canvas>();
+            var scaler = canvas != null ? canvas.GetComponent<CanvasScaler>() : null;
+            if (scaler == null)
+                return;
+
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(ReferenceWidth, ReferenceHeight);
+            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+            scaler.matchWidthOrHeight = Screen.width > Screen.height ? 1f : 0f;
+        }
+
+        private void ConfigureViewRoot()
+        {
+            var rectTransform = transform as RectTransform;
+            if (rectTransform == null)
+                return;
+
+            rectTransform.anchorMin = Vector2.zero;
+            rectTransform.anchorMax = Vector2.one;
+            rectTransform.offsetMin = Vector2.zero;
+            rectTransform.offsetMax = Vector2.zero;
+            rectTransform.pivot = new Vector2(0.5f, 0.5f);
+            rectTransform.anchoredPosition = Vector2.zero;
+        }
+
+        private static void PlaceActionButton(Button button, int column, int row)
+        {
+            if (button == null)
+                return;
+
+            var rectTransform = (RectTransform)button.transform;
+            rectTransform.anchorMin = new Vector2(0.5f, 0f);
+            rectTransform.anchorMax = new Vector2(0.5f, 0f);
+            rectTransform.pivot = new Vector2(0.5f, 0.5f);
+            rectTransform.sizeDelta = new Vector2(ButtonWidth, ButtonHeight);
+            rectTransform.anchoredPosition = new Vector2(
+                column * (ButtonWidth + ButtonColumnSpacing),
+                ButtonBottomRow + row * ButtonRowSpacing);
         }
 
         private Font GetDefaultFont()

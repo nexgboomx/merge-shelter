@@ -13,6 +13,7 @@ namespace MergeShelter.EditorTools
     public static class PrototypeSprint1SceneBuilder
     {
         private const string ScenePath = "Assets/Scenes/PrototypeSprint1.unity";
+        private static readonly Vector2 ReferenceResolution = new(720f, 1280f);
 
         [MenuItem("Merge Shelter/Build Prototype Sprint 1 Scene")]
         public static void Build()
@@ -29,29 +30,30 @@ namespace MergeShelter.EditorTools
             hud.transform.SetParent(canvas.transform, false);
             var hudView = hud.AddComponent<PrototypeHudView>();
 
-            var levelText = CreateHudText(canvas.transform, "LevelText", new Vector2(24f, -24f), 24);
-            var tutorialText = CreateHudText(canvas.transform, "TutorialText", new Vector2(24f, -58f), 18);
-            var shelterHpText = CreateHudText(canvas.transform, "ShelterHpText", new Vector2(24f, -90f), 18);
-            var nextTileText = CreateHudText(canvas.transform, "NextTileText", new Vector2(24f, -122f), 18);
-            var walletText = CreateHudText(canvas.transform, "WalletText", new Vector2(24f, -154f), 18);
-            var resultText = CreateHudText(canvas.transform, "ResultText", new Vector2(24f, -648f), 20);
+            var levelText = CreateHudText(canvas.transform, "LevelText", new Vector2(24f, -16f), new Vector2(672f, 28f), 20);
+            var tutorialText = CreateHudText(canvas.transform, "TutorialText", new Vector2(24f, -48f), new Vector2(672f, 42f), 14);
+            var shelterHpText = CreateHudText(canvas.transform, "ShelterHpText", new Vector2(24f, -98f), new Vector2(328f, 24f), 14);
+            var nextTileText = CreateHudText(canvas.transform, "NextTileText", new Vector2(368f, -98f), new Vector2(328f, 24f), 14);
+            nextTileText.alignment = TextAnchor.MiddleRight;
+            var walletText = CreateHudText(canvas.transform, "WalletText", new Vector2(24f, -130f), new Vector2(672f, 86f), 13);
+            var resultText = CreateBottomHudText(canvas.transform, "ResultText", 236f, new Vector2(672f, 78f), 16);
 
             var boardRoot = CreateRectTransformObject("BoardRoot", canvas.transform);
-            boardRoot.anchorMin = new Vector2(0.5f, 0.5f);
-            boardRoot.anchorMax = new Vector2(0.5f, 0.5f);
+            boardRoot.anchorMin = Vector2.zero;
+            boardRoot.anchorMax = Vector2.one;
             boardRoot.pivot = new Vector2(0.5f, 0.5f);
-            boardRoot.anchoredPosition = new Vector2(0f, -20f);
-            boardRoot.sizeDelta = new Vector2(540f, 540f);
+            boardRoot.offsetMin = Vector2.zero;
+            boardRoot.offsetMax = Vector2.zero;
             var boardView = boardRoot.gameObject.AddComponent<PrototypeBoardView>();
 
             var boardGrid = CreateRectTransformObject("BoardGrid", boardRoot);
             boardGrid.anchorMin = new Vector2(0.5f, 0.5f);
             boardGrid.anchorMax = new Vector2(0.5f, 0.5f);
             boardGrid.pivot = new Vector2(0.5f, 0.5f);
-            boardGrid.anchoredPosition = Vector2.zero;
+            boardGrid.anchoredPosition = new Vector2(0f, 64f);
             boardGrid.sizeDelta = new Vector2(462f, 462f);
 
-            var startWaveButton = CreateButton(boardRoot, "StartWaveButton", "Start Wave", new Vector2(0f, -280f), new Vector2(180f, 44f));
+            var startWaveButton = CreateButton(boardRoot, "StartWaveButton", "Start Wave", new Vector2(0f, 84f), new Vector2(200f, 44f));
 
             WireHud(hudView, levelText, tutorialText, shelterHpText, nextTileText, resultText, walletText);
             WireGameController(gameController, hudView);
@@ -86,7 +88,11 @@ namespace MergeShelter.EditorTools
             var canvasObject = new GameObject("Canvas");
             var canvas = canvasObject.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvasObject.AddComponent<CanvasScaler>();
+            var scaler = canvasObject.AddComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = ReferenceResolution;
+            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+            scaler.matchWidthOrHeight = 0f;
             canvasObject.AddComponent<GraphicRaycaster>();
             return canvas;
         }
@@ -105,20 +111,49 @@ namespace MergeShelter.EditorTools
             return gameObject.GetComponent<RectTransform>();
         }
 
-        private static Text CreateHudText(Transform parent, string name, Vector2 anchoredPosition, int fontSize)
+        private static Text CreateHudText(Transform parent, string name, Vector2 anchoredPosition, Vector2 size, int fontSize)
         {
             var rectTransform = CreateRectTransformObject(name, parent);
             rectTransform.anchorMin = new Vector2(0f, 1f);
             rectTransform.anchorMax = new Vector2(0f, 1f);
             rectTransform.pivot = new Vector2(0f, 1f);
             rectTransform.anchoredPosition = anchoredPosition;
-            rectTransform.sizeDelta = new Vector2(720f, 30f);
+            rectTransform.sizeDelta = size;
 
             var text = rectTransform.gameObject.AddComponent<Text>();
             text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             text.fontSize = fontSize;
             text.color = Color.white;
-            text.alignment = TextAnchor.MiddleLeft;
+            text.alignment = TextAnchor.UpperLeft;
+            text.resizeTextForBestFit = true;
+            text.resizeTextMinSize = 10;
+            text.resizeTextMaxSize = fontSize;
+            text.horizontalOverflow = HorizontalWrapMode.Wrap;
+            text.verticalOverflow = VerticalWrapMode.Truncate;
+            text.raycastTarget = false;
+            text.text = name;
+            return text;
+        }
+
+        private static Text CreateBottomHudText(Transform parent, string name, float bottom, Vector2 size, int fontSize)
+        {
+            var rectTransform = CreateRectTransformObject(name, parent);
+            rectTransform.anchorMin = new Vector2(0f, 0f);
+            rectTransform.anchorMax = new Vector2(0f, 0f);
+            rectTransform.pivot = new Vector2(0f, 0f);
+            rectTransform.anchoredPosition = new Vector2(24f, bottom);
+            rectTransform.sizeDelta = size;
+
+            var text = rectTransform.gameObject.AddComponent<Text>();
+            text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            text.fontSize = fontSize;
+            text.color = Color.white;
+            text.alignment = TextAnchor.UpperLeft;
+            text.resizeTextForBestFit = true;
+            text.resizeTextMinSize = 10;
+            text.resizeTextMaxSize = fontSize;
+            text.horizontalOverflow = HorizontalWrapMode.Wrap;
+            text.verticalOverflow = VerticalWrapMode.Truncate;
             text.raycastTarget = false;
             text.text = name;
             return text;

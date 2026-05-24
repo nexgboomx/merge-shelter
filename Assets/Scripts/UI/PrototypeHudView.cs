@@ -9,12 +9,58 @@ namespace MergeShelter.UI
 {
     public sealed class PrototypeHudView : MonoBehaviour
     {
+        private const float HorizontalPadding = 24f;
+        private const float TopPadding = 16f;
+        private const float LevelHeight = 28f;
+        private const float TutorialTop = 48f;
+        private const float TutorialHeight = 42f;
+        private const float StatusTop = 98f;
+        private const float StatusHeight = 24f;
+        private const float WalletTop = 130f;
+        private const float WalletHeight = 86f;
+        private const float ResultBottom = 236f;
+        private const float ResultHeight = 78f;
+
         [SerializeField] private Text levelText;
         [SerializeField] private Text tutorialText;
         [SerializeField] private Text shelterHpText;
         [SerializeField] private Text nextTileText;
         [SerializeField] private Text resultText;
         [SerializeField] private Text walletText;
+
+        private bool _isApplyingLayout;
+
+        private void Awake()
+        {
+            ApplyPhoneSafeLayout();
+        }
+
+        private void OnRectTransformDimensionsChange()
+        {
+            if (!_isApplyingLayout)
+                ApplyPhoneSafeLayout();
+        }
+
+        public void ApplyPhoneSafeLayout()
+        {
+            if (_isApplyingLayout)
+                return;
+
+            _isApplyingLayout = true;
+            try
+            {
+                ConfigureTopText(levelText, TopPadding, LevelHeight, 20, TextAnchor.UpperLeft);
+                ConfigureTopText(tutorialText, TutorialTop, TutorialHeight, 14, TextAnchor.UpperLeft);
+                ConfigureTopText(shelterHpText, StatusTop, StatusHeight, 14, TextAnchor.MiddleLeft, 0f, 0.5f, HorizontalPadding, 8f);
+                ConfigureTopText(nextTileText, StatusTop, StatusHeight, 14, TextAnchor.MiddleRight, 0.5f, 1f, 8f, HorizontalPadding);
+                ConfigureTopText(walletText, WalletTop, WalletHeight, 13, TextAnchor.UpperLeft);
+                ConfigureBottomText(resultText, ResultBottom, ResultHeight, 16, TextAnchor.UpperLeft);
+            }
+            finally
+            {
+                _isApplyingLayout = false;
+            }
+        }
 
         public void SetLevel(int levelId, string displayName)
         {
@@ -43,13 +89,19 @@ namespace MergeShelter.UI
         public void SetResult(string message)
         {
             if (resultText != null)
+            {
+                ConfigureBottomText(resultText, ResultBottom, ResultHeight, 16, TextAnchor.UpperLeft);
                 resultText.text = message;
+            }
         }
 
         public void SetWallet(int coins, int parts)
         {
             if (walletText != null)
+            {
+                ConfigureTopText(walletText, WalletTop, WalletHeight, 13, TextAnchor.UpperLeft);
                 walletText.text = $"Coins: {coins} | Parts: {parts}";
+            }
         }
 
         public void SetProgression(
@@ -67,11 +119,11 @@ namespace MergeShelter.UI
             if (walletText == null)
                 return;
 
-            walletText.verticalOverflow = VerticalWrapMode.Overflow;
+            ConfigureTopText(walletText, WalletTop, WalletHeight, 13, TextAnchor.UpperLeft);
             var affordText = canAffordUpgrade ? "can afford" : $"need {upgradeCost - coins} more";
             var dailyRewardStatus = hasClaimedDailyReward ? "claimed" : canClaimDailyReward ? "available" : "unavailable";
             walletText.text =
-                $"Coins: {coins} | Parts: {parts}\nShelter Lv {shelterUpgradeLevel} | Upgrade: {upgradeCost} coins ({affordText})\nDaily Reward: +{dailyRewardCoins} coins, +{dailyRewardParts} parts ({dailyRewardStatus})\n{FormatQuestStatus(dailyQuests)}";
+                $"Coins: {coins} | Parts: {parts} | Shelter Lv {shelterUpgradeLevel}\nUpgrade: {upgradeCost} coins ({affordText}) | Daily Reward: +{dailyRewardCoins} coins, +{dailyRewardParts} parts ({dailyRewardStatus})\n{FormatQuestStatus(dailyQuests)}";
         }
 
         private static string FormatQuestStatus(IReadOnlyList<DailyQuestState> dailyQuests)
@@ -99,6 +151,58 @@ namespace MergeShelter.UI
             }
 
             return builder.ToString();
+        }
+
+        private static void ConfigureTopText(
+            Text text,
+            float top,
+            float height,
+            int fontSize,
+            TextAnchor alignment,
+            float anchorMinX = 0f,
+            float anchorMaxX = 1f,
+            float leftInset = HorizontalPadding,
+            float rightInset = HorizontalPadding)
+        {
+            if (text == null)
+                return;
+
+            var rectTransform = (RectTransform)text.transform;
+            rectTransform.anchorMin = new Vector2(anchorMinX, 1f);
+            rectTransform.anchorMax = new Vector2(anchorMaxX, 1f);
+            rectTransform.pivot = new Vector2(0.5f, 1f);
+            rectTransform.offsetMin = new Vector2(leftInset, -top - height);
+            rectTransform.offsetMax = new Vector2(-rightInset, -top);
+
+            ConfigureText(text, fontSize, alignment);
+        }
+
+        private static void ConfigureBottomText(Text text, float bottom, float height, int fontSize, TextAnchor alignment)
+        {
+            if (text == null)
+                return;
+
+            var rectTransform = (RectTransform)text.transform;
+            rectTransform.anchorMin = new Vector2(0f, 0f);
+            rectTransform.anchorMax = new Vector2(1f, 0f);
+            rectTransform.pivot = new Vector2(0.5f, 0f);
+            rectTransform.offsetMin = new Vector2(HorizontalPadding, bottom);
+            rectTransform.offsetMax = new Vector2(-HorizontalPadding, bottom + height);
+
+            ConfigureText(text, fontSize, alignment);
+        }
+
+        private static void ConfigureText(Text text, int fontSize, TextAnchor alignment)
+        {
+            text.fontSize = fontSize;
+            text.resizeTextForBestFit = true;
+            text.resizeTextMinSize = 10;
+            text.resizeTextMaxSize = fontSize;
+            text.horizontalOverflow = HorizontalWrapMode.Wrap;
+            text.verticalOverflow = VerticalWrapMode.Truncate;
+            text.alignment = alignment;
+            text.lineSpacing = 1f;
+            text.raycastTarget = false;
         }
     }
 }

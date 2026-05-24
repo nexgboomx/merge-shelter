@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using MergeShelter.Board;
@@ -19,6 +20,30 @@ namespace MergeShelter.Tests.PlayMode
     public sealed class PrototypeSprint1SmokeTests
     {
         private const string SceneName = "PrototypeSprint1";
+        private static readonly string[] HudTextNames =
+        {
+            "LevelText",
+            "TutorialText",
+            "ShelterHpText",
+            "NextTileText",
+            "WalletText",
+            "ResultText"
+        };
+
+        private static readonly string[] ActionButtonNames =
+        {
+            "StartWaveButton",
+            "ClaimRewardButton",
+            "NextLevelButton",
+            "RetryButton",
+            "UpgradeShelterButton",
+            "DailyRewardButton",
+            "ClaimQuestButton",
+            "DoubleRewardButton",
+            "ReviveButton",
+            "ResetSaveButton"
+        };
+
         private string _tempSaveDirectory;
 
         [SetUp]
@@ -66,6 +91,96 @@ namespace MergeShelter.Tests.PlayMode
             yield return null;
 
             Assert.IsFalse(string.IsNullOrWhiteSpace(GetResultText().text));
+        }
+
+        [UnityTest]
+        public IEnumerator PhoneHudLayout_KeepsTextBoardAndActionsSeparatedAcrossProgressionStates()
+        {
+            Screen.SetResolution(720, 1280, false);
+            yield return null;
+
+            yield return LoadPrototypeScene();
+            yield return null;
+
+            var controller = Object.FindObjectOfType<PrototypeGameController>();
+            Assert.NotNull(controller);
+
+            AssertRequiredPhoneUiExists();
+            AssertVisibleActionButton("StartWaveButton");
+            AssertVisibleActionButton("UpgradeShelterButton");
+            AssertVisibleActionButton("ResetSaveButton");
+            AssertVisibleActionButton("DailyRewardButton");
+            AssertPhoneSafeLayout();
+
+            FindButton("DailyRewardButton").onClick.Invoke();
+            yield return null;
+            AssertPhoneSafeLayout();
+
+            for (var i = 0; i < 10; i++)
+            {
+                Assert.IsTrue(controller.TryPlaceNextTile(i % controller.BoardWidth, i / controller.BoardWidth));
+                yield return null;
+            }
+
+            AssertVisibleActionButton("ClaimQuestButton");
+            AssertPhoneSafeLayout();
+
+            FindButton("ClaimQuestButton").onClick.Invoke();
+            yield return null;
+            AssertPhoneSafeLayout();
+
+            controller.StartLevel(0);
+            SetStrongLevelOneBoard(controller);
+            controller.StartWave();
+            yield return null;
+
+            AssertVisibleActionButton("ClaimRewardButton");
+            AssertPhoneSafeLayout();
+
+            FindButton("ClaimRewardButton").onClick.Invoke();
+            yield return null;
+            AssertPhoneSafeLayout();
+
+            AssertVisibleActionButton("UpgradeShelterButton");
+            FindButton("UpgradeShelterButton").onClick.Invoke();
+            yield return null;
+            Assert.That(GetResultText().text, Does.Contain("Shelter upgraded"));
+            AssertPhoneSafeLayout();
+
+            FindButton("ResetSaveButton").onClick.Invoke();
+            yield return null;
+            AssertNewPlayerState(controller);
+            AssertPhoneSafeLayout();
+
+            controller.StartLevel(9);
+            SetStrongLevelTenBoard(controller);
+            controller.StartWave();
+            yield return null;
+
+            AssertVisibleActionButton("ClaimRewardButton");
+            AssertVisibleActionButton("DoubleRewardButton");
+            AssertPhoneSafeLayout();
+
+            FindButton("DoubleRewardButton").onClick.Invoke();
+            yield return null;
+            AssertPhoneSafeLayout();
+
+            controller.StartLevel(9);
+            controller.StartWave();
+            yield return null;
+
+            AssertVisibleActionButton("RetryButton");
+            AssertVisibleActionButton("ReviveButton");
+            AssertPhoneSafeLayout();
+
+            FindButton("ReviveButton").onClick.Invoke();
+            yield return null;
+            AssertPhoneSafeLayout();
+
+            FindButton("ResetSaveButton").onClick.Invoke();
+            yield return null;
+            AssertNewPlayerState(controller);
+            AssertPhoneSafeLayout();
         }
 
         [UnityTest]
@@ -547,6 +662,144 @@ namespace MergeShelter.Tests.PlayMode
             var resultText = GameObject.Find("ResultText")?.GetComponent<Text>();
             Assert.NotNull(resultText);
             return resultText;
+        }
+
+        private static Text GetHudText(string name)
+        {
+            var text = GameObject.Find(name)?.GetComponent<Text>();
+            Assert.NotNull(text, $"{name} should exist.");
+            return text;
+        }
+
+        private static void AssertRequiredPhoneUiExists()
+        {
+            foreach (var textName in HudTextNames)
+                Assert.NotNull(GetHudText(textName));
+
+            Assert.NotNull(GameObject.Find("BoardGrid")?.GetComponent<RectTransform>());
+
+            foreach (var buttonName in ActionButtonNames)
+                Assert.NotNull(FindButton(buttonName), $"{buttonName} should exist.");
+        }
+
+        private static void AssertVisibleActionButton(string name)
+        {
+            var button = FindButton(name);
+            Assert.NotNull(button, $"{name} should exist.");
+            Assert.IsTrue(button.gameObject.activeInHierarchy, $"{name} should be visible.");
+            Assert.IsTrue(button.interactable, $"{name} should be tappable.");
+        }
+
+        private static void AssertPhoneSafeLayout()
+        {
+            Canvas.ForceUpdateCanvases();
+
+            var canvas = Object.FindObjectOfType<Canvas>();
+            Assert.NotNull(canvas);
+
+            var boardRectTransform = GameObject.Find("BoardGrid")?.GetComponent<RectTransform>();
+            Assert.NotNull(boardRectTransform);
+            var boardRect = GetCanvasRect(canvas, boardRectTransform);
+            var canvasRect = ((RectTransform)canvas.transform).rect;
+            Assert.Greater(boardRect.width, 300f);
+            Assert.Greater(boardRect.height, 300f);
+            Assert.Less(Mathf.Abs(boardRect.center.x - canvasRect.center.x), 2f, "Board should stay centered horizontally.");
+
+            var hudRects = new Dictionary<string, Rect>();
+            foreach (var textName in HudTextNames)
+            {
+                var text = GetHudText(textName);
+                var rect = GetCanvasRect(canvas, (RectTransform)text.transform);
+                Assert.Greater(rect.width, 100f, $"{textName} should have bounded width.");
+                Assert.Greater(rect.height, 20f, $"{textName} should have bounded height.");
+                Assert.AreEqual(HorizontalWrapMode.Wrap, text.horizontalOverflow, $"{textName} should wrap horizontally.");
+                Assert.AreEqual(VerticalWrapMode.Truncate, text.verticalOverflow, $"{textName} should clamp vertically.");
+                hudRects[textName] = rect;
+            }
+
+            for (var i = 0; i < HudTextNames.Length; i++)
+            {
+                for (var j = i + 1; j < HudTextNames.Length; j++)
+                {
+                    var firstName = HudTextNames[i];
+                    var secondName = HudTextNames[j];
+                    Assert.IsFalse(
+                        RectsOverlap(hudRects[firstName], hudRects[secondName]),
+                        $"{firstName} overlaps {secondName}.");
+                }
+            }
+
+            foreach (var textName in HudTextNames)
+            {
+                Assert.IsFalse(
+                    RectsOverlap(boardRect, hudRects[textName]),
+                    $"BoardGrid overlaps {textName}.");
+            }
+
+            AssertActiveActionButtonsDoNotOverlap(canvas, hudRects["ResultText"]);
+        }
+
+        private static void AssertActiveActionButtonsDoNotOverlap(Canvas canvas, Rect resultRect)
+        {
+            var activeButtons = new List<Button>();
+            foreach (var buttonName in ActionButtonNames)
+            {
+                var button = FindButton(buttonName);
+                if (button != null && button.gameObject.activeInHierarchy)
+                    activeButtons.Add(button);
+            }
+
+            for (var i = 0; i < activeButtons.Count; i++)
+            {
+                var first = activeButtons[i];
+                Assert.IsTrue(first.interactable, $"{first.name} should be tappable.");
+                var firstRect = GetCanvasRect(canvas, (RectTransform)first.transform);
+                Assert.Greater(firstRect.width, 120f, $"{first.name} should keep a tappable width.");
+                Assert.Greater(firstRect.height, 36f, $"{first.name} should keep a tappable height.");
+                Assert.IsFalse(RectsOverlap(firstRect, resultRect), $"{first.name} overlaps ResultText.");
+
+                for (var j = i + 1; j < activeButtons.Count; j++)
+                {
+                    var second = activeButtons[j];
+                    var secondRect = GetCanvasRect(canvas, (RectTransform)second.transform);
+                    Assert.IsFalse(
+                        RectsOverlap(firstRect, secondRect),
+                        $"{first.name} overlaps {second.name}.");
+                }
+            }
+        }
+
+        private static Rect GetCanvasRect(Canvas canvas, RectTransform rectTransform)
+        {
+            var corners = new Vector3[4];
+            rectTransform.GetWorldCorners(corners);
+            var canvasTransform = canvas.transform;
+            for (var i = 0; i < corners.Length; i++)
+                corners[i] = canvasTransform.InverseTransformPoint(corners[i]);
+
+            var minX = corners[0].x;
+            var maxX = corners[0].x;
+            var minY = corners[0].y;
+            var maxY = corners[0].y;
+
+            for (var i = 1; i < corners.Length; i++)
+            {
+                minX = Mathf.Min(minX, corners[i].x);
+                maxX = Mathf.Max(maxX, corners[i].x);
+                minY = Mathf.Min(minY, corners[i].y);
+                maxY = Mathf.Max(maxY, corners[i].y);
+            }
+
+            return Rect.MinMaxRect(minX, minY, maxX, maxY);
+        }
+
+        private static bool RectsOverlap(Rect first, Rect second)
+        {
+            const float tolerance = 1f;
+            return first.xMin < second.xMax - tolerance &&
+                   first.xMax > second.xMin + tolerance &&
+                   first.yMin < second.yMax - tolerance &&
+                   first.yMax > second.yMin + tolerance;
         }
 
         private static Text GetWalletText()
