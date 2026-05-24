@@ -306,7 +306,7 @@ namespace MergeShelter.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator ReviveButton_RestartsFailedLevelOnce()
+        public IEnumerator ReviveButton_HidesAndIgnoresStaleClicksAfterSuccessfulRevive()
         {
             yield return LoadPrototypeScene();
 
@@ -316,8 +316,10 @@ namespace MergeShelter.Tests.PlayMode
 
             var reviveButton = FindButton("ReviveButton");
             var startWaveButton = FindButton("StartWaveButton");
+            var retryButton = FindButton("RetryButton");
             Assert.NotNull(reviveButton);
             Assert.NotNull(startWaveButton);
+            Assert.NotNull(retryButton);
             Assert.IsFalse(controller.CanRevive);
             Assert.IsFalse(reviveButton.gameObject.activeSelf);
 
@@ -337,9 +339,66 @@ namespace MergeShelter.Tests.PlayMode
             Assert.IsFalse(controller.IsLevelEnded);
             Assert.IsFalse(controller.CanRevive);
             Assert.IsFalse(reviveButton.gameObject.activeSelf);
+            Assert.IsFalse(reviveButton.interactable);
+            Assert.IsFalse(retryButton.gameObject.activeSelf);
             Assert.IsTrue(startWaveButton.gameObject.activeSelf);
             Assert.IsTrue(controller.GetTileAt(0, 0).IsEmpty);
             Assert.That(GetResultText().text, Does.Contain("Revive used"));
+            Assert.IsFalse(controller.Revive());
+            Assert.AreEqual(10, controller.CurrentLevelId);
+            Assert.AreEqual(SceneName, SceneManager.GetActiveScene().name);
+            Assert.IsFalse(controller.IsLevelEnded);
+            Assert.IsFalse(controller.CanRevive);
+            Assert.IsFalse(reviveButton.gameObject.activeSelf);
+            Assert.IsTrue(startWaveButton.gameObject.activeSelf);
+
+            var resultBeforeStaleClick = GetResultText().text;
+            reviveButton.onClick.Invoke();
+            yield return null;
+
+            Assert.NotNull(Object.FindObjectOfType<PrototypeBoardView>());
+            Assert.NotNull(Object.FindObjectOfType<Canvas>());
+            Assert.AreEqual(10, controller.CurrentLevelId);
+            Assert.IsFalse(controller.IsLevelEnded);
+            Assert.IsFalse(controller.CanRevive);
+            Assert.IsFalse(reviveButton.gameObject.activeSelf);
+            Assert.IsFalse(reviveButton.interactable);
+            Assert.IsTrue(startWaveButton.gameObject.activeSelf);
+            Assert.AreEqual(resultBeforeStaleClick, GetResultText().text);
+        }
+
+        [UnityTest]
+        public IEnumerator Revive_RemainsUnavailableIfRevivedAttemptFailsAgain()
+        {
+            yield return LoadPrototypeScene();
+
+            var controller = Object.FindObjectOfType<PrototypeGameController>();
+            Assert.NotNull(controller);
+            controller.StartLevel(9);
+
+            var reviveButton = FindButton("ReviveButton");
+            var retryButton = FindButton("RetryButton");
+            Assert.NotNull(reviveButton);
+            Assert.NotNull(retryButton);
+
+            controller.StartWave();
+            yield return null;
+
+            Assert.IsTrue(controller.CanRevive);
+            reviveButton.onClick.Invoke();
+            yield return null;
+
+            Assert.IsFalse(controller.CanRevive);
+            Assert.IsFalse(reviveButton.gameObject.activeSelf);
+
+            controller.StartWave();
+            yield return null;
+
+            Assert.IsTrue(controller.IsLevelEnded);
+            Assert.IsTrue(controller.CanRetryLevel);
+            Assert.IsTrue(retryButton.gameObject.activeSelf);
+            Assert.IsFalse(controller.CanRevive);
+            Assert.IsFalse(reviveButton.gameObject.activeSelf);
             Assert.IsFalse(controller.Revive());
         }
 
