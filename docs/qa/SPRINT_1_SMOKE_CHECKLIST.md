@@ -132,6 +132,14 @@ This checklist is the minimum quality gate for the first playable prototype.
 - Automated validation covers save load on startup, coins/highest unlocked/shelter upgrade/daily reward/daily quest persistence across scene reload, save-on-change hooks, Reset Save button behavior, and reset returning to new-player Level 1 state.
 - Remaining known issues: save is local JSON only by design; no cloud save, account login, encryption, backend, real IAP, or real ad SDK is integrated.
 
+## Sprint 4 Android Build Docs Notes - 2026-05-24
+
+- Unity version: 6000.3.16f1.
+- Documentation added: `docs/release/ANDROID_PROTOTYPE_BUILD.md` and `docs/release/SPRINT_4_RELEASE_CHECKLIST.md`.
+- Local toolchain check: Android Build Support, SDK, NDK, and OpenJDK folders are present under the Unity 6000.3.16f1 Android playback engine.
+- Build settings check: `Assets/Scenes/PrototypeSprint1.unity` is enabled in `ProjectSettings/EditorBuildSettings.asset`.
+- Android APK build and physical device install were not run for this documentation task.
+
 ## Severity Rules
 
 | Severity | Definition |
