@@ -194,6 +194,26 @@ This checklist is the minimum quality gate for the first playable prototype.
 - P0/P1 blockers: P1 blocker for Android physical-device smoke completion: stale Revive button plus second Revive tap caused a persistent black-screen app state and blocked Retry and strong-board Level 10 follow-up validation. P1 UI blocker: HUD/status text overlaps enough to make top-left progression/result text hard to read on SM-S918B.
 - Security note: Testing used only the Merge Shelter package, game-only screenshots/input after foreground verification, approved system-overlay dismissal/refocus actions to return to the game, and did not access personal apps or device data.
 
+## Post-Fix Android Physical Device Smoke Notes - 2026-05-25
+
+- Device: Samsung SM-S918B.
+- Android version/API: Android 16 / API 36.
+- APK filename: `merge-shelter-post-fix-device-debug.apk`.
+- APK output path: `Builds/Android/merge-shelter-post-fix-device-debug.apk`.
+- Branch/APK tested: `fix/android-hud-text-rendering` after adding an opaque canvas background behind the prototype UI to clear Android text redraws.
+- Install result: passed with `adb install -r` after the phone was re-authorized.
+- Launch result: passed with `adb shell monkey -p com.DefaultCompany.mergeshelter 1`; foreground was verified as `com.DefaultCompany.mergeshelter/com.unity3d.player.UnityPlayerGameActivity`.
+- Revive fix result: passed. Level 10 weak-board defeat showed Revive and Retry; Retry returned to a playable Level 10 state. Revive returned to a playable Level 10 state, hid the Revive button immediately, and a stale second tap at the old Revive position did not change state or cause a black screen. A later defeat showed Retry only, with Revive unavailable.
+- HUD layout/rendering fix result: passed on SM-S918B portrait. Launch, repeated progression updates, reward claim, Next Level, save/load relaunch, Reset Save, Level 10 defeat, Retry, Revive, stale Revive tap, and final Reset Save all kept HUD text readable without the previous text ghosting/stacking.
+- Full smoke result: passed on the branch APK. Validated app launch, board visibility, board tap placement, Start Wave, Claim Reward, Next Level, Retry, Daily Reward one-use behavior, Daily Quest progress and claim, insufficient-coin upgrade block, successful shelter upgrade, Reward Double one-use behavior, Revive one-use behavior, HUD readability, and tappable action buttons.
+- Save/load result: passed. After force-stopping and relaunching only Merge Shelter, Level 2, coins/parts, Shelter Lv 2, daily reward claimed state, and daily quest claimed/ready states persisted.
+- Reset Save result: passed. Reset Save returned to new-player Level 1 with coins/parts reset to 0, Shelter Lv 1, daily reward available, quests at 0 progress, empty board, and clean HUD rendering.
+- EditMode tests: passed 41/41 (`Logs/EditModeResults-android-hud-background.xml`).
+- PlayMode tests: passed 13/13 (`Logs/PlayModeResults-android-hud-background.xml`).
+- Remaining known issues: no device smoke blocker observed on the branch APK. The branch still needs review/merge before the post-fix result applies to `main`.
+- P0/P1 blockers: none observed on `fix/android-hud-text-rendering` during this physical-device run.
+- Security note: Testing used only the Merge Shelter package, game-only screenshots/input after foreground verification, approved force-stop/relaunch of Merge Shelter, and safe device metadata commands. No personal apps or device data were accessed.
+
 ## Severity Rules
 
 | Severity | Definition |

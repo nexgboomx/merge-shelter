@@ -25,6 +25,7 @@ namespace MergeShelter.EditorTools
 
             var canvas = CreateCanvas();
             CreateEventSystem();
+            CreateOpaqueBackground(canvas.transform);
 
             var hud = new GameObject("PrototypeHud", typeof(RectTransform));
             hud.transform.SetParent(canvas.transform, false);
@@ -35,8 +36,8 @@ namespace MergeShelter.EditorTools
             var shelterHpText = CreateHudText(canvas.transform, "ShelterHpText", new Vector2(24f, -98f), new Vector2(328f, 24f), 14);
             var nextTileText = CreateHudText(canvas.transform, "NextTileText", new Vector2(368f, -98f), new Vector2(328f, 24f), 14);
             nextTileText.alignment = TextAnchor.MiddleRight;
-            var walletText = CreateHudText(canvas.transform, "WalletText", new Vector2(24f, -130f), new Vector2(672f, 86f), 13);
-            var resultText = CreateBottomHudText(canvas.transform, "ResultText", 236f, new Vector2(672f, 78f), 16);
+            var walletText = CreateHudText(canvas.transform, "WalletText", new Vector2(24f, -130f), new Vector2(672f, 108f), 12);
+            var resultText = CreateBottomHudText(canvas.transform, "ResultText", 236f, new Vector2(672f, 92f), 14);
 
             var boardRoot = CreateRectTransformObject("BoardRoot", canvas.transform);
             boardRoot.anchorMin = Vector2.zero;
@@ -97,6 +98,20 @@ namespace MergeShelter.EditorTools
             return canvas;
         }
 
+        private static void CreateOpaqueBackground(Transform parent)
+        {
+            var rectTransform = CreateRectTransformObject(PrototypeHudView.OpaqueBackgroundName, parent);
+            rectTransform.anchorMin = Vector2.zero;
+            rectTransform.anchorMax = Vector2.one;
+            rectTransform.pivot = new Vector2(0.5f, 0.5f);
+            rectTransform.offsetMin = Vector2.zero;
+            rectTransform.offsetMax = Vector2.zero;
+
+            var image = rectTransform.gameObject.AddComponent<Image>();
+            image.color = new Color(0.12f, 0.12f, 0.12f, 1f);
+            image.raycastTarget = false;
+        }
+
         private static void CreateEventSystem()
         {
             var eventSystem = new GameObject("EventSystem");
@@ -125,11 +140,12 @@ namespace MergeShelter.EditorTools
             text.fontSize = fontSize;
             text.color = Color.white;
             text.alignment = TextAnchor.UpperLeft;
-            text.resizeTextForBestFit = true;
-            text.resizeTextMinSize = 10;
+            text.resizeTextForBestFit = false;
+            text.resizeTextMinSize = fontSize;
             text.resizeTextMaxSize = fontSize;
             text.horizontalOverflow = HorizontalWrapMode.Wrap;
             text.verticalOverflow = VerticalWrapMode.Truncate;
+            text.lineSpacing = 1.05f;
             text.raycastTarget = false;
             text.text = name;
             return text;
@@ -149,11 +165,12 @@ namespace MergeShelter.EditorTools
             text.fontSize = fontSize;
             text.color = Color.white;
             text.alignment = TextAnchor.UpperLeft;
-            text.resizeTextForBestFit = true;
-            text.resizeTextMinSize = 10;
+            text.resizeTextForBestFit = false;
+            text.resizeTextMinSize = fontSize;
             text.resizeTextMaxSize = fontSize;
             text.horizontalOverflow = HorizontalWrapMode.Wrap;
             text.verticalOverflow = VerticalWrapMode.Truncate;
+            text.lineSpacing = 1.05f;
             text.raycastTarget = false;
             text.text = name;
             return text;

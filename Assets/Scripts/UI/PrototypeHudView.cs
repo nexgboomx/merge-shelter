@@ -9,6 +9,8 @@ namespace MergeShelter.UI
 {
     public sealed class PrototypeHudView : MonoBehaviour
     {
+        public const string OpaqueBackgroundName = "PrototypeOpaqueBackground";
+
         private const float HorizontalPadding = 24f;
         private const float TopPadding = 16f;
         private const float LevelHeight = 28f;
@@ -17,9 +19,9 @@ namespace MergeShelter.UI
         private const float StatusTop = 98f;
         private const float StatusHeight = 24f;
         private const float WalletTop = 130f;
-        private const float WalletHeight = 86f;
+        private const float WalletHeight = 108f;
         private const float ResultBottom = 236f;
-        private const float ResultHeight = 78f;
+        private const float ResultHeight = 92f;
 
         [SerializeField] private Text levelText;
         [SerializeField] private Text tutorialText;
@@ -32,6 +34,7 @@ namespace MergeShelter.UI
 
         private void Awake()
         {
+            EnsureOpaqueCanvasBackground();
             ApplyPhoneSafeLayout();
         }
 
@@ -53,8 +56,8 @@ namespace MergeShelter.UI
                 ConfigureTopText(tutorialText, TutorialTop, TutorialHeight, 14, TextAnchor.UpperLeft);
                 ConfigureTopText(shelterHpText, StatusTop, StatusHeight, 14, TextAnchor.MiddleLeft, 0f, 0.5f, HorizontalPadding, 8f);
                 ConfigureTopText(nextTileText, StatusTop, StatusHeight, 14, TextAnchor.MiddleRight, 0.5f, 1f, 8f, HorizontalPadding);
-                ConfigureTopText(walletText, WalletTop, WalletHeight, 13, TextAnchor.UpperLeft);
-                ConfigureBottomText(resultText, ResultBottom, ResultHeight, 16, TextAnchor.UpperLeft);
+                ConfigureTopText(walletText, WalletTop, WalletHeight, 12, TextAnchor.UpperLeft);
+                ConfigureBottomText(resultText, ResultBottom, ResultHeight, 14, TextAnchor.UpperLeft);
             }
             finally
             {
@@ -90,7 +93,7 @@ namespace MergeShelter.UI
         {
             if (resultText != null)
             {
-                ConfigureBottomText(resultText, ResultBottom, ResultHeight, 16, TextAnchor.UpperLeft);
+                ConfigureBottomText(resultText, ResultBottom, ResultHeight, 14, TextAnchor.UpperLeft);
                 resultText.text = message;
             }
         }
@@ -99,7 +102,7 @@ namespace MergeShelter.UI
         {
             if (walletText != null)
             {
-                ConfigureTopText(walletText, WalletTop, WalletHeight, 13, TextAnchor.UpperLeft);
+                ConfigureTopText(walletText, WalletTop, WalletHeight, 12, TextAnchor.UpperLeft);
                 walletText.text = $"Coins: {coins} | Parts: {parts}";
             }
         }
@@ -119,7 +122,7 @@ namespace MergeShelter.UI
             if (walletText == null)
                 return;
 
-            ConfigureTopText(walletText, WalletTop, WalletHeight, 13, TextAnchor.UpperLeft);
+            ConfigureTopText(walletText, WalletTop, WalletHeight, 12, TextAnchor.UpperLeft);
             var affordText = canAffordUpgrade ? "can afford" : $"need {upgradeCost - coins} more";
             var dailyRewardStatus = hasClaimedDailyReward ? "claimed" : canClaimDailyReward ? "available" : "unavailable";
             walletText.text =
@@ -195,14 +198,43 @@ namespace MergeShelter.UI
         private static void ConfigureText(Text text, int fontSize, TextAnchor alignment)
         {
             text.fontSize = fontSize;
-            text.resizeTextForBestFit = true;
-            text.resizeTextMinSize = 10;
+            text.resizeTextForBestFit = false;
+            text.resizeTextMinSize = fontSize;
             text.resizeTextMaxSize = fontSize;
             text.horizontalOverflow = HorizontalWrapMode.Wrap;
             text.verticalOverflow = VerticalWrapMode.Truncate;
             text.alignment = alignment;
-            text.lineSpacing = 1f;
+            text.lineSpacing = 1.05f;
             text.raycastTarget = false;
+        }
+
+        private void EnsureOpaqueCanvasBackground()
+        {
+            var canvas = GetComponentInParent<Canvas>();
+            if (canvas == null)
+                return;
+
+            var existing = canvas.transform.Find(OpaqueBackgroundName);
+            if (existing != null)
+            {
+                existing.SetAsFirstSibling();
+                return;
+            }
+
+            var backgroundObject = new GameObject(OpaqueBackgroundName, typeof(RectTransform), typeof(Image));
+            backgroundObject.transform.SetParent(canvas.transform, false);
+            backgroundObject.transform.SetAsFirstSibling();
+
+            var rectTransform = backgroundObject.GetComponent<RectTransform>();
+            rectTransform.anchorMin = Vector2.zero;
+            rectTransform.anchorMax = Vector2.one;
+            rectTransform.pivot = new Vector2(0.5f, 0.5f);
+            rectTransform.offsetMin = Vector2.zero;
+            rectTransform.offsetMax = Vector2.zero;
+
+            var image = backgroundObject.GetComponent<Image>();
+            image.color = new Color(0.12f, 0.12f, 0.12f, 1f);
+            image.raycastTarget = false;
         }
     }
 }
