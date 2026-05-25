@@ -17,9 +17,14 @@ namespace MergeShelter.UI
         private const float BoardVerticalOffset = 64f;
         private const float ButtonWidth = 200f;
         private const float ButtonHeight = 44f;
-        private const float ButtonColumnSpacing = 20f;
+        private const float PrimaryButtonWidth = 220f;
+        private const float PrimaryButtonHeight = 52f;
+        private const float ButtonColumnSpacing = 24f;
         private const float ButtonBottomRow = 32f;
-        private const float ButtonRowSpacing = 52f;
+        private const float ButtonRowSpacing = 56f;
+        private const float CellFeedbackDuration = 0.28f;
+        private const float ButtonFeedbackDuration = 0.1f;
+        private const float ButtonFeedbackScale = 1.04f;
 
         [SerializeField] private PrototypeGameController gameController;
         [SerializeField] private RectTransform boardRoot;
@@ -40,6 +45,15 @@ namespace MergeShelter.UI
         private PrototypeGameController _subscribedController;
         private Font _defaultFont;
         private bool _isApplyingLayout;
+        private int _feedbackCellX = -1;
+        private int _feedbackCellY = -1;
+        private float _feedbackCellClearTime;
+        private Color _feedbackCellColor;
+        private RectTransform _buttonPulseTarget;
+        private float _buttonPulseClearTime;
+
+        public PrototypeFeedbackKind LastCellFeedbackKind { get; private set; } = PrototypeFeedbackKind.None;
+        public bool HasActiveCellFeedback => _feedbackCellX >= 0 && Time.unscaledTime < _feedbackCellClearTime;
 
         private void Awake()
         {
@@ -56,6 +70,22 @@ namespace MergeShelter.UI
         {
             if (!_isApplyingLayout)
                 ApplyPhoneSafeLayout();
+        }
+
+        private void Update()
+        {
+            if (_feedbackCellX >= 0 && Time.unscaledTime >= _feedbackCellClearTime)
+            {
+                _feedbackCellX = -1;
+                _feedbackCellY = -1;
+                RefreshCells();
+            }
+
+            if (_buttonPulseTarget != null && Time.unscaledTime >= _buttonPulseClearTime)
+            {
+                _buttonPulseTarget.localScale = Vector3.one;
+                _buttonPulseTarget = null;
+            }
         }
 
         private void OnEnable()
@@ -304,24 +334,33 @@ namespace MergeShelter.UI
             if (gameController == null)
                 return;
 
-            gameController.TryPlaceNextTile(x, y);
+            var placed = gameController.TryPlaceNextTile(x, y);
+            var feedbackKind = placed
+                ? gameController.LastFeedbackKind
+                : gameController.LastFeedbackKind == PrototypeFeedbackKind.Blocked
+                    ? PrototypeFeedbackKind.Blocked
+                    : PrototypeFeedbackKind.InvalidPlacement;
+            ShowCellFeedback(x, y, feedbackKind);
             RefreshCells();
         }
 
         private void OnStartWaveClicked()
         {
+            PulseButton(startWaveButton);
             gameController?.StartWave();
             RefreshActionButtons();
         }
 
         private void OnClaimRewardClicked()
         {
+            PulseButton(claimRewardButton);
             gameController?.ClaimReward();
             RefreshActionButtons();
         }
 
         private void OnNextLevelClicked()
         {
+            PulseButton(nextLevelButton);
             gameController?.StartNextLevel();
             RefreshCells();
             RefreshActionButtons();
@@ -329,6 +368,7 @@ namespace MergeShelter.UI
 
         private void OnRetryClicked()
         {
+            PulseButton(retryButton);
             gameController?.RetryLevel();
             RefreshCells();
             RefreshActionButtons();
@@ -336,24 +376,28 @@ namespace MergeShelter.UI
 
         private void OnUpgradeShelterClicked()
         {
+            PulseButton(upgradeShelterButton);
             gameController?.UpgradeShelter();
             RefreshActionButtons();
         }
 
         private void OnDailyRewardClicked()
         {
+            PulseButton(dailyRewardButton);
             gameController?.ClaimDailyReward();
             RefreshActionButtons();
         }
 
         private void OnClaimQuestClicked()
         {
+            PulseButton(claimQuestButton);
             gameController?.ClaimQuest();
             RefreshActionButtons();
         }
 
         private void OnDoubleRewardClicked()
         {
+            PulseButton(doubleRewardButton);
             gameController?.DoubleReward();
             RefreshActionButtons();
         }
@@ -369,6 +413,7 @@ namespace MergeShelter.UI
                 return;
             }
 
+            PulseButton(reviveButton);
             if (reviveButton != null)
             {
                 reviveButton.interactable = false;
@@ -383,6 +428,7 @@ namespace MergeShelter.UI
 
         private void OnResetSaveClicked()
         {
+            PulseButton(resetSaveButton);
             gameController?.ResetSave();
             RefreshCells();
             RefreshActionButtons();
@@ -397,8 +443,39 @@ namespace MergeShelter.UI
             {
                 var tile = gameController.GetTileAt(cell.X, cell.Y);
                 cell.Label.text = FormatTileLabel(tile);
-                cell.Background.color = GetTileColor(tile);
+                cell.Background.color = GetCellDisplayColor(cell, tile);
             }
+        }
+
+        private void ShowCellFeedback(int x, int y, PrototypeFeedbackKind kind)
+        {
+            _feedbackCellX = x;
+            _feedbackCellY = y;
+            _feedbackCellClearTime = Time.unscaledTime + CellFeedbackDuration;
+            _feedbackCellColor = GetFeedbackCellColor(kind);
+            LastCellFeedbackKind = kind;
+        }
+
+        private Color GetCellDisplayColor(CellView cell, TileData tile)
+        {
+            var baseColor = GetTileColor(tile);
+            if (_feedbackCellX == cell.X && _feedbackCellY == cell.Y && Time.unscaledTime < _feedbackCellClearTime)
+                return Color.Lerp(baseColor, _feedbackCellColor, 0.68f);
+
+            return baseColor;
+        }
+
+        private void PulseButton(Button button)
+        {
+            if (button == null || !button.gameObject.activeInHierarchy || !button.interactable)
+                return;
+
+            if (_buttonPulseTarget != null)
+                _buttonPulseTarget.localScale = Vector3.one;
+
+            _buttonPulseTarget = (RectTransform)button.transform;
+            _buttonPulseTarget.localScale = Vector3.one * ButtonFeedbackScale;
+            _buttonPulseClearTime = Time.unscaledTime + ButtonFeedbackDuration;
         }
 
         private void RefreshActionButtons()
@@ -467,11 +544,11 @@ namespace MergeShelter.UI
                 PlaceActionButton(resetSaveButton, 1, 0);
                 PlaceActionButton(claimQuestButton, -1, 1);
                 PlaceActionButton(startWaveButton, 0, 1);
-                PlaceActionButton(nextLevelButton, 1, 1);
                 PlaceActionButton(doubleRewardButton, -1, 2);
+                PlaceActionButton(reviveButton, -1, 2);
                 PlaceActionButton(claimRewardButton, 0, 2);
-                PlaceActionButton(retryButton, 1, 2);
-                PlaceActionButton(reviveButton, 0, 3);
+                PlaceActionButton(nextLevelButton, 0, 2);
+                PlaceActionButton(retryButton, 0, 2);
             }
             finally
             {
@@ -506,19 +583,95 @@ namespace MergeShelter.UI
             rectTransform.anchoredPosition = Vector2.zero;
         }
 
-        private static void PlaceActionButton(Button button, int column, int row)
+        private void PlaceActionButton(Button button, int column, int row)
         {
             if (button == null)
                 return;
 
+            var isPrimary = IsPrimaryAction(button);
+            var width = isPrimary ? PrimaryButtonWidth : ButtonWidth;
+            var height = isPrimary ? PrimaryButtonHeight : ButtonHeight;
             var rectTransform = (RectTransform)button.transform;
             rectTransform.anchorMin = new Vector2(0.5f, 0f);
             rectTransform.anchorMax = new Vector2(0.5f, 0f);
             rectTransform.pivot = new Vector2(0.5f, 0.5f);
-            rectTransform.sizeDelta = new Vector2(ButtonWidth, ButtonHeight);
+            rectTransform.sizeDelta = new Vector2(width, height);
             rectTransform.anchoredPosition = new Vector2(
                 column * (ButtonWidth + ButtonColumnSpacing),
                 ButtonBottomRow + row * ButtonRowSpacing);
+
+            if (button.targetGraphic is Image image)
+                image.color = GetActionButtonColor(button.name, isPrimary);
+
+            var label = button.GetComponentInChildren<Text>(true);
+            if (label != null)
+            {
+                label.fontSize = isPrimary ? 22 : 20;
+                label.resizeTextMaxSize = label.fontSize;
+            }
+        }
+
+        private bool IsPrimaryAction(Button button)
+        {
+            if (gameController == null || button == null)
+                return false;
+
+            if (button == startWaveButton)
+                return !gameController.IsLevelEnded;
+
+            if (button == claimRewardButton)
+                return gameController.CanClaimReward;
+
+            if (button == nextLevelButton)
+                return gameController.CanStartNextLevel;
+
+            if (button == retryButton)
+                return gameController.CanRetryLevel;
+
+            if (button == reviveButton)
+                return gameController.CanRevive;
+
+            return false;
+        }
+
+        private static Color GetActionButtonColor(string buttonName, bool isPrimary)
+        {
+            Color color;
+            switch (buttonName)
+            {
+                case "StartWaveButton":
+                    color = new Color(0.13f, 0.48f, 0.34f);
+                    break;
+                case "ClaimRewardButton":
+                    color = new Color(0.2f, 0.45f, 0.72f);
+                    break;
+                case "NextLevelButton":
+                    color = new Color(0.2f, 0.48f, 0.3f);
+                    break;
+                case "RetryButton":
+                    color = new Color(0.52f, 0.28f, 0.18f);
+                    break;
+                case "ReviveButton":
+                    color = new Color(0.48f, 0.22f, 0.28f);
+                    break;
+                case "DailyRewardButton":
+                    color = new Color(0.3f, 0.33f, 0.65f);
+                    break;
+                case "UpgradeShelterButton":
+                    color = new Color(0.45f, 0.35f, 0.14f);
+                    break;
+                case "ClaimQuestButton":
+                    color = new Color(0.33f, 0.42f, 0.2f);
+                    break;
+                case "DoubleRewardButton":
+                    color = new Color(0.42f, 0.24f, 0.55f);
+                    break;
+                default:
+                    color = new Color(0.24f, 0.24f, 0.24f);
+                    break;
+            }
+
+            return isPrimary ? Color.Lerp(color, Color.white, 0.16f) : color;
         }
 
         private Font GetDefaultFont()
@@ -551,6 +704,22 @@ namespace MergeShelter.UI
                     return new Color(0.18f, 0.38f, 0.62f);
                 default:
                     return new Color(0.18f, 0.2f, 0.22f);
+            }
+        }
+
+        private static Color GetFeedbackCellColor(PrototypeFeedbackKind kind)
+        {
+            switch (kind)
+            {
+                case PrototypeFeedbackKind.MergeSuccess:
+                    return new Color(0.42f, 0.88f, 0.6f);
+                case PrototypeFeedbackKind.InvalidPlacement:
+                case PrototypeFeedbackKind.Blocked:
+                    return new Color(0.92f, 0.28f, 0.22f);
+                case PrototypeFeedbackKind.TilePlaced:
+                    return new Color(0.94f, 0.78f, 0.34f);
+                default:
+                    return Color.white;
             }
         }
 

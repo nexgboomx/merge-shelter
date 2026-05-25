@@ -214,6 +214,27 @@ This checklist is the minimum quality gate for the first playable prototype.
 - P0/P1 blockers: none observed on `fix/android-hud-text-rendering` during this physical-device run.
 - Security note: Testing used only the Merge Shelter package, game-only screenshots/input after foreground verification, approved force-stop/relaunch of Merge Shelter, and safe device metadata commands. No personal apps or device data were accessed.
 
+## Sprint 5 Android Physical Device Smoke Notes - 2026-05-25
+
+- Machine OS: Ubuntu 24.04.3 LTS, Linux 6.17.0-1017-oem x86_64.
+- Unity version: 6000.3.16f1 (a56f230f6470).
+- Device manufacturer/model: samsung SM-S918B.
+- Android version/API: Android 16 / API 36.
+- APK filename: `merge-shelter-sprint5-polish-device-debug.apk`.
+- APK output path: `Builds/Android/merge-shelter-sprint5-polish-device-debug.apk`.
+- EditMode tests: passed 41/41 before device install and after the HUD save/load refresh fix (`Logs/EditModeResults-sprint5-android-smoke.xml`, `Logs/EditModeResults-sprint5-smoke-hudfix.xml`).
+- PlayMode tests: passed 17/17 before device install and after the HUD save/load refresh fix (`Logs/PlayModeResults-sprint5-android-smoke.xml`, `Logs/PlayModeResults-sprint5-smoke-hudfix.xml`).
+- Install result: passed with `adb install -r` using Unity's embedded adb at `/home/phung-truong/Unity/Hub/Editor/6000.3.16f1/Editor/Data/PlaybackEngines/AndroidPlayer/SDK/platform-tools/adb`. The fixed APK was rebuilt and reinstalled after code fix `c91a5cb`.
+- Launch result: passed with `adb shell monkey -p com.DefaultCompany.mergeshelter 1`; foreground was verified as `com.DefaultCompany.mergeshelter/com.unity3d.player.UnityPlayerGameActivity`.
+- First-run tutorial result: passed. Reset/new-player state showed first-tile guidance. Board tap advanced to place-more-tiles guidance, a second tile advanced to merge-intent guidance, a third matching tile merged and advanced to Start Wave guidance, victory advanced to Claim Reward guidance, Claim Reward advanced to Next Level/optional reward guidance, and daily reward usage moved the tutorial out of first-run state. Final Reset Save restarted the first tutorial step.
+- Gameplay feedback result: passed for tile placement (`TILE:`), merge success (`MERGE:`), invalid placement (`BLOCKED:`), wave victory (`WIN:`), wave defeat (`DEFEAT:`), reward claim (`REWARD:`), daily reward claim (`DAILY:`), quest claim (`QUEST:`), shelter upgrade (`UPGRADE:`), reward double (`DOUBLE:`), revive (`REVIVE:`), and reset save (`RESET:`). Wave start action was tappable and resolved correctly; its text feedback is transient because the prototype resolves waves immediately and is covered by PlayMode feedback state assertions.
+- UI/HUD result: passed after code fix `c91a5cb`. Portrait HUD remained readable on SM-S918B with no observed text overlap, ghosting, or blocked buttons across tutorial, reward, quest, upgrade, save/load, defeat, revive, stale revive tap, and reset flows. Initial smoke found a HUD refresh regression after save/load where dynamic Sprint 5 labels showed fallback values; `PrototypeHudView.SetProgression()` now initializes dynamic text fields before applying saved progression state.
+- Save/load result: passed after the HUD refresh fix. After making progress, upgrading shelter, claiming daily reward, claiming quests, force-stopping only Merge Shelter, and relaunching only Merge Shelter, Level 2, coins/parts, Shelter Lv 2, 125 HP, daily reward claimed state, and quest progress/claimed states displayed correctly.
+- Reset Save result: passed. Reset Save returned to new-player Level 1 with coins/parts reset to 0, Shelter Lv 1, daily reward available, quests at 0 progress, empty board, first-run tutorial guidance, and clean HUD rendering.
+- Revive regression result: passed. Level 10 empty-board defeat showed Revive and Retry, Revive returned to a playable Level 10 state, hid Revive, restored HP to 100/100, and a stale tap at the old Revive location did not change state or produce a black screen.
+- P0/P1 blockers: none after code fix `c91a5cb`. No crash/freeze occurred, so `adb logcat -d` was not run.
+- Security note: Testing used only the Merge Shelter package, safe metadata commands, allowed install/launch/force-stop commands, foreground verification, and game-only screenshots/input after foreground verification. No personal apps, notifications, storage, or personal device data were opened, pulled, browsed, or inspected.
+
 ## Severity Rules
 
 | Severity | Definition |

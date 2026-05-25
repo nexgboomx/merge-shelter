@@ -24,9 +24,17 @@ namespace MergeShelter.Tests.PlayMode
         {
             "LevelText",
             "TutorialText",
+            PrototypeHudView.ShelterSectionLabelName,
             "ShelterHpText",
+            PrototypeHudView.ShelterUpgradeTextName,
+            PrototypeHudView.BoardSectionLabelName,
             "NextTileText",
+            PrototypeHudView.ActionsSectionLabelName,
+            PrototypeHudView.RewardsSectionLabelName,
             "WalletText",
+            PrototypeHudView.RewardTextName,
+            PrototypeHudView.QuestsSectionLabelName,
+            PrototypeHudView.QuestTextName,
             "ResultText"
         };
 
@@ -94,6 +102,51 @@ namespace MergeShelter.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator GameplayFeedback_ShowsDistinctBoardActionStates()
+        {
+            yield return LoadPrototypeScene();
+
+            var controller = Object.FindObjectOfType<PrototypeGameController>();
+            var boardView = Object.FindObjectOfType<PrototypeBoardView>();
+            var hudView = Object.FindObjectOfType<PrototypeHudView>();
+            Assert.NotNull(controller);
+            Assert.NotNull(boardView);
+            Assert.NotNull(hudView);
+
+            var firstCell = FindCellButton(0, 0);
+            var firstCellImage = GetCellImage(0, 0);
+            var emptyColor = firstCellImage.color;
+
+            firstCell.onClick.Invoke();
+            yield return null;
+
+            AssertFeedback(controller, PrototypeFeedbackKind.TilePlaced, "TILE:");
+            Assert.AreEqual(PrototypeFeedbackKind.TilePlaced, hudView.CurrentFeedbackKind);
+            Assert.AreEqual(PrototypeFeedbackKind.TilePlaced, boardView.LastCellFeedbackKind);
+            Assert.IsTrue(boardView.HasActiveCellFeedback);
+            Assert.AreNotEqual(emptyColor, firstCellImage.color);
+
+            firstCell.onClick.Invoke();
+            yield return null;
+
+            AssertFeedback(controller, PrototypeFeedbackKind.InvalidPlacement, "BLOCKED:");
+            Assert.AreEqual(PrototypeFeedbackKind.InvalidPlacement, boardView.LastCellFeedbackKind);
+
+            FindCellButton(1, 0).onClick.Invoke();
+            yield return null;
+            AssertFeedback(controller, PrototypeFeedbackKind.TilePlaced, "TILE:");
+
+            FindCellButton(2, 0).onClick.Invoke();
+            yield return null;
+
+            AssertFeedback(controller, PrototypeFeedbackKind.MergeSuccess, "MERGE:");
+            Assert.AreEqual(PrototypeFeedbackKind.MergeSuccess, boardView.LastCellFeedbackKind);
+            Assert.IsTrue(controller.HasShownFeedback(PrototypeFeedbackKind.TilePlaced));
+            Assert.IsTrue(controller.HasShownFeedback(PrototypeFeedbackKind.InvalidPlacement));
+            Assert.IsTrue(controller.HasShownFeedback(PrototypeFeedbackKind.MergeSuccess));
+        }
+
+        [UnityTest]
         public IEnumerator PhoneHudLayout_KeepsTextBoardAndActionsSeparatedAcrossProgressionStates()
         {
             Screen.SetResolution(720, 1280, false);
@@ -107,6 +160,7 @@ namespace MergeShelter.Tests.PlayMode
 
             AssertRequiredPhoneUiExists();
             AssertVisibleActionButton("StartWaveButton");
+            AssertPrimaryActionButton("StartWaveButton");
             AssertVisibleActionButton("UpgradeShelterButton");
             AssertVisibleActionButton("ResetSaveButton");
             AssertVisibleActionButton("DailyRewardButton");
@@ -115,6 +169,7 @@ namespace MergeShelter.Tests.PlayMode
             FindButton("DailyRewardButton").onClick.Invoke();
             yield return null;
             AssertPhoneSafeLayout();
+            Assert.That(GetRewardText().text, Does.Contain("claimed"));
 
             for (var i = 0; i < 10; i++)
             {
@@ -135,10 +190,12 @@ namespace MergeShelter.Tests.PlayMode
             yield return null;
 
             AssertVisibleActionButton("ClaimRewardButton");
+            AssertPrimaryActionButton("ClaimRewardButton");
             AssertPhoneSafeLayout();
 
             FindButton("ClaimRewardButton").onClick.Invoke();
             yield return null;
+            AssertPrimaryActionButton("NextLevelButton");
             AssertPhoneSafeLayout();
 
             AssertVisibleActionButton("UpgradeShelterButton");
@@ -171,16 +228,115 @@ namespace MergeShelter.Tests.PlayMode
 
             AssertVisibleActionButton("RetryButton");
             AssertVisibleActionButton("ReviveButton");
+            AssertPrimaryActionButton("RetryButton");
+            AssertPrimaryActionButton("ReviveButton");
             AssertPhoneSafeLayout();
 
             FindButton("ReviveButton").onClick.Invoke();
             yield return null;
+            AssertPrimaryActionButton("StartWaveButton");
             AssertPhoneSafeLayout();
 
             FindButton("ResetSaveButton").onClick.Invoke();
             yield return null;
             AssertNewPlayerState(controller);
             AssertPhoneSafeLayout();
+        }
+
+        [UnityTest]
+        public IEnumerator FirstRunTutorial_AdvancesThroughLevelOneActionsAndReset()
+        {
+            yield return LoadPrototypeScene();
+
+            var controller = Object.FindObjectOfType<PrototypeGameController>();
+            Assert.NotNull(controller);
+            Assert.AreEqual(PrototypeTutorialStep.PlaceFirstTile, controller.TutorialStep);
+            Assert.That(GetTutorialText().text, Does.Contain("tap an empty board cell"));
+
+            Assert.IsTrue(controller.TryPlaceNextTile(0, 0));
+            yield return null;
+            Assert.AreEqual(PrototypeTutorialStep.PlaceMoreTiles, controller.TutorialStep);
+            Assert.AreEqual(1, controller.TutorialTilesPlaced);
+            Assert.That(GetTutorialText().text, Does.Contain("place two more"));
+
+            Assert.IsTrue(controller.TryPlaceNextTile(1, 0));
+            yield return null;
+            Assert.AreEqual(PrototypeTutorialStep.MergeIntent, controller.TutorialStep);
+            Assert.AreEqual(2, controller.TutorialTilesPlaced);
+            Assert.That(GetTutorialText().text, Does.Contain("one more"));
+
+            Assert.IsTrue(controller.TryPlaceNextTile(2, 0));
+            yield return null;
+            Assert.AreEqual(PrototypeTutorialStep.StartWave, controller.TutorialStep);
+            Assert.AreEqual(3, controller.TutorialTilesPlaced);
+            Assert.That(GetTutorialText().text, Does.Contain("Start Wave"));
+
+            controller.StartWave();
+            yield return null;
+            Assert.AreEqual(PrototypeTutorialStep.ClaimReward, controller.TutorialStep);
+            Assert.IsTrue(controller.CanClaimReward);
+            Assert.That(GetTutorialText().text, Does.Contain("Claim Reward"));
+
+            Assert.IsTrue(controller.ClaimReward());
+            yield return null;
+            Assert.AreEqual(PrototypeTutorialStep.Continue, controller.TutorialStep);
+            Assert.IsTrue(controller.CanStartNextLevel);
+            Assert.That(GetTutorialText().text, Does.Contain("Next Level"));
+
+            Assert.IsTrue(controller.StartNextLevel());
+            yield return null;
+            Assert.AreEqual(PrototypeTutorialStep.Complete, controller.TutorialStep);
+            Assert.IsTrue(controller.IsTutorialComplete);
+            Assert.AreEqual(2, controller.CurrentLevelId);
+
+            controller.ResetSave();
+            yield return null;
+            AssertNewPlayerState(controller);
+            Assert.AreEqual(PrototypeTutorialStep.PlaceFirstTile, controller.TutorialStep);
+            Assert.AreEqual(0, controller.TutorialTilesPlaced);
+            Assert.That(GetTutorialText().text, Does.Contain("tap an empty board cell"));
+        }
+
+        [UnityTest]
+        public IEnumerator FirstRunTutorial_SaveLoadPreservesProgress()
+        {
+            yield return LoadPrototypeScene();
+
+            var controller = Object.FindObjectOfType<PrototypeGameController>();
+            Assert.NotNull(controller);
+            Assert.IsTrue(controller.TryPlaceNextTile(0, 0));
+            yield return null;
+            Assert.AreEqual(PrototypeTutorialStep.PlaceMoreTiles, controller.TutorialStep);
+            Assert.AreEqual(1, controller.TutorialTilesPlaced);
+            Assert.IsTrue(new LocalJsonSaveService(_tempSaveDirectory).HasSave());
+
+            yield return LoadPrototypeScene();
+
+            controller = Object.FindObjectOfType<PrototypeGameController>();
+            Assert.NotNull(controller);
+            Assert.AreEqual(PrototypeTutorialStep.PlaceMoreTiles, controller.TutorialStep);
+            Assert.AreEqual(1, controller.TutorialTilesPlaced);
+            Assert.That(GetTutorialText().text, Does.Contain("place two more"));
+        }
+
+        [UnityTest]
+        public IEnumerator FirstRunTutorial_DoesNotBlockNormalGameplay()
+        {
+            yield return LoadPrototypeScene();
+
+            var controller = Object.FindObjectOfType<PrototypeGameController>();
+            Assert.NotNull(controller);
+            Assert.AreEqual(PrototypeTutorialStep.PlaceFirstTile, controller.TutorialStep);
+
+            controller.StartLevel(9);
+            yield return null;
+            controller.StartWave();
+            yield return null;
+
+            Assert.AreEqual(10, controller.CurrentLevelId);
+            Assert.IsTrue(controller.IsLevelEnded);
+            Assert.IsTrue(controller.CanRetryLevel);
+            AssertVisibleActionButton("RetryButton");
         }
 
         [UnityTest]
@@ -198,6 +354,8 @@ namespace MergeShelter.Tests.PlayMode
 
             var weakResult = GetResultText().text;
             Assert.That(weakResult, Does.Contain("Defeat"));
+            AssertFeedback(controller, PrototypeFeedbackKind.WaveDefeat, "DEFEAT:");
+            Assert.IsTrue(controller.HasShownFeedback(PrototypeFeedbackKind.WaveStart));
 
             controller.StartLevel(9);
             var board = GetBoard(controller);
@@ -212,6 +370,8 @@ namespace MergeShelter.Tests.PlayMode
 
             var strongResult = GetResultText().text;
             Assert.That(strongResult, Does.Contain("Victory"));
+            AssertFeedback(controller, PrototypeFeedbackKind.WaveVictory, "WIN:");
+            Assert.IsTrue(controller.HasShownFeedback(PrototypeFeedbackKind.WaveStart));
             Assert.AreNotEqual(weakResult, strongResult);
         }
 
@@ -240,7 +400,8 @@ namespace MergeShelter.Tests.PlayMode
             Assert.IsTrue(controller.HasClaimedDailyReward);
             Assert.IsFalse(dailyRewardButton.gameObject.activeSelf);
             Assert.That(GetResultText().text, Does.Contain("Daily reward claimed"));
-            Assert.That(GetWalletText().text, Does.Contain("claimed"));
+            AssertFeedback(controller, PrototypeFeedbackKind.DailyRewardClaim, "DAILY:");
+            Assert.That(GetRewardText().text, Does.Contain("claimed"));
 
             Assert.IsFalse(controller.ClaimDailyReward());
             Assert.AreEqual(rewardCoins, controller.Coins);
@@ -269,7 +430,7 @@ namespace MergeShelter.Tests.PlayMode
             Assert.IsFalse(placeQuest.Claimed);
             Assert.IsTrue(controller.CanClaimQuest);
             Assert.IsTrue(claimQuestButton.gameObject.activeSelf);
-            Assert.That(GetWalletText().text, Does.Contain("Place 10 Tiles 10/10 ready"));
+            Assert.That(GetQuestText().text, Does.Contain("Tiles 10/10 ready"));
 
             var startingCoins = controller.Coins;
             var startingParts = controller.Parts;
@@ -283,7 +444,8 @@ namespace MergeShelter.Tests.PlayMode
             Assert.IsFalse(controller.CanClaimQuest);
             Assert.IsFalse(claimQuestButton.gameObject.activeSelf);
             Assert.That(GetResultText().text, Does.Contain("Quest claimed"));
-            Assert.That(GetWalletText().text, Does.Contain("Place 10 Tiles 10/10 claimed"));
+            AssertFeedback(controller, PrototypeFeedbackKind.QuestClaim, "QUEST:");
+            Assert.That(GetQuestText().text, Does.Contain("Tiles 10/10 claimed"));
         }
 
         [UnityTest]
@@ -331,6 +493,9 @@ namespace MergeShelter.Tests.PlayMode
             Assert.AreEqual(2, controller.ShelterUpgradeLevel);
             Assert.IsTrue(controller.HasClaimedDailyReward);
             Assert.IsFalse(controller.CanClaimDailyReward);
+            Assert.That(GetShelterUpgradeText().text, Does.Contain("Lv 2"));
+            Assert.That(GetRewardText().text, Does.Contain("claimed"));
+            Assert.That(GetQuestText().text, Does.Contain("Tiles 10/10 claimed"));
 
             var placeQuest = GetQuest(controller, DailyQuestModel.PlaceTilesQuestId);
             Assert.AreEqual(10, placeQuest.Progress);
@@ -367,6 +532,7 @@ namespace MergeShelter.Tests.PlayMode
             AssertNewPlayerState(controller);
             Assert.IsFalse(new LocalJsonSaveService(_tempSaveDirectory).HasSave());
             Assert.That(GetResultText().text, Does.Contain("Save reset"));
+            AssertFeedback(controller, PrototypeFeedbackKind.ResetSave, "RESET:");
 
             yield return LoadPrototypeScene();
 
@@ -407,6 +573,7 @@ namespace MergeShelter.Tests.PlayMode
             Assert.AreEqual(500, controller.PendingRewardCoins);
             Assert.AreEqual(10, controller.PendingRewardParts);
             Assert.That(GetResultText().text, Does.Contain("Reward doubled"));
+            AssertFeedback(controller, PrototypeFeedbackKind.RewardDouble, "DOUBLE:");
             Assert.IsFalse(controller.DoubleReward());
             Assert.AreEqual(500, controller.PendingRewardCoins);
             Assert.AreEqual(10, controller.PendingRewardParts);
@@ -459,6 +626,7 @@ namespace MergeShelter.Tests.PlayMode
             Assert.IsTrue(startWaveButton.gameObject.activeSelf);
             Assert.IsTrue(controller.GetTileAt(0, 0).IsEmpty);
             Assert.That(GetResultText().text, Does.Contain("Revive used"));
+            AssertFeedback(controller, PrototypeFeedbackKind.Revive, "REVIVE:");
             Assert.IsFalse(controller.Revive());
             Assert.AreEqual(10, controller.CurrentLevelId);
             Assert.AreEqual(SceneName, SceneManager.GetActiveScene().name);
@@ -555,9 +723,11 @@ namespace MergeShelter.Tests.PlayMode
             Assert.AreEqual(50, controller.Coins);
             Assert.AreEqual(0, controller.Parts);
             Assert.AreEqual(2, controller.HighestUnlockedLevel);
+            AssertFeedback(controller, PrototypeFeedbackKind.RewardClaim, "REWARD:");
             Assert.IsFalse(controller.ClaimReward());
             Assert.AreEqual(50, controller.Coins);
             Assert.IsTrue(nextLevelButton.gameObject.activeSelf);
+            AssertFeedback(controller, PrototypeFeedbackKind.Blocked, "BLOCKED:");
 
             nextLevelButton.onClick.Invoke();
             yield return null;
@@ -567,6 +737,7 @@ namespace MergeShelter.Tests.PlayMode
             Assert.IsFalse(controller.IsLevelEnded);
             Assert.IsFalse(nextLevelButton.gameObject.activeSelf);
             Assert.IsTrue(startWaveButton.gameObject.activeSelf);
+            AssertFeedback(controller, PrototypeFeedbackKind.NextLevel, "NEXT:");
         }
 
         [UnityTest]
@@ -597,6 +768,7 @@ namespace MergeShelter.Tests.PlayMode
             Assert.IsFalse(controller.CanRetryLevel);
             Assert.IsFalse(retryButton.gameObject.activeSelf);
             Assert.IsTrue(controller.GetTileAt(0, 0).IsEmpty);
+            AssertFeedback(controller, PrototypeFeedbackKind.Retry, "RETRY:");
         }
 
         [UnityTest]
@@ -621,6 +793,7 @@ namespace MergeShelter.Tests.PlayMode
             Assert.AreEqual(1, controller.ShelterUpgradeLevel);
             Assert.AreEqual(0, controller.Coins);
             Assert.That(GetResultText().text, Does.Contain("Upgrade blocked"));
+            AssertFeedback(controller, PrototypeFeedbackKind.Blocked, "BLOCKED:");
 
             yield return WinCurrentLevelAndClaim(controller);
             Assert.IsTrue(controller.StartNextLevel());
@@ -638,7 +811,8 @@ namespace MergeShelter.Tests.PlayMode
             Assert.AreEqual(20, controller.Coins);
             Assert.Greater(controller.ShelterUpgradeCost, previousCost);
             Assert.That(GetResultText().text, Does.Contain("Shelter upgraded"));
-            Assert.That(GetWalletText().text, Does.Contain("Shelter Lv 2"));
+            AssertFeedback(controller, PrototypeFeedbackKind.ShelterUpgrade, "UPGRADE:");
+            Assert.That(GetShelterUpgradeText().text, Does.Contain("Lv 2"));
 
             Assert.IsTrue(controller.StartNextLevel());
             yield return null;
@@ -662,6 +836,38 @@ namespace MergeShelter.Tests.PlayMode
             var resultText = GameObject.Find("ResultText")?.GetComponent<Text>();
             Assert.NotNull(resultText);
             return resultText;
+        }
+
+        private static void AssertFeedback(PrototypeGameController controller, PrototypeFeedbackKind kind, string prefix)
+        {
+            Assert.AreEqual(kind, controller.LastFeedbackKind);
+            Assert.IsFalse(string.IsNullOrWhiteSpace(controller.LastFeedbackMessage));
+
+            var hudView = Object.FindObjectOfType<PrototypeHudView>();
+            Assert.NotNull(hudView);
+            Assert.AreEqual(kind, hudView.CurrentFeedbackKind);
+            Assert.That(GetResultText().text, Does.StartWith(prefix));
+        }
+
+        private static Button FindCellButton(int x, int y)
+        {
+            var button = GameObject.Find($"Cell_{x}_{y}")?.GetComponent<Button>();
+            Assert.NotNull(button);
+            return button;
+        }
+
+        private static Image GetCellImage(int x, int y)
+        {
+            var image = GameObject.Find($"Cell_{x}_{y}")?.GetComponent<Image>();
+            Assert.NotNull(image);
+            return image;
+        }
+
+        private static Text GetTutorialText()
+        {
+            var tutorialText = GameObject.Find("TutorialText")?.GetComponent<Text>();
+            Assert.NotNull(tutorialText);
+            return tutorialText;
         }
 
         private static Text GetHudText(string name)
@@ -708,6 +914,15 @@ namespace MergeShelter.Tests.PlayMode
             Assert.IsTrue(button.interactable, $"{name} should be tappable.");
         }
 
+        private static void AssertPrimaryActionButton(string name)
+        {
+            AssertVisibleActionButton(name);
+            var button = FindButton(name);
+            var rectTransform = (RectTransform)button.transform;
+            Assert.GreaterOrEqual(rectTransform.sizeDelta.x, 218f, $"{name} should be visually emphasized as the primary next action.");
+            Assert.GreaterOrEqual(rectTransform.sizeDelta.y, 50f, $"{name} should be visually emphasized as the primary next action.");
+        }
+
         private static void AssertPhoneSafeLayout()
         {
             Canvas.ForceUpdateCanvases();
@@ -729,7 +944,8 @@ namespace MergeShelter.Tests.PlayMode
                 var text = GetHudText(textName);
                 var rect = GetCanvasRect(canvas, (RectTransform)text.transform);
                 Assert.Greater(rect.width, 100f, $"{textName} should have bounded width.");
-                Assert.Greater(rect.height, 20f, $"{textName} should have bounded height.");
+                var minimumHeight = IsCompactHudText(textName) ? 10f : 20f;
+                Assert.Greater(rect.height, minimumHeight, $"{textName} should have bounded height.");
                 Assert.AreEqual(HorizontalWrapMode.Wrap, text.horizontalOverflow, $"{textName} should wrap horizontally.");
                 Assert.AreEqual(VerticalWrapMode.Truncate, text.verticalOverflow, $"{textName} should clamp vertically.");
                 Assert.IsFalse(text.resizeTextForBestFit, $"{textName} should avoid Best Fit line collapse on Android.");
@@ -756,6 +972,16 @@ namespace MergeShelter.Tests.PlayMode
             }
 
             AssertActiveActionButtonsDoNotOverlap(canvas, hudRects["ResultText"]);
+        }
+
+        private static bool IsCompactHudText(string textName)
+        {
+            return textName == PrototypeHudView.ShelterSectionLabelName ||
+                   textName == PrototypeHudView.BoardSectionLabelName ||
+                   textName == PrototypeHudView.ActionsSectionLabelName ||
+                   textName == PrototypeHudView.RewardsSectionLabelName ||
+                   textName == PrototypeHudView.QuestsSectionLabelName ||
+                   textName == "NextTileText";
         }
 
         private static void AssertActiveActionButtonsDoNotOverlap(Canvas canvas, Rect resultRect)
@@ -828,11 +1054,32 @@ namespace MergeShelter.Tests.PlayMode
             return walletText;
         }
 
+        private static Text GetRewardText()
+        {
+            var rewardText = GameObject.Find(PrototypeHudView.RewardTextName)?.GetComponent<Text>();
+            Assert.NotNull(rewardText);
+            return rewardText;
+        }
+
+        private static Text GetQuestText()
+        {
+            var questText = GameObject.Find(PrototypeHudView.QuestTextName)?.GetComponent<Text>();
+            Assert.NotNull(questText);
+            return questText;
+        }
+
         private static Text GetShelterHpText()
         {
             var shelterHpText = GameObject.Find("ShelterHpText")?.GetComponent<Text>();
             Assert.NotNull(shelterHpText);
             return shelterHpText;
+        }
+
+        private static Text GetShelterUpgradeText()
+        {
+            var shelterUpgradeText = GameObject.Find(PrototypeHudView.ShelterUpgradeTextName)?.GetComponent<Text>();
+            Assert.NotNull(shelterUpgradeText);
+            return shelterUpgradeText;
         }
 
         private static Button FindButton(string name)

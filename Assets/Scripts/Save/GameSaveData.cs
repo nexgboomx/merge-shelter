@@ -16,6 +16,9 @@ namespace MergeShelter.Save
         public int SelectedLevel = SessionProgressionState.FirstLevel;
         public int ShelterUpgradeLevel = 1;
         public bool DailyRewardClaimed;
+        public bool TutorialStateSaved;
+        public int TutorialStep;
+        public int TutorialTilesPlaced;
         public List<DailyQuestSaveData> DailyQuests = new();
 
         public bool IsValid()
@@ -27,6 +30,9 @@ namespace MergeShelter.Save
                 SelectedLevel < SessionProgressionState.FirstLevel ||
                 SelectedLevel > HighestUnlockedLevel ||
                 ShelterUpgradeLevel < 1 ||
+                TutorialStep < 0 ||
+                TutorialStep > 6 ||
+                TutorialTilesPlaced < 0 ||
                 DailyQuests == null)
             {
                 return false;
@@ -62,6 +68,14 @@ namespace MergeShelter.Save
 
             if (ShelterUpgradeLevel < 1)
                 ShelterUpgradeLevel = 1;
+
+            if (TutorialStep < 0)
+                TutorialStep = 0;
+            else if (TutorialStep > 6)
+                TutorialStep = 6;
+
+            if (TutorialTilesPlaced < 0)
+                TutorialTilesPlaced = 0;
 
             DailyQuests ??= new List<DailyQuestSaveData>();
         }

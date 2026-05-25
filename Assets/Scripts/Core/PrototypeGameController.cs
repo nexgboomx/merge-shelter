@@ -12,6 +12,38 @@ using UnityEngine;
 
 namespace MergeShelter.Core
 {
+    public enum PrototypeTutorialStep
+    {
+        PlaceFirstTile = 0,
+        PlaceMoreTiles = 1,
+        MergeIntent = 2,
+        StartWave = 3,
+        ClaimReward = 4,
+        Continue = 5,
+        Complete = 6
+    }
+
+    public enum PrototypeFeedbackKind
+    {
+        None = 0,
+        TilePlaced = 1,
+        MergeSuccess = 2,
+        InvalidPlacement = 3,
+        WaveStart = 4,
+        WaveVictory = 5,
+        WaveDefeat = 6,
+        RewardClaim = 7,
+        DailyRewardClaim = 8,
+        QuestClaim = 9,
+        ShelterUpgrade = 10,
+        RewardDouble = 11,
+        Revive = 12,
+        ResetSave = 13,
+        NextLevel = 14,
+        Retry = 15,
+        Blocked = 16
+    }
+
     /// <summary>
     /// Sprint 1 prototype controller.
     /// Attach this to a GameObject in the prototype scene and wire PrototypeHudView in the inspector.
@@ -45,6 +77,9 @@ namespace MergeShelter.Core
         private bool _reviveUsedThisResult;
         private bool _rewardDoubleOfferPreviewed;
         private bool _reviveOfferPreviewed;
+        private PrototypeTutorialStep _tutorialStep;
+        private int _tutorialTilesPlaced;
+        private readonly List<PrototypeFeedbackKind> _feedbackHistory = new();
 
         public static string SaveDirectoryOverrideForTests { get; set; }
 
@@ -88,6 +123,11 @@ namespace MergeShelter.Core
             _progression.SelectedLevel < _progression.HighestUnlockedLevel &&
             _progression.SelectedLevel < _levels.Count;
         public bool CanRetryLevel => _levelEnded && _lastLevelFailed;
+        public PrototypeTutorialStep TutorialStep => _tutorialStep;
+        public int TutorialTilesPlaced => _tutorialTilesPlaced;
+        public bool IsTutorialComplete => _tutorialStep == PrototypeTutorialStep.Complete;
+        public PrototypeFeedbackKind LastFeedbackKind { get; private set; } = PrototypeFeedbackKind.None;
+        public string LastFeedbackMessage { get; private set; } = string.Empty;
 
         public event Action BoardChanged;
         public event Action ProgressionChanged;
@@ -97,7 +137,11 @@ namespace MergeShelter.Core
             _analytics = new DebugAnalyticsService();
             _levels = SprintOneLevelCatalog.CreateLevels();
             _saveService = CreateSaveService();
-            _progression = LoadProgression();
+            var saveData = LoadSaveData();
+            _progression = saveData != null
+                ? SessionProgressionState.FromSaveData(saveData)
+                : new SessionProgressionState();
+            LoadTutorialState(saveData);
             StartSelectedLevel();
         }
 
@@ -117,7 +161,7 @@ namespace MergeShelter.Core
         {
             if (!_progression.TrySelectLevel(levelId))
             {
-                hudView?.SetResult($"Level {levelId} is locked. Claim rewards to unlock it.");
+                ShowFeedback(PrototypeFeedbackKind.Blocked, $"Level {levelId} is locked. Claim rewards to unlock it.");
                 ProgressionChanged?.Invoke();
                 return false;
             }
@@ -137,7 +181,7 @@ namespace MergeShelter.Core
         {
             if (!CanClaimReward)
             {
-                hudView?.SetResult("No reward is waiting to claim.");
+                ShowFeedback(PrototypeFeedbackKind.Blocked, "No reward is waiting to claim.");
                 ProgressionChanged?.Invoke();
                 return false;
             }
@@ -162,10 +206,11 @@ namespace MergeShelter.Core
             }
 
             var questProgress = RecordQuestProgress(DailyQuestModel.ClaimRewardQuestId, 1);
+            var tutorialAdvanced = AdvanceTutorialAfterRewardClaim(reward.LevelId);
             SaveProgression();
             RefreshHud();
             var nextLevelMessage = CanStartNextLevel ? $" Level {_progression.SelectedLevel + 1} unlocked." : string.Empty;
-            hudView?.SetResult($"Reward claimed: +{reward.Coins} coins, +{reward.Parts} parts.{nextLevelMessage}{FormatQuestCompletionSuffix(questProgress)}");
+            ShowFeedback(PrototypeFeedbackKind.RewardClaim, $"Reward claimed: +{reward.Coins} coins, +{reward.Parts} parts.{nextLevelMessage}{FormatQuestCompletionSuffix(questProgress)}{FormatTutorialSuffix(tutorialAdvanced)}");
             ProgressionChanged?.Invoke();
             return true;
         }
@@ -175,7 +220,7 @@ namespace MergeShelter.Core
             if (!_progression.TryClaimDailyReward(out var reward))
             {
                 RefreshHud();
-                hudView?.SetResult("Daily reward already claimed this session.");
+                ShowFeedback(PrototypeFeedbackKind.Blocked, "Daily reward already claimed this session.");
                 ProgressionChanged?.Invoke();
                 return false;
             }
@@ -186,8 +231,9 @@ namespace MergeShelter.Core
                 ["parts"] = reward.Parts
             });
 
+            var tutorialCompleted = AdvanceTutorialAfterOptionalContinueAction();
             RefreshHud();
-            hudView?.SetResult($"Daily reward claimed: +{reward.Coins} coins, +{reward.Parts} parts.");
+            ShowFeedback(PrototypeFeedbackKind.DailyRewardClaim, $"Daily reward claimed: +{reward.Coins} coins, +{reward.Parts} parts.{FormatTutorialSuffix(tutorialCompleted)}");
             SaveProgression();
             ProgressionChanged?.Invoke();
             return true;
@@ -198,7 +244,7 @@ namespace MergeShelter.Core
             if (!_progression.TryClaimDailyQuest(out var reward))
             {
                 RefreshHud();
-                hudView?.SetResult("No completed daily quest is ready to claim.");
+                ShowFeedback(PrototypeFeedbackKind.Blocked, "No completed daily quest is ready to claim.");
                 ProgressionChanged?.Invoke();
                 return false;
             }
@@ -212,7 +258,7 @@ namespace MergeShelter.Core
             });
 
             RefreshHud();
-            hudView?.SetResult($"Quest claimed: {reward.Title}. +{reward.Coins} coins, +{reward.Parts} parts.");
+            ShowFeedback(PrototypeFeedbackKind.QuestClaim, $"Quest claimed: {reward.Title}. +{reward.Coins} coins, +{reward.Parts} parts.");
             SaveProgression();
             ProgressionChanged?.Invoke();
             return true;
@@ -223,7 +269,7 @@ namespace MergeShelter.Core
             if (!CanDoubleReward)
             {
                 RefreshHud();
-                hudView?.SetResult("Double Reward is not available for this result.");
+                ShowFeedback(PrototypeFeedbackKind.Blocked, "Double Reward is not available for this result.");
                 ProgressionChanged?.Invoke();
                 return false;
             }
@@ -231,7 +277,7 @@ namespace MergeShelter.Core
             if (!ShowMockRewardedAd(AdPlacement.RewardDouble))
             {
                 RefreshHud();
-                hudView?.SetResult("Double Reward mock ad was not completed.");
+                ShowFeedback(PrototypeFeedbackKind.Blocked, "Double Reward mock ad was not completed.");
                 ProgressionChanged?.Invoke();
                 return false;
             }
@@ -248,7 +294,7 @@ namespace MergeShelter.Core
             });
 
             RefreshHud();
-            hudView?.SetResult($"Reward doubled. Pending reward: +{reward.Coins} coins, +{reward.Parts} parts.");
+            ShowFeedback(PrototypeFeedbackKind.RewardDouble, $"Reward doubled. Pending reward: +{reward.Coins} coins, +{reward.Parts} parts.");
             SaveProgression();
             ProgressionChanged?.Invoke();
             return true;
@@ -259,7 +305,7 @@ namespace MergeShelter.Core
             if (!CanRevive)
             {
                 RefreshHud();
-                hudView?.SetResult("Revive is not available for this result.");
+                ShowFeedback(PrototypeFeedbackKind.Blocked, "Revive is not available for this result.");
                 ProgressionChanged?.Invoke();
                 return false;
             }
@@ -267,7 +313,7 @@ namespace MergeShelter.Core
             if (!ShowMockRewardedAd(AdPlacement.Revive))
             {
                 RefreshHud();
-                hudView?.SetResult("Revive mock ad was not completed.");
+                ShowFeedback(PrototypeFeedbackKind.Blocked, "Revive mock ad was not completed.");
                 ProgressionChanged?.Invoke();
                 return false;
             }
@@ -279,7 +325,7 @@ namespace MergeShelter.Core
             });
 
             StartSelectedLevel(preserveReviveUsage: true);
-            hudView?.SetResult("Revive used. Level restarted with a fresh shelter.");
+            ShowFeedback(PrototypeFeedbackKind.Revive, "Revive used. Level restarted with a fresh shelter.");
             ProgressionChanged?.Invoke();
             return true;
         }
@@ -292,7 +338,7 @@ namespace MergeShelter.Core
             {
                 var missingCoins = Mathf.Max(0, cost - _progression.Coins);
                 RefreshHud();
-                hudView?.SetResult($"Upgrade blocked. Need {missingCoins} more coins for Shelter Lv {previousLevel + 1}.");
+                ShowFeedback(PrototypeFeedbackKind.Blocked, $"Upgrade blocked. Need {missingCoins} more coins for Shelter Lv {previousLevel + 1}.");
                 ProgressionChanged?.Invoke();
                 return false;
             }
@@ -307,8 +353,9 @@ namespace MergeShelter.Core
                 ["max_hp"] = GetShelterMaxHp()
             });
 
+            var tutorialCompleted = AdvanceTutorialAfterOptionalContinueAction();
             RefreshHud();
-            hudView?.SetResult($"Shelter upgraded to Lv {newLevel}. Future waves start with {GetShelterMaxHp()} HP.");
+            ShowFeedback(PrototypeFeedbackKind.ShelterUpgrade, $"Shelter upgraded to Lv {newLevel}. Future waves start with {GetShelterMaxHp()} HP.{FormatTutorialSuffix(tutorialCompleted)}");
             SaveProgression();
             ProgressionChanged?.Invoke();
             return true;
@@ -318,8 +365,9 @@ namespace MergeShelter.Core
         {
             _saveService?.Reset();
             _progression = new SessionProgressionState();
+            ResetTutorialState();
             StartSelectedLevel();
-            hudView?.SetResult("Save reset. Progress returned to Level 1.");
+            ShowFeedback(PrototypeFeedbackKind.ResetSave, "Save reset. Progress returned to Level 1.");
             BoardChanged?.Invoke();
             ProgressionChanged?.Invoke();
         }
@@ -328,24 +376,40 @@ namespace MergeShelter.Core
         {
             if (!CanStartNextLevel)
             {
-                hudView?.SetResult("Next level is locked. Claim the pending reward first.");
+                ShowFeedback(PrototypeFeedbackKind.Blocked, "Next level is locked. Claim the pending reward first.");
                 ProgressionChanged?.Invoke();
                 return false;
             }
 
-            return TryStartLevel(_progression.SelectedLevel + 1);
+            var tutorialShouldComplete = _tutorialStep == PrototypeTutorialStep.Continue;
+            var started = TryStartLevel(_progression.SelectedLevel + 1);
+            if (started && tutorialShouldComplete)
+            {
+                SetTutorialStep(PrototypeTutorialStep.Complete, saveAfterChange: false);
+                RefreshHud();
+                ShowFeedback(PrototypeFeedbackKind.NextLevel, "Tutorial complete. Level 2 is ready.");
+                SaveProgression();
+                ProgressionChanged?.Invoke();
+            }
+            else if (started)
+            {
+                ShowFeedback(PrototypeFeedbackKind.NextLevel, $"Level {_progression.SelectedLevel} started. Build before the wave.");
+            }
+
+            return started;
         }
 
         public bool RetryLevel()
         {
             if (!CanRetryLevel)
             {
-                hudView?.SetResult("Retry is available after defeat.");
+                ShowFeedback(PrototypeFeedbackKind.Blocked, "Retry is available after defeat.");
                 ProgressionChanged?.Invoke();
                 return false;
             }
 
             StartSelectedLevel();
+            ShowFeedback(PrototypeFeedbackKind.Retry, "Retry started. Rebuild stronger before the wave.");
             return true;
         }
 
@@ -384,7 +448,9 @@ namespace MergeShelter.Core
 
             _nextTile = _tileGenerator.GenerateNextTile();
             RefreshHud();
-            hudView?.SetResult("Place tiles, merge, then start the wave.");
+            hudView?.SetResult(IsTutorialComplete
+                ? "Place tiles, merge, then start the wave."
+                : GetTutorialResultHint());
             BoardChanged?.Invoke();
             ProgressionChanged?.Invoke();
         }
@@ -392,7 +458,10 @@ namespace MergeShelter.Core
         public bool TryPlaceNextTile(int x, int y)
         {
             if (_levelEnded)
+            {
+                ShowFeedback(PrototypeFeedbackKind.Blocked, "Board is locked after the wave. Use the result action.");
                 return false;
+            }
 
             var position = new BoardPosition(x, y);
             var placed = _board.TryPlace(position, _nextTile);
@@ -403,7 +472,7 @@ namespace MergeShelter.Core
                     ["level_id"] = _currentLevel.LevelId,
                     ["reason"] = "invalid_placement"
                 });
-                hudView?.SetResult("Invalid cell. Choose an empty board space.");
+                ShowFeedback(PrototypeFeedbackKind.InvalidPlacement, "Invalid cell. Choose an empty board space.");
                 return false;
             }
 
@@ -417,6 +486,7 @@ namespace MergeShelter.Core
             });
 
             string resultMessage;
+            var feedbackKind = PrototypeFeedbackKind.TilePlaced;
             if (_mergeResolver.TryResolveMerge(_board, position, out var mergedTile))
             {
                 _analytics.Track("merge_success", new Dictionary<string, object>
@@ -427,16 +497,19 @@ namespace MergeShelter.Core
                     ["merge_size"] = 3
                 });
                 resultMessage = $"Merged {mergedTile.Type} into tier {mergedTile.Tier}!";
+                feedbackKind = PrototypeFeedbackKind.MergeSuccess;
             }
             else
             {
                 resultMessage = "Tile placed. Build toward a merge of 3.";
             }
 
+            AdvanceTutorialAfterTilePlaced();
+
             var questProgress = RecordQuestProgress(DailyQuestModel.PlaceTilesQuestId, 1);
             _nextTile = _tileGenerator.GenerateNextTile();
             RefreshHud();
-            hudView?.SetResult($"{resultMessage}{FormatQuestCompletionSuffix(questProgress)}");
+            ShowFeedback(feedbackKind, $"{resultMessage}{FormatQuestCompletionSuffix(questProgress)}");
             BoardChanged?.Invoke();
             ProgressionChanged?.Invoke();
             return true;
@@ -450,9 +523,13 @@ namespace MergeShelter.Core
         public void StartWave()
         {
             if (_levelEnded)
+            {
+                ShowFeedback(PrototypeFeedbackKind.Blocked, "Wave is already resolved. Choose the next result action.");
                 return;
+            }
 
             _lastBoardEvaluation = _boardEvaluator.Evaluate(_board, _currentLevel.Enemies);
+            ShowFeedback(PrototypeFeedbackKind.WaveStart, "Wave started. Shelter is resolving the attack.");
 
             _analytics.Track("wave_start", new Dictionary<string, object>
             {
@@ -497,12 +574,13 @@ namespace MergeShelter.Core
             });
 
             var questProgress = RecordQuestProgress(DailyQuestModel.CompleteLevelQuestId, 1);
+            AdvanceTutorialAfterWaveCompleted();
             RefreshHud();
             var explanation = _lastBoardEvaluation?.ResultExplanation ?? "Victory!";
             var rewardMessage = rewardStored
                 ? $" Reward pending: +{_currentLevel.CoinReward} coins, +{_currentLevel.PartsReward} parts."
                 : " Reward is already pending.";
-            hudView?.SetResult($"{explanation}{rewardMessage}{FormatQuestCompletionSuffix(questProgress)}");
+            ShowFeedback(PrototypeFeedbackKind.WaveVictory, $"{explanation}{rewardMessage}{FormatQuestCompletionSuffix(questProgress)}");
             PreviewAvailableAdOffers();
             ProgressionChanged?.Invoke();
         }
@@ -522,8 +600,8 @@ namespace MergeShelter.Core
                 ["fail_reason"] = failReason
             });
             RefreshHud();
-            hudView?.SetResult(_lastBoardEvaluation?.ResultExplanation ??
-                               "Defeat. Your shelter was overwhelmed. Try stronger merges before the wave.");
+            ShowFeedback(PrototypeFeedbackKind.WaveDefeat, _lastBoardEvaluation?.ResultExplanation ??
+                                                  "Defeat. Your shelter was overwhelmed. Try stronger merges before the wave.");
             PreviewAvailableAdOffers();
             ProgressionChanged?.Invoke();
         }
@@ -531,7 +609,7 @@ namespace MergeShelter.Core
         private void RefreshHud()
         {
             hudView?.SetLevel(_currentLevel.LevelId, _currentLevel.DisplayName);
-            hudView?.SetTutorial(_currentLevel.TutorialMessage);
+            hudView?.SetTutorial(IsTutorialComplete ? _currentLevel.TutorialMessage : GetTutorialMessage());
             hudView?.SetShelterHp(_shelter.CurrentHealth, _shelter.MaxHealth);
             hudView?.SetNextTile(_nextTile);
             hudView?.SetProgression(
@@ -559,12 +637,34 @@ namespace MergeShelter.Core
                 : new LocalJsonSaveService(SaveDirectoryOverrideForTests);
         }
 
-        private SessionProgressionState LoadProgression()
+        private GameSaveData LoadSaveData()
         {
             if (_saveService != null && _saveService.TryLoad(out var saveData))
-                return SessionProgressionState.FromSaveData(saveData);
+                return saveData;
 
-            return new SessionProgressionState();
+            return null;
+        }
+
+        private void LoadTutorialState(GameSaveData saveData)
+        {
+            if (saveData == null)
+            {
+                ResetTutorialState();
+                return;
+            }
+
+            if (!saveData.TutorialStateSaved)
+            {
+                _tutorialStep = saveData.HighestUnlockedLevel > SessionProgressionState.FirstLevel ||
+                                saveData.SelectedLevel > SessionProgressionState.FirstLevel
+                    ? PrototypeTutorialStep.Complete
+                    : PrototypeTutorialStep.PlaceFirstTile;
+                _tutorialTilesPlaced = 0;
+                return;
+            }
+
+            _tutorialStep = ClampTutorialStep(saveData.TutorialStep);
+            _tutorialTilesPlaced = Mathf.Max(0, saveData.TutorialTilesPlaced);
         }
 
         private void SaveProgression()
@@ -574,12 +674,163 @@ namespace MergeShelter.Core
 
             try
             {
-                _saveService.Save(_progression.ToSaveData());
+                var saveData = _progression.ToSaveData();
+                saveData.TutorialStateSaved = true;
+                saveData.TutorialStep = (int)_tutorialStep;
+                saveData.TutorialTilesPlaced = _tutorialTilesPlaced;
+                _saveService.Save(saveData);
             }
             catch (Exception exception)
             {
                 Debug.LogWarning($"Save failed: {exception.Message}");
             }
+        }
+
+        public bool HasShownFeedback(PrototypeFeedbackKind kind)
+        {
+            return _feedbackHistory.Contains(kind);
+        }
+
+        private void ShowFeedback(PrototypeFeedbackKind kind, string message)
+        {
+            LastFeedbackKind = kind;
+            LastFeedbackMessage = message ?? string.Empty;
+
+            if (kind != PrototypeFeedbackKind.None)
+            {
+                _feedbackHistory.Add(kind);
+                if (_feedbackHistory.Count > 32)
+                    _feedbackHistory.RemoveAt(0);
+            }
+
+            hudView?.SetFeedback(kind, LastFeedbackMessage);
+        }
+
+        private void ResetTutorialState()
+        {
+            _tutorialStep = PrototypeTutorialStep.PlaceFirstTile;
+            _tutorialTilesPlaced = 0;
+        }
+
+        private static PrototypeTutorialStep ClampTutorialStep(int step)
+        {
+            if (step < (int)PrototypeTutorialStep.PlaceFirstTile)
+                return PrototypeTutorialStep.PlaceFirstTile;
+
+            if (step > (int)PrototypeTutorialStep.Complete)
+                return PrototypeTutorialStep.Complete;
+
+            return (PrototypeTutorialStep)step;
+        }
+
+        private bool SetTutorialStep(PrototypeTutorialStep step, bool saveAfterChange = true)
+        {
+            if (_tutorialStep == step)
+                return false;
+
+            _tutorialStep = step;
+            if (saveAfterChange)
+                SaveProgression();
+
+            return true;
+        }
+
+        private bool AdvanceTutorialAfterTilePlaced()
+        {
+            if (IsTutorialComplete)
+                return false;
+
+            _tutorialTilesPlaced++;
+
+            if (_tutorialStep == PrototypeTutorialStep.PlaceFirstTile)
+                return SetTutorialStep(PrototypeTutorialStep.PlaceMoreTiles, saveAfterChange: false);
+
+            if (_tutorialStep == PrototypeTutorialStep.PlaceMoreTiles && _tutorialTilesPlaced >= 2)
+                return SetTutorialStep(PrototypeTutorialStep.MergeIntent, saveAfterChange: false);
+
+            if (_tutorialStep == PrototypeTutorialStep.MergeIntent && _tutorialTilesPlaced >= 3)
+                return SetTutorialStep(PrototypeTutorialStep.StartWave, saveAfterChange: false);
+
+            return false;
+        }
+
+        private bool AdvanceTutorialAfterWaveCompleted()
+        {
+            if (_tutorialStep == PrototypeTutorialStep.PlaceFirstTile ||
+                _tutorialStep == PrototypeTutorialStep.PlaceMoreTiles ||
+                _tutorialStep == PrototypeTutorialStep.MergeIntent ||
+                _tutorialStep == PrototypeTutorialStep.StartWave)
+            {
+                return SetTutorialStep(PrototypeTutorialStep.ClaimReward, saveAfterChange: false);
+            }
+
+            return false;
+        }
+
+        private bool AdvanceTutorialAfterRewardClaim(int levelId)
+        {
+            if (levelId == SessionProgressionState.FirstLevel &&
+                _tutorialStep == PrototypeTutorialStep.ClaimReward)
+            {
+                return SetTutorialStep(PrototypeTutorialStep.Continue, saveAfterChange: false);
+            }
+
+            return false;
+        }
+
+        private bool AdvanceTutorialAfterOptionalContinueAction()
+        {
+            if (_tutorialStep != PrototypeTutorialStep.Continue)
+                return false;
+
+            return SetTutorialStep(PrototypeTutorialStep.Complete, saveAfterChange: false);
+        }
+
+        private string GetTutorialMessage()
+        {
+            switch (_tutorialStep)
+            {
+                case PrototypeTutorialStep.PlaceFirstTile:
+                    return "Tutorial: tap an empty board cell to place your first tile.";
+                case PrototypeTutorialStep.PlaceMoreTiles:
+                    return "Tutorial: place two more tiles. Matching 3 creates a stronger tile.";
+                case PrototypeTutorialStep.MergeIntent:
+                    return "Tutorial: one more nearby tile can make a merge. Build before the wave.";
+                case PrototypeTutorialStep.StartWave:
+                    return "Tutorial: good. Tap Start Wave to test your shelter.";
+                case PrototypeTutorialStep.ClaimReward:
+                    return "Tutorial: victory creates a reward. Tap Claim Reward.";
+                case PrototypeTutorialStep.Continue:
+                    return "Tutorial: tap Next Level. Daily Reward can help upgrades.";
+                default:
+                    return _currentLevel != null ? _currentLevel.TutorialMessage : string.Empty;
+            }
+        }
+
+        private string GetTutorialResultHint()
+        {
+            switch (_tutorialStep)
+            {
+                case PrototypeTutorialStep.PlaceFirstTile:
+                    return "Tap a board cell to place a tile.";
+                case PrototypeTutorialStep.PlaceMoreTiles:
+                    return "Place more tiles to set up your first merge.";
+                case PrototypeTutorialStep.MergeIntent:
+                    return "Matching 3 tiles merge into a stronger tile.";
+                case PrototypeTutorialStep.StartWave:
+                    return "Start Wave is the next step.";
+                case PrototypeTutorialStep.ClaimReward:
+                    return "Claim the pending reward.";
+                case PrototypeTutorialStep.Continue:
+                    return "Continue to Level 2 or use a reward action.";
+                default:
+                    return "Place tiles, merge, then start the wave.";
+            }
+        }
+
+        private static string FormatTutorialSuffix(bool advanced)
+        {
+            return advanced ? " Tutorial updated." : string.Empty;
         }
 
         private DailyQuestProgressResult RecordQuestProgress(string questId, int amount)

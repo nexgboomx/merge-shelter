@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Text;
 using MergeShelter.Board;
+using MergeShelter.Core;
 using MergeShelter.Meta;
 using UnityEngine;
 using UnityEngine.UI;
@@ -10,31 +11,60 @@ namespace MergeShelter.UI
     public sealed class PrototypeHudView : MonoBehaviour
     {
         public const string OpaqueBackgroundName = "PrototypeOpaqueBackground";
+        public const string ShelterSectionLabelName = "ShelterSectionLabel";
+        public const string BoardSectionLabelName = "BoardSectionLabel";
+        public const string ActionsSectionLabelName = "ActionsSectionLabel";
+        public const string RewardsSectionLabelName = "RewardsSectionLabel";
+        public const string QuestsSectionLabelName = "QuestsSectionLabel";
+        public const string ShelterUpgradeTextName = "ShelterUpgradeText";
+        public const string RewardTextName = "RewardText";
+        public const string QuestTextName = "QuestText";
 
         private const float HorizontalPadding = 24f;
         private const float TopPadding = 16f;
-        private const float LevelHeight = 28f;
-        private const float TutorialTop = 48f;
-        private const float TutorialHeight = 42f;
-        private const float StatusTop = 98f;
+        private const float LevelHeight = 30f;
+        private const float TutorialTop = 50f;
+        private const float TutorialHeight = 36f;
+        private const float ShelterLabelTop = 94f;
+        private const float SectionLabelHeight = 14f;
+        private const float StatusTop = 112f;
         private const float StatusHeight = 24f;
-        private const float WalletTop = 130f;
-        private const float WalletHeight = 108f;
-        private const float ResultBottom = 236f;
-        private const float ResultHeight = 92f;
+        private const float RewardsLabelTop = 144f;
+        private const float WalletTop = 162f;
+        private const float WalletHeight = 22f;
+        private const float QuestsLabelTop = 216f;
+        private const float QuestTop = 234f;
+        private const float QuestHeight = 40f;
+        private const float BoardLabelTop = 286f;
+        private const float ResultBottom = 250f;
+        private const float ResultHeight = 72f;
+        private const float ActionsLabelBottom = 208f;
+        private const float ResultPulseScale = 1.04f;
+        private const float ResultPulseSeconds = 0.12f;
 
         [SerializeField] private Text levelText;
         [SerializeField] private Text tutorialText;
+        [SerializeField] private Text shelterLabelText;
         [SerializeField] private Text shelterHpText;
+        [SerializeField] private Text shelterUpgradeText;
+        [SerializeField] private Text boardLabelText;
         [SerializeField] private Text nextTileText;
+        [SerializeField] private Text actionsLabelText;
+        [SerializeField] private Text rewardsLabelText;
+        [SerializeField] private Text rewardText;
+        [SerializeField] private Text questsLabelText;
+        [SerializeField] private Text questText;
         [SerializeField] private Text resultText;
         [SerializeField] private Text walletText;
 
         private bool _isApplyingLayout;
+        public PrototypeFeedbackKind CurrentFeedbackKind { get; private set; } = PrototypeFeedbackKind.None;
+        public string CurrentFeedbackMessage { get; private set; } = string.Empty;
 
         private void Awake()
         {
             EnsureOpaqueCanvasBackground();
+            EnsureSectionLabelsAndText();
             ApplyPhoneSafeLayout();
         }
 
@@ -52,12 +82,21 @@ namespace MergeShelter.UI
             _isApplyingLayout = true;
             try
             {
+                EnsureSectionLabelsAndText();
                 ConfigureTopText(levelText, TopPadding, LevelHeight, 20, TextAnchor.UpperLeft);
                 ConfigureTopText(tutorialText, TutorialTop, TutorialHeight, 14, TextAnchor.UpperLeft);
+                ConfigureTopText(shelterLabelText, ShelterLabelTop, SectionLabelHeight, 11, TextAnchor.UpperLeft);
                 ConfigureTopText(shelterHpText, StatusTop, StatusHeight, 14, TextAnchor.MiddleLeft, 0f, 0.5f, HorizontalPadding, 8f);
-                ConfigureTopText(nextTileText, StatusTop, StatusHeight, 14, TextAnchor.MiddleRight, 0.5f, 1f, 8f, HorizontalPadding);
-                ConfigureTopText(walletText, WalletTop, WalletHeight, 12, TextAnchor.UpperLeft);
+                ConfigureTopText(shelterUpgradeText, StatusTop, StatusHeight, 12, TextAnchor.MiddleRight, 0.5f, 1f, 8f, HorizontalPadding);
+                ConfigureTopText(rewardsLabelText, RewardsLabelTop, SectionLabelHeight, 11, TextAnchor.UpperLeft);
+                ConfigureTopText(walletText, WalletTop, WalletHeight, 12, TextAnchor.MiddleLeft, 0f, 0.5f, HorizontalPadding, 8f);
+                ConfigureTopText(rewardText, WalletTop, WalletHeight, 12, TextAnchor.MiddleRight, 0.5f, 1f, 8f, HorizontalPadding);
+                ConfigureTopText(questsLabelText, QuestsLabelTop, SectionLabelHeight, 11, TextAnchor.UpperLeft);
+                ConfigureTopText(questText, QuestTop, QuestHeight, 12, TextAnchor.UpperLeft);
+                ConfigureTopText(boardLabelText, BoardLabelTop, SectionLabelHeight, 11, TextAnchor.UpperLeft, 0f, 0.5f, HorizontalPadding, 8f);
+                ConfigureTopText(nextTileText, BoardLabelTop, SectionLabelHeight, 12, TextAnchor.UpperRight, 0.5f, 1f, 8f, HorizontalPadding);
                 ConfigureBottomText(resultText, ResultBottom, ResultHeight, 14, TextAnchor.UpperLeft);
+                ConfigureBottomText(actionsLabelText, ActionsLabelBottom, SectionLabelHeight, 11, TextAnchor.UpperLeft);
             }
             finally
             {
@@ -80,7 +119,7 @@ namespace MergeShelter.UI
         public void SetShelterHp(int current, int max)
         {
             if (shelterHpText != null)
-                shelterHpText.text = $"Shelter HP: {current}/{max}";
+                shelterHpText.text = $"HP: {current}/{max}";
         }
 
         public void SetNextTile(TileData tile)
@@ -91,15 +130,36 @@ namespace MergeShelter.UI
 
         public void SetResult(string message)
         {
+            SetResultInternal(PrototypeFeedbackKind.None, message);
+        }
+
+        public void SetFeedback(PrototypeFeedbackKind kind, string message)
+        {
+            SetResultInternal(kind, message);
+        }
+
+        private void SetResultInternal(PrototypeFeedbackKind kind, string message)
+        {
             if (resultText != null)
             {
                 ConfigureBottomText(resultText, ResultBottom, ResultHeight, 14, TextAnchor.UpperLeft);
-                resultText.text = message;
+                CurrentFeedbackKind = kind;
+                CurrentFeedbackMessage = message ?? string.Empty;
+                resultText.text = FormatFeedbackMessage(kind, CurrentFeedbackMessage);
+                resultText.color = GetFeedbackColor(kind);
+                resultText.transform.localScale = kind == PrototypeFeedbackKind.None
+                    ? Vector3.one
+                    : Vector3.one * ResultPulseScale;
+
+                CancelInvoke(nameof(ClearResultPulse));
+                if (kind != PrototypeFeedbackKind.None)
+                    Invoke(nameof(ClearResultPulse), ResultPulseSeconds);
             }
         }
 
         public void SetWallet(int coins, int parts)
         {
+            EnsureSectionLabelsAndText();
             if (walletText != null)
             {
                 ConfigureTopText(walletText, WalletTop, WalletHeight, 12, TextAnchor.UpperLeft);
@@ -119,29 +179,42 @@ namespace MergeShelter.UI
             int dailyRewardParts = 0,
             IReadOnlyList<DailyQuestState> dailyQuests = null)
         {
+            EnsureSectionLabelsAndText();
             if (walletText == null)
                 return;
 
-            ConfigureTopText(walletText, WalletTop, WalletHeight, 12, TextAnchor.UpperLeft);
+            ConfigureTopText(walletText, WalletTop, WalletHeight, 12, TextAnchor.MiddleLeft, 0f, 0.5f, HorizontalPadding, 8f);
+            ConfigureTopText(shelterUpgradeText, StatusTop, StatusHeight, 12, TextAnchor.MiddleRight, 0.5f, 1f, 8f, HorizontalPadding);
+            ConfigureTopText(rewardText, WalletTop, WalletHeight, 12, TextAnchor.MiddleRight, 0.5f, 1f, 8f, HorizontalPadding);
+            ConfigureTopText(questText, QuestTop, QuestHeight, 12, TextAnchor.UpperLeft);
             var affordText = canAffordUpgrade ? "can afford" : $"need {upgradeCost - coins} more";
             var dailyRewardStatus = hasClaimedDailyReward ? "claimed" : canClaimDailyReward ? "available" : "unavailable";
-            walletText.text =
-                $"Coins: {coins} | Parts: {parts} | Shelter Lv {shelterUpgradeLevel}\nUpgrade: {upgradeCost} coins ({affordText}) | Daily Reward: +{dailyRewardCoins} coins, +{dailyRewardParts} parts ({dailyRewardStatus})\n{FormatQuestStatus(dailyQuests)}";
+
+            walletText.text = $"Coins: {coins} | Parts: {parts}";
+
+            if (shelterUpgradeText != null)
+                shelterUpgradeText.text = $"Lv {shelterUpgradeLevel} | Upgrade {upgradeCost} ({affordText})";
+
+            if (rewardText != null)
+                rewardText.text = $"Daily: {dailyRewardStatus} (+{dailyRewardCoins}c, +{dailyRewardParts}p)";
+
+            if (questText != null)
+                questText.text = FormatQuestStatus(dailyQuests);
         }
 
         private static string FormatQuestStatus(IReadOnlyList<DailyQuestState> dailyQuests)
         {
             if (dailyQuests == null || dailyQuests.Count == 0)
-                return "Daily Quests: none";
+                return "No daily quests.";
 
-            var builder = new StringBuilder("Daily Quests: ");
+            var builder = new StringBuilder();
             for (var i = 0; i < dailyQuests.Count; i++)
             {
                 var quest = dailyQuests[i];
                 if (i > 0)
                     builder.Append(" | ");
 
-                builder.Append(quest.Title);
+                builder.Append(GetShortQuestTitle(quest));
                 builder.Append(' ');
                 builder.Append(quest.Progress);
                 builder.Append('/');
@@ -154,6 +227,21 @@ namespace MergeShelter.UI
             }
 
             return builder.ToString();
+        }
+
+        private static string GetShortQuestTitle(DailyQuestState quest)
+        {
+            switch (quest.QuestId)
+            {
+                case DailyQuestModel.PlaceTilesQuestId:
+                    return "Tiles";
+                case DailyQuestModel.CompleteLevelQuestId:
+                    return "Level";
+                case DailyQuestModel.ClaimRewardQuestId:
+                    return "Reward";
+                default:
+                    return string.IsNullOrWhiteSpace(quest.Title) ? "Quest" : quest.Title;
+            }
         }
 
         private static void ConfigureTopText(
@@ -208,6 +296,41 @@ namespace MergeShelter.UI
             text.raycastTarget = false;
         }
 
+        private void EnsureSectionLabelsAndText()
+        {
+            var canvas = GetComponentInParent<Canvas>();
+            if (canvas == null)
+                return;
+
+            shelterLabelText = ResolveOrCreateText(canvas.transform, shelterLabelText, ShelterSectionLabelName, "SHELTER");
+            boardLabelText = ResolveOrCreateText(canvas.transform, boardLabelText, BoardSectionLabelName, "BOARD");
+            actionsLabelText = ResolveOrCreateText(canvas.transform, actionsLabelText, ActionsSectionLabelName, "ACTIONS");
+            rewardsLabelText = ResolveOrCreateText(canvas.transform, rewardsLabelText, RewardsSectionLabelName, "REWARDS");
+            questsLabelText = ResolveOrCreateText(canvas.transform, questsLabelText, QuestsSectionLabelName, "QUESTS");
+            shelterUpgradeText = ResolveOrCreateText(canvas.transform, shelterUpgradeText, ShelterUpgradeTextName, "Lv 1 | Upgrade 100");
+            rewardText = ResolveOrCreateText(canvas.transform, rewardText, RewardTextName, "Daily: available");
+            questText = ResolveOrCreateText(canvas.transform, questText, QuestTextName, "Tiles 0/10 | Level 0/1 | Reward 0/1");
+        }
+
+        private static Text ResolveOrCreateText(Transform parent, Text current, string name, string fallbackText)
+        {
+            if (current != null)
+                return current;
+
+            var existing = parent.Find(name);
+            if (existing != null && existing.TryGetComponent<Text>(out var existingText))
+                return existingText;
+
+            var textObject = new GameObject(name, typeof(RectTransform), typeof(Text));
+            textObject.transform.SetParent(parent, false);
+            var text = textObject.GetComponent<Text>();
+            text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            text.color = Color.white;
+            text.text = fallbackText;
+            ConfigureText(text, 12, TextAnchor.UpperLeft);
+            return text;
+        }
+
         private void EnsureOpaqueCanvasBackground()
         {
             var canvas = GetComponentInParent<Canvas>();
@@ -235,6 +358,90 @@ namespace MergeShelter.UI
             var image = backgroundObject.GetComponent<Image>();
             image.color = new Color(0.12f, 0.12f, 0.12f, 1f);
             image.raycastTarget = false;
+        }
+
+        private void ClearResultPulse()
+        {
+            if (resultText != null)
+                resultText.transform.localScale = Vector3.one;
+        }
+
+        private static string FormatFeedbackMessage(PrototypeFeedbackKind kind, string message)
+        {
+            var prefix = GetFeedbackPrefix(kind);
+            if (string.IsNullOrEmpty(prefix))
+                return message;
+
+            return $"{prefix} {message}";
+        }
+
+        private static string GetFeedbackPrefix(PrototypeFeedbackKind kind)
+        {
+            switch (kind)
+            {
+                case PrototypeFeedbackKind.TilePlaced:
+                    return "TILE:";
+                case PrototypeFeedbackKind.MergeSuccess:
+                    return "MERGE:";
+                case PrototypeFeedbackKind.InvalidPlacement:
+                case PrototypeFeedbackKind.Blocked:
+                    return "BLOCKED:";
+                case PrototypeFeedbackKind.WaveStart:
+                    return "WAVE:";
+                case PrototypeFeedbackKind.WaveVictory:
+                    return "WIN:";
+                case PrototypeFeedbackKind.WaveDefeat:
+                    return "DEFEAT:";
+                case PrototypeFeedbackKind.RewardClaim:
+                    return "REWARD:";
+                case PrototypeFeedbackKind.DailyRewardClaim:
+                    return "DAILY:";
+                case PrototypeFeedbackKind.QuestClaim:
+                    return "QUEST:";
+                case PrototypeFeedbackKind.ShelterUpgrade:
+                    return "UPGRADE:";
+                case PrototypeFeedbackKind.RewardDouble:
+                    return "DOUBLE:";
+                case PrototypeFeedbackKind.Revive:
+                    return "REVIVE:";
+                case PrototypeFeedbackKind.ResetSave:
+                    return "RESET:";
+                case PrototypeFeedbackKind.NextLevel:
+                    return "NEXT:";
+                case PrototypeFeedbackKind.Retry:
+                    return "RETRY:";
+                default:
+                    return string.Empty;
+            }
+        }
+
+        private static Color GetFeedbackColor(PrototypeFeedbackKind kind)
+        {
+            switch (kind)
+            {
+                case PrototypeFeedbackKind.TilePlaced:
+                case PrototypeFeedbackKind.WaveStart:
+                case PrototypeFeedbackKind.NextLevel:
+                case PrototypeFeedbackKind.Retry:
+                    return new Color(0.9f, 0.94f, 1f);
+                case PrototypeFeedbackKind.MergeSuccess:
+                case PrototypeFeedbackKind.WaveVictory:
+                case PrototypeFeedbackKind.RewardClaim:
+                case PrototypeFeedbackKind.DailyRewardClaim:
+                case PrototypeFeedbackKind.QuestClaim:
+                case PrototypeFeedbackKind.ShelterUpgrade:
+                case PrototypeFeedbackKind.RewardDouble:
+                case PrototypeFeedbackKind.Revive:
+                    return new Color(0.82f, 1f, 0.82f);
+                case PrototypeFeedbackKind.InvalidPlacement:
+                case PrototypeFeedbackKind.WaveDefeat:
+                case PrototypeFeedbackKind.Blocked:
+                    return new Color(1f, 0.84f, 0.72f);
+                case PrototypeFeedbackKind.ResetSave:
+                    return new Color(0.9f, 0.9f, 0.9f);
+                default:
+                    return Color.white;
+            }
         }
     }
 }

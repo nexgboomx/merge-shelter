@@ -31,13 +31,24 @@ namespace MergeShelter.EditorTools
             hud.transform.SetParent(canvas.transform, false);
             var hudView = hud.AddComponent<PrototypeHudView>();
 
-            var levelText = CreateHudText(canvas.transform, "LevelText", new Vector2(24f, -16f), new Vector2(672f, 28f), 20);
-            var tutorialText = CreateHudText(canvas.transform, "TutorialText", new Vector2(24f, -48f), new Vector2(672f, 42f), 14);
-            var shelterHpText = CreateHudText(canvas.transform, "ShelterHpText", new Vector2(24f, -98f), new Vector2(328f, 24f), 14);
-            var nextTileText = CreateHudText(canvas.transform, "NextTileText", new Vector2(368f, -98f), new Vector2(328f, 24f), 14);
+            var levelText = CreateHudText(canvas.transform, "LevelText", new Vector2(24f, -16f), new Vector2(672f, 30f), 20);
+            var tutorialText = CreateHudText(canvas.transform, "TutorialText", new Vector2(24f, -50f), new Vector2(672f, 36f), 14);
+            var shelterLabelText = CreateHudText(canvas.transform, PrototypeHudView.ShelterSectionLabelName, new Vector2(24f, -94f), new Vector2(672f, 14f), 11, "SHELTER");
+            var shelterHpText = CreateHudText(canvas.transform, "ShelterHpText", new Vector2(24f, -112f), new Vector2(328f, 24f), 14);
+            var shelterUpgradeText = CreateHudText(canvas.transform, PrototypeHudView.ShelterUpgradeTextName, new Vector2(368f, -112f), new Vector2(328f, 24f), 12);
+            shelterUpgradeText.alignment = TextAnchor.MiddleRight;
+            var rewardsLabelText = CreateHudText(canvas.transform, PrototypeHudView.RewardsSectionLabelName, new Vector2(24f, -144f), new Vector2(672f, 14f), 11, "REWARDS");
+            var walletText = CreateHudText(canvas.transform, "WalletText", new Vector2(24f, -162f), new Vector2(328f, 22f), 12);
+            var rewardText = CreateHudText(canvas.transform, PrototypeHudView.RewardTextName, new Vector2(368f, -162f), new Vector2(328f, 22f), 12);
+            rewardText.alignment = TextAnchor.MiddleRight;
+            var questsLabelText = CreateHudText(canvas.transform, PrototypeHudView.QuestsSectionLabelName, new Vector2(24f, -216f), new Vector2(672f, 14f), 11, "QUESTS");
+            var questText = CreateHudText(canvas.transform, PrototypeHudView.QuestTextName, new Vector2(24f, -234f), new Vector2(672f, 40f), 12);
+            var boardLabelText = CreateHudText(canvas.transform, PrototypeHudView.BoardSectionLabelName, new Vector2(24f, -286f), new Vector2(328f, 14f), 11, "BOARD");
+            var nextTileText = CreateHudText(canvas.transform, "NextTileText", new Vector2(368f, -286f), new Vector2(328f, 14f), 12);
             nextTileText.alignment = TextAnchor.MiddleRight;
-            var walletText = CreateHudText(canvas.transform, "WalletText", new Vector2(24f, -130f), new Vector2(672f, 108f), 12);
-            var resultText = CreateBottomHudText(canvas.transform, "ResultText", 236f, new Vector2(672f, 92f), 14);
+            var actionsLabelText = CreateBottomHudText(canvas.transform, PrototypeHudView.ActionsSectionLabelName, 208f, new Vector2(672f, 14f), 11);
+            actionsLabelText.text = "ACTIONS";
+            var resultText = CreateBottomHudText(canvas.transform, "ResultText", 250f, new Vector2(672f, 72f), 14);
 
             var boardRoot = CreateRectTransformObject("BoardRoot", canvas.transform);
             boardRoot.anchorMin = Vector2.zero;
@@ -56,7 +67,22 @@ namespace MergeShelter.EditorTools
 
             var startWaveButton = CreateButton(boardRoot, "StartWaveButton", "Start Wave", new Vector2(0f, 84f), new Vector2(200f, 44f));
 
-            WireHud(hudView, levelText, tutorialText, shelterHpText, nextTileText, resultText, walletText);
+            WireHud(
+                hudView,
+                levelText,
+                tutorialText,
+                shelterLabelText,
+                shelterHpText,
+                shelterUpgradeText,
+                boardLabelText,
+                nextTileText,
+                actionsLabelText,
+                rewardsLabelText,
+                rewardText,
+                questsLabelText,
+                questText,
+                resultText,
+                walletText);
             WireGameController(gameController, hudView);
             WireBoardView(boardView, gameController, boardGrid, startWaveButton);
 
@@ -126,7 +152,7 @@ namespace MergeShelter.EditorTools
             return gameObject.GetComponent<RectTransform>();
         }
 
-        private static Text CreateHudText(Transform parent, string name, Vector2 anchoredPosition, Vector2 size, int fontSize)
+        private static Text CreateHudText(Transform parent, string name, Vector2 anchoredPosition, Vector2 size, int fontSize, string initialText = null)
         {
             var rectTransform = CreateRectTransformObject(name, parent);
             rectTransform.anchorMin = new Vector2(0f, 1f);
@@ -147,7 +173,7 @@ namespace MergeShelter.EditorTools
             text.verticalOverflow = VerticalWrapMode.Truncate;
             text.lineSpacing = 1.05f;
             text.raycastTarget = false;
-            text.text = name;
+            text.text = initialText ?? name;
             return text;
         }
 
@@ -211,16 +237,32 @@ namespace MergeShelter.EditorTools
             PrototypeHudView hudView,
             Text levelText,
             Text tutorialText,
+            Text shelterLabelText,
             Text shelterHpText,
+            Text shelterUpgradeText,
+            Text boardLabelText,
             Text nextTileText,
+            Text actionsLabelText,
+            Text rewardsLabelText,
+            Text rewardText,
+            Text questsLabelText,
+            Text questText,
             Text resultText,
             Text walletText)
         {
             var serializedObject = new SerializedObject(hudView);
             serializedObject.FindProperty("levelText").objectReferenceValue = levelText;
             serializedObject.FindProperty("tutorialText").objectReferenceValue = tutorialText;
+            serializedObject.FindProperty("shelterLabelText").objectReferenceValue = shelterLabelText;
             serializedObject.FindProperty("shelterHpText").objectReferenceValue = shelterHpText;
+            serializedObject.FindProperty("shelterUpgradeText").objectReferenceValue = shelterUpgradeText;
+            serializedObject.FindProperty("boardLabelText").objectReferenceValue = boardLabelText;
             serializedObject.FindProperty("nextTileText").objectReferenceValue = nextTileText;
+            serializedObject.FindProperty("actionsLabelText").objectReferenceValue = actionsLabelText;
+            serializedObject.FindProperty("rewardsLabelText").objectReferenceValue = rewardsLabelText;
+            serializedObject.FindProperty("rewardText").objectReferenceValue = rewardText;
+            serializedObject.FindProperty("questsLabelText").objectReferenceValue = questsLabelText;
+            serializedObject.FindProperty("questText").objectReferenceValue = questText;
             serializedObject.FindProperty("resultText").objectReferenceValue = resultText;
             serializedObject.FindProperty("walletText").objectReferenceValue = walletText;
             serializedObject.ApplyModifiedPropertiesWithoutUndo();
