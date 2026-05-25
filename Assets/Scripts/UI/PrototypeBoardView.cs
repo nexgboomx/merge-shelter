@@ -17,9 +17,11 @@ namespace MergeShelter.UI
         private const float BoardVerticalOffset = 64f;
         private const float ButtonWidth = 200f;
         private const float ButtonHeight = 44f;
-        private const float ButtonColumnSpacing = 20f;
+        private const float PrimaryButtonWidth = 220f;
+        private const float PrimaryButtonHeight = 52f;
+        private const float ButtonColumnSpacing = 24f;
         private const float ButtonBottomRow = 32f;
-        private const float ButtonRowSpacing = 52f;
+        private const float ButtonRowSpacing = 56f;
 
         [SerializeField] private PrototypeGameController gameController;
         [SerializeField] private RectTransform boardRoot;
@@ -467,11 +469,11 @@ namespace MergeShelter.UI
                 PlaceActionButton(resetSaveButton, 1, 0);
                 PlaceActionButton(claimQuestButton, -1, 1);
                 PlaceActionButton(startWaveButton, 0, 1);
-                PlaceActionButton(nextLevelButton, 1, 1);
                 PlaceActionButton(doubleRewardButton, -1, 2);
+                PlaceActionButton(reviveButton, -1, 2);
                 PlaceActionButton(claimRewardButton, 0, 2);
-                PlaceActionButton(retryButton, 1, 2);
-                PlaceActionButton(reviveButton, 0, 3);
+                PlaceActionButton(nextLevelButton, 0, 2);
+                PlaceActionButton(retryButton, 0, 2);
             }
             finally
             {
@@ -506,19 +508,95 @@ namespace MergeShelter.UI
             rectTransform.anchoredPosition = Vector2.zero;
         }
 
-        private static void PlaceActionButton(Button button, int column, int row)
+        private void PlaceActionButton(Button button, int column, int row)
         {
             if (button == null)
                 return;
 
+            var isPrimary = IsPrimaryAction(button);
+            var width = isPrimary ? PrimaryButtonWidth : ButtonWidth;
+            var height = isPrimary ? PrimaryButtonHeight : ButtonHeight;
             var rectTransform = (RectTransform)button.transform;
             rectTransform.anchorMin = new Vector2(0.5f, 0f);
             rectTransform.anchorMax = new Vector2(0.5f, 0f);
             rectTransform.pivot = new Vector2(0.5f, 0.5f);
-            rectTransform.sizeDelta = new Vector2(ButtonWidth, ButtonHeight);
+            rectTransform.sizeDelta = new Vector2(width, height);
             rectTransform.anchoredPosition = new Vector2(
                 column * (ButtonWidth + ButtonColumnSpacing),
                 ButtonBottomRow + row * ButtonRowSpacing);
+
+            if (button.targetGraphic is Image image)
+                image.color = GetActionButtonColor(button.name, isPrimary);
+
+            var label = button.GetComponentInChildren<Text>(true);
+            if (label != null)
+            {
+                label.fontSize = isPrimary ? 22 : 20;
+                label.resizeTextMaxSize = label.fontSize;
+            }
+        }
+
+        private bool IsPrimaryAction(Button button)
+        {
+            if (gameController == null || button == null)
+                return false;
+
+            if (button == startWaveButton)
+                return !gameController.IsLevelEnded;
+
+            if (button == claimRewardButton)
+                return gameController.CanClaimReward;
+
+            if (button == nextLevelButton)
+                return gameController.CanStartNextLevel;
+
+            if (button == retryButton)
+                return gameController.CanRetryLevel;
+
+            if (button == reviveButton)
+                return gameController.CanRevive;
+
+            return false;
+        }
+
+        private static Color GetActionButtonColor(string buttonName, bool isPrimary)
+        {
+            Color color;
+            switch (buttonName)
+            {
+                case "StartWaveButton":
+                    color = new Color(0.13f, 0.48f, 0.34f);
+                    break;
+                case "ClaimRewardButton":
+                    color = new Color(0.2f, 0.45f, 0.72f);
+                    break;
+                case "NextLevelButton":
+                    color = new Color(0.2f, 0.48f, 0.3f);
+                    break;
+                case "RetryButton":
+                    color = new Color(0.52f, 0.28f, 0.18f);
+                    break;
+                case "ReviveButton":
+                    color = new Color(0.48f, 0.22f, 0.28f);
+                    break;
+                case "DailyRewardButton":
+                    color = new Color(0.3f, 0.33f, 0.65f);
+                    break;
+                case "UpgradeShelterButton":
+                    color = new Color(0.45f, 0.35f, 0.14f);
+                    break;
+                case "ClaimQuestButton":
+                    color = new Color(0.33f, 0.42f, 0.2f);
+                    break;
+                case "DoubleRewardButton":
+                    color = new Color(0.42f, 0.24f, 0.55f);
+                    break;
+                default:
+                    color = new Color(0.24f, 0.24f, 0.24f);
+                    break;
+            }
+
+            return isPrimary ? Color.Lerp(color, Color.white, 0.16f) : color;
         }
 
         private Font GetDefaultFont()

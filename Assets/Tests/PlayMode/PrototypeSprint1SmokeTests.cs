@@ -24,9 +24,17 @@ namespace MergeShelter.Tests.PlayMode
         {
             "LevelText",
             "TutorialText",
+            PrototypeHudView.ShelterSectionLabelName,
             "ShelterHpText",
+            PrototypeHudView.ShelterUpgradeTextName,
+            PrototypeHudView.BoardSectionLabelName,
             "NextTileText",
+            PrototypeHudView.ActionsSectionLabelName,
+            PrototypeHudView.RewardsSectionLabelName,
             "WalletText",
+            PrototypeHudView.RewardTextName,
+            PrototypeHudView.QuestsSectionLabelName,
+            PrototypeHudView.QuestTextName,
             "ResultText"
         };
 
@@ -107,6 +115,7 @@ namespace MergeShelter.Tests.PlayMode
 
             AssertRequiredPhoneUiExists();
             AssertVisibleActionButton("StartWaveButton");
+            AssertPrimaryActionButton("StartWaveButton");
             AssertVisibleActionButton("UpgradeShelterButton");
             AssertVisibleActionButton("ResetSaveButton");
             AssertVisibleActionButton("DailyRewardButton");
@@ -115,6 +124,7 @@ namespace MergeShelter.Tests.PlayMode
             FindButton("DailyRewardButton").onClick.Invoke();
             yield return null;
             AssertPhoneSafeLayout();
+            Assert.That(GetRewardText().text, Does.Contain("claimed"));
 
             for (var i = 0; i < 10; i++)
             {
@@ -135,10 +145,12 @@ namespace MergeShelter.Tests.PlayMode
             yield return null;
 
             AssertVisibleActionButton("ClaimRewardButton");
+            AssertPrimaryActionButton("ClaimRewardButton");
             AssertPhoneSafeLayout();
 
             FindButton("ClaimRewardButton").onClick.Invoke();
             yield return null;
+            AssertPrimaryActionButton("NextLevelButton");
             AssertPhoneSafeLayout();
 
             AssertVisibleActionButton("UpgradeShelterButton");
@@ -171,10 +183,13 @@ namespace MergeShelter.Tests.PlayMode
 
             AssertVisibleActionButton("RetryButton");
             AssertVisibleActionButton("ReviveButton");
+            AssertPrimaryActionButton("RetryButton");
+            AssertPrimaryActionButton("ReviveButton");
             AssertPhoneSafeLayout();
 
             FindButton("ReviveButton").onClick.Invoke();
             yield return null;
+            AssertPrimaryActionButton("StartWaveButton");
             AssertPhoneSafeLayout();
 
             FindButton("ResetSaveButton").onClick.Invoke();
@@ -240,7 +255,7 @@ namespace MergeShelter.Tests.PlayMode
             Assert.IsTrue(controller.HasClaimedDailyReward);
             Assert.IsFalse(dailyRewardButton.gameObject.activeSelf);
             Assert.That(GetResultText().text, Does.Contain("Daily reward claimed"));
-            Assert.That(GetWalletText().text, Does.Contain("claimed"));
+            Assert.That(GetRewardText().text, Does.Contain("claimed"));
 
             Assert.IsFalse(controller.ClaimDailyReward());
             Assert.AreEqual(rewardCoins, controller.Coins);
@@ -269,7 +284,7 @@ namespace MergeShelter.Tests.PlayMode
             Assert.IsFalse(placeQuest.Claimed);
             Assert.IsTrue(controller.CanClaimQuest);
             Assert.IsTrue(claimQuestButton.gameObject.activeSelf);
-            Assert.That(GetWalletText().text, Does.Contain("Place 10 Tiles 10/10 ready"));
+            Assert.That(GetQuestText().text, Does.Contain("Tiles 10/10 ready"));
 
             var startingCoins = controller.Coins;
             var startingParts = controller.Parts;
@@ -283,7 +298,7 @@ namespace MergeShelter.Tests.PlayMode
             Assert.IsFalse(controller.CanClaimQuest);
             Assert.IsFalse(claimQuestButton.gameObject.activeSelf);
             Assert.That(GetResultText().text, Does.Contain("Quest claimed"));
-            Assert.That(GetWalletText().text, Does.Contain("Place 10 Tiles 10/10 claimed"));
+            Assert.That(GetQuestText().text, Does.Contain("Tiles 10/10 claimed"));
         }
 
         [UnityTest]
@@ -638,7 +653,7 @@ namespace MergeShelter.Tests.PlayMode
             Assert.AreEqual(20, controller.Coins);
             Assert.Greater(controller.ShelterUpgradeCost, previousCost);
             Assert.That(GetResultText().text, Does.Contain("Shelter upgraded"));
-            Assert.That(GetWalletText().text, Does.Contain("Shelter Lv 2"));
+            Assert.That(GetShelterUpgradeText().text, Does.Contain("Lv 2"));
 
             Assert.IsTrue(controller.StartNextLevel());
             yield return null;
@@ -708,6 +723,15 @@ namespace MergeShelter.Tests.PlayMode
             Assert.IsTrue(button.interactable, $"{name} should be tappable.");
         }
 
+        private static void AssertPrimaryActionButton(string name)
+        {
+            AssertVisibleActionButton(name);
+            var button = FindButton(name);
+            var rectTransform = (RectTransform)button.transform;
+            Assert.GreaterOrEqual(rectTransform.sizeDelta.x, 218f, $"{name} should be visually emphasized as the primary next action.");
+            Assert.GreaterOrEqual(rectTransform.sizeDelta.y, 50f, $"{name} should be visually emphasized as the primary next action.");
+        }
+
         private static void AssertPhoneSafeLayout()
         {
             Canvas.ForceUpdateCanvases();
@@ -729,7 +753,8 @@ namespace MergeShelter.Tests.PlayMode
                 var text = GetHudText(textName);
                 var rect = GetCanvasRect(canvas, (RectTransform)text.transform);
                 Assert.Greater(rect.width, 100f, $"{textName} should have bounded width.");
-                Assert.Greater(rect.height, 20f, $"{textName} should have bounded height.");
+                var minimumHeight = IsCompactHudText(textName) ? 10f : 20f;
+                Assert.Greater(rect.height, minimumHeight, $"{textName} should have bounded height.");
                 Assert.AreEqual(HorizontalWrapMode.Wrap, text.horizontalOverflow, $"{textName} should wrap horizontally.");
                 Assert.AreEqual(VerticalWrapMode.Truncate, text.verticalOverflow, $"{textName} should clamp vertically.");
                 Assert.IsFalse(text.resizeTextForBestFit, $"{textName} should avoid Best Fit line collapse on Android.");
@@ -756,6 +781,16 @@ namespace MergeShelter.Tests.PlayMode
             }
 
             AssertActiveActionButtonsDoNotOverlap(canvas, hudRects["ResultText"]);
+        }
+
+        private static bool IsCompactHudText(string textName)
+        {
+            return textName == PrototypeHudView.ShelterSectionLabelName ||
+                   textName == PrototypeHudView.BoardSectionLabelName ||
+                   textName == PrototypeHudView.ActionsSectionLabelName ||
+                   textName == PrototypeHudView.RewardsSectionLabelName ||
+                   textName == PrototypeHudView.QuestsSectionLabelName ||
+                   textName == "NextTileText";
         }
 
         private static void AssertActiveActionButtonsDoNotOverlap(Canvas canvas, Rect resultRect)
@@ -828,11 +863,32 @@ namespace MergeShelter.Tests.PlayMode
             return walletText;
         }
 
+        private static Text GetRewardText()
+        {
+            var rewardText = GameObject.Find(PrototypeHudView.RewardTextName)?.GetComponent<Text>();
+            Assert.NotNull(rewardText);
+            return rewardText;
+        }
+
+        private static Text GetQuestText()
+        {
+            var questText = GameObject.Find(PrototypeHudView.QuestTextName)?.GetComponent<Text>();
+            Assert.NotNull(questText);
+            return questText;
+        }
+
         private static Text GetShelterHpText()
         {
             var shelterHpText = GameObject.Find("ShelterHpText")?.GetComponent<Text>();
             Assert.NotNull(shelterHpText);
             return shelterHpText;
+        }
+
+        private static Text GetShelterUpgradeText()
+        {
+            var shelterUpgradeText = GameObject.Find(PrototypeHudView.ShelterUpgradeTextName)?.GetComponent<Text>();
+            Assert.NotNull(shelterUpgradeText);
+            return shelterUpgradeText;
         }
 
         private static Button FindButton(string name)
