@@ -9,6 +9,8 @@ namespace MergeShelter.UI
 {
     public sealed class PrototypeHudView : MonoBehaviour
     {
+        public const string OpaqueBackgroundName = "PrototypeOpaqueBackground";
+
         private const float HorizontalPadding = 24f;
         private const float TopPadding = 16f;
         private const float LevelHeight = 28f;
@@ -32,6 +34,7 @@ namespace MergeShelter.UI
 
         private void Awake()
         {
+            EnsureOpaqueCanvasBackground();
             ApplyPhoneSafeLayout();
         }
 
@@ -203,6 +206,35 @@ namespace MergeShelter.UI
             text.alignment = alignment;
             text.lineSpacing = 1.05f;
             text.raycastTarget = false;
+        }
+
+        private void EnsureOpaqueCanvasBackground()
+        {
+            var canvas = GetComponentInParent<Canvas>();
+            if (canvas == null)
+                return;
+
+            var existing = canvas.transform.Find(OpaqueBackgroundName);
+            if (existing != null)
+            {
+                existing.SetAsFirstSibling();
+                return;
+            }
+
+            var backgroundObject = new GameObject(OpaqueBackgroundName, typeof(RectTransform), typeof(Image));
+            backgroundObject.transform.SetParent(canvas.transform, false);
+            backgroundObject.transform.SetAsFirstSibling();
+
+            var rectTransform = backgroundObject.GetComponent<RectTransform>();
+            rectTransform.anchorMin = Vector2.zero;
+            rectTransform.anchorMax = Vector2.one;
+            rectTransform.pivot = new Vector2(0.5f, 0.5f);
+            rectTransform.offsetMin = Vector2.zero;
+            rectTransform.offsetMax = Vector2.zero;
+
+            var image = backgroundObject.GetComponent<Image>();
+            image.color = new Color(0.12f, 0.12f, 0.12f, 1f);
+            image.raycastTarget = false;
         }
     }
 }

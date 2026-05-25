@@ -677,9 +677,27 @@ namespace MergeShelter.Tests.PlayMode
                 Assert.NotNull(GetHudText(textName));
 
             Assert.NotNull(GameObject.Find("BoardGrid")?.GetComponent<RectTransform>());
+            AssertOpaqueCanvasBackground();
 
             foreach (var buttonName in ActionButtonNames)
                 Assert.NotNull(FindButton(buttonName), $"{buttonName} should exist.");
+        }
+
+        private static void AssertOpaqueCanvasBackground()
+        {
+            var background = GameObject.Find(PrototypeHudView.OpaqueBackgroundName);
+            Assert.NotNull(background, "Canvas should have an opaque background to clear Android text redraws.");
+
+            var backgroundImage = background.GetComponent<Image>();
+            Assert.NotNull(backgroundImage);
+            Assert.IsFalse(backgroundImage.raycastTarget);
+            Assert.GreaterOrEqual(backgroundImage.color.a, 0.99f);
+
+            var rectTransform = background.GetComponent<RectTransform>();
+            Assert.NotNull(rectTransform);
+            Assert.AreEqual(Vector2.zero, rectTransform.anchorMin);
+            Assert.AreEqual(Vector2.one, rectTransform.anchorMax);
+            Assert.AreEqual(0, background.transform.GetSiblingIndex());
         }
 
         private static void AssertVisibleActionButton(string name)

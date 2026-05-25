@@ -25,6 +25,7 @@ namespace MergeShelter.EditorTools
 
             var canvas = CreateCanvas();
             CreateEventSystem();
+            CreateOpaqueBackground(canvas.transform);
 
             var hud = new GameObject("PrototypeHud", typeof(RectTransform));
             hud.transform.SetParent(canvas.transform, false);
@@ -95,6 +96,20 @@ namespace MergeShelter.EditorTools
             scaler.matchWidthOrHeight = 0f;
             canvasObject.AddComponent<GraphicRaycaster>();
             return canvas;
+        }
+
+        private static void CreateOpaqueBackground(Transform parent)
+        {
+            var rectTransform = CreateRectTransformObject(PrototypeHudView.OpaqueBackgroundName, parent);
+            rectTransform.anchorMin = Vector2.zero;
+            rectTransform.anchorMax = Vector2.one;
+            rectTransform.pivot = new Vector2(0.5f, 0.5f);
+            rectTransform.offsetMin = Vector2.zero;
+            rectTransform.offsetMax = Vector2.zero;
+
+            var image = rectTransform.gameObject.AddComponent<Image>();
+            image.color = new Color(0.12f, 0.12f, 0.12f, 1f);
+            image.raycastTarget = false;
         }
 
         private static void CreateEventSystem()
