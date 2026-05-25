@@ -493,6 +493,9 @@ namespace MergeShelter.Tests.PlayMode
             Assert.AreEqual(2, controller.ShelterUpgradeLevel);
             Assert.IsTrue(controller.HasClaimedDailyReward);
             Assert.IsFalse(controller.CanClaimDailyReward);
+            Assert.That(GetShelterUpgradeText().text, Does.Contain("Lv 2"));
+            Assert.That(GetRewardText().text, Does.Contain("claimed"));
+            Assert.That(GetQuestText().text, Does.Contain("Tiles 10/10 claimed"));
 
             var placeQuest = GetQuest(controller, DailyQuestModel.PlaceTilesQuestId);
             Assert.AreEqual(10, placeQuest.Progress);

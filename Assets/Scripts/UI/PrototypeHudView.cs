@@ -159,6 +159,7 @@ namespace MergeShelter.UI
 
         public void SetWallet(int coins, int parts)
         {
+            EnsureSectionLabelsAndText();
             if (walletText != null)
             {
                 ConfigureTopText(walletText, WalletTop, WalletHeight, 12, TextAnchor.UpperLeft);
@@ -178,6 +179,7 @@ namespace MergeShelter.UI
             int dailyRewardParts = 0,
             IReadOnlyList<DailyQuestState> dailyQuests = null)
         {
+            EnsureSectionLabelsAndText();
             if (walletText == null)
                 return;
 
