@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Text;
 using MergeShelter.Board;
+using MergeShelter.Core;
 using MergeShelter.Meta;
 using UnityEngine;
 using UnityEngine.UI;
@@ -38,6 +39,8 @@ namespace MergeShelter.UI
         private const float ResultBottom = 250f;
         private const float ResultHeight = 72f;
         private const float ActionsLabelBottom = 208f;
+        private const float ResultPulseScale = 1.04f;
+        private const float ResultPulseSeconds = 0.12f;
 
         [SerializeField] private Text levelText;
         [SerializeField] private Text tutorialText;
@@ -55,6 +58,8 @@ namespace MergeShelter.UI
         [SerializeField] private Text walletText;
 
         private bool _isApplyingLayout;
+        public PrototypeFeedbackKind CurrentFeedbackKind { get; private set; } = PrototypeFeedbackKind.None;
+        public string CurrentFeedbackMessage { get; private set; } = string.Empty;
 
         private void Awake()
         {
@@ -125,10 +130,30 @@ namespace MergeShelter.UI
 
         public void SetResult(string message)
         {
+            SetResultInternal(PrototypeFeedbackKind.None, message);
+        }
+
+        public void SetFeedback(PrototypeFeedbackKind kind, string message)
+        {
+            SetResultInternal(kind, message);
+        }
+
+        private void SetResultInternal(PrototypeFeedbackKind kind, string message)
+        {
             if (resultText != null)
             {
                 ConfigureBottomText(resultText, ResultBottom, ResultHeight, 14, TextAnchor.UpperLeft);
-                resultText.text = message;
+                CurrentFeedbackKind = kind;
+                CurrentFeedbackMessage = message ?? string.Empty;
+                resultText.text = FormatFeedbackMessage(kind, CurrentFeedbackMessage);
+                resultText.color = GetFeedbackColor(kind);
+                resultText.transform.localScale = kind == PrototypeFeedbackKind.None
+                    ? Vector3.one
+                    : Vector3.one * ResultPulseScale;
+
+                CancelInvoke(nameof(ClearResultPulse));
+                if (kind != PrototypeFeedbackKind.None)
+                    Invoke(nameof(ClearResultPulse), ResultPulseSeconds);
             }
         }
 
@@ -331,6 +356,90 @@ namespace MergeShelter.UI
             var image = backgroundObject.GetComponent<Image>();
             image.color = new Color(0.12f, 0.12f, 0.12f, 1f);
             image.raycastTarget = false;
+        }
+
+        private void ClearResultPulse()
+        {
+            if (resultText != null)
+                resultText.transform.localScale = Vector3.one;
+        }
+
+        private static string FormatFeedbackMessage(PrototypeFeedbackKind kind, string message)
+        {
+            var prefix = GetFeedbackPrefix(kind);
+            if (string.IsNullOrEmpty(prefix))
+                return message;
+
+            return $"{prefix} {message}";
+        }
+
+        private static string GetFeedbackPrefix(PrototypeFeedbackKind kind)
+        {
+            switch (kind)
+            {
+                case PrototypeFeedbackKind.TilePlaced:
+                    return "TILE:";
+                case PrototypeFeedbackKind.MergeSuccess:
+                    return "MERGE:";
+                case PrototypeFeedbackKind.InvalidPlacement:
+                case PrototypeFeedbackKind.Blocked:
+                    return "BLOCKED:";
+                case PrototypeFeedbackKind.WaveStart:
+                    return "WAVE:";
+                case PrototypeFeedbackKind.WaveVictory:
+                    return "WIN:";
+                case PrototypeFeedbackKind.WaveDefeat:
+                    return "DEFEAT:";
+                case PrototypeFeedbackKind.RewardClaim:
+                    return "REWARD:";
+                case PrototypeFeedbackKind.DailyRewardClaim:
+                    return "DAILY:";
+                case PrototypeFeedbackKind.QuestClaim:
+                    return "QUEST:";
+                case PrototypeFeedbackKind.ShelterUpgrade:
+                    return "UPGRADE:";
+                case PrototypeFeedbackKind.RewardDouble:
+                    return "DOUBLE:";
+                case PrototypeFeedbackKind.Revive:
+                    return "REVIVE:";
+                case PrototypeFeedbackKind.ResetSave:
+                    return "RESET:";
+                case PrototypeFeedbackKind.NextLevel:
+                    return "NEXT:";
+                case PrototypeFeedbackKind.Retry:
+                    return "RETRY:";
+                default:
+                    return string.Empty;
+            }
+        }
+
+        private static Color GetFeedbackColor(PrototypeFeedbackKind kind)
+        {
+            switch (kind)
+            {
+                case PrototypeFeedbackKind.TilePlaced:
+                case PrototypeFeedbackKind.WaveStart:
+                case PrototypeFeedbackKind.NextLevel:
+                case PrototypeFeedbackKind.Retry:
+                    return new Color(0.9f, 0.94f, 1f);
+                case PrototypeFeedbackKind.MergeSuccess:
+                case PrototypeFeedbackKind.WaveVictory:
+                case PrototypeFeedbackKind.RewardClaim:
+                case PrototypeFeedbackKind.DailyRewardClaim:
+                case PrototypeFeedbackKind.QuestClaim:
+                case PrototypeFeedbackKind.ShelterUpgrade:
+                case PrototypeFeedbackKind.RewardDouble:
+                case PrototypeFeedbackKind.Revive:
+                    return new Color(0.82f, 1f, 0.82f);
+                case PrototypeFeedbackKind.InvalidPlacement:
+                case PrototypeFeedbackKind.WaveDefeat:
+                case PrototypeFeedbackKind.Blocked:
+                    return new Color(1f, 0.84f, 0.72f);
+                case PrototypeFeedbackKind.ResetSave:
+                    return new Color(0.9f, 0.9f, 0.9f);
+                default:
+                    return Color.white;
+            }
         }
     }
 }

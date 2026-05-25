@@ -102,6 +102,51 @@ namespace MergeShelter.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator GameplayFeedback_ShowsDistinctBoardActionStates()
+        {
+            yield return LoadPrototypeScene();
+
+            var controller = Object.FindObjectOfType<PrototypeGameController>();
+            var boardView = Object.FindObjectOfType<PrototypeBoardView>();
+            var hudView = Object.FindObjectOfType<PrototypeHudView>();
+            Assert.NotNull(controller);
+            Assert.NotNull(boardView);
+            Assert.NotNull(hudView);
+
+            var firstCell = FindCellButton(0, 0);
+            var firstCellImage = GetCellImage(0, 0);
+            var emptyColor = firstCellImage.color;
+
+            firstCell.onClick.Invoke();
+            yield return null;
+
+            AssertFeedback(controller, PrototypeFeedbackKind.TilePlaced, "TILE:");
+            Assert.AreEqual(PrototypeFeedbackKind.TilePlaced, hudView.CurrentFeedbackKind);
+            Assert.AreEqual(PrototypeFeedbackKind.TilePlaced, boardView.LastCellFeedbackKind);
+            Assert.IsTrue(boardView.HasActiveCellFeedback);
+            Assert.AreNotEqual(emptyColor, firstCellImage.color);
+
+            firstCell.onClick.Invoke();
+            yield return null;
+
+            AssertFeedback(controller, PrototypeFeedbackKind.InvalidPlacement, "BLOCKED:");
+            Assert.AreEqual(PrototypeFeedbackKind.InvalidPlacement, boardView.LastCellFeedbackKind);
+
+            FindCellButton(1, 0).onClick.Invoke();
+            yield return null;
+            AssertFeedback(controller, PrototypeFeedbackKind.TilePlaced, "TILE:");
+
+            FindCellButton(2, 0).onClick.Invoke();
+            yield return null;
+
+            AssertFeedback(controller, PrototypeFeedbackKind.MergeSuccess, "MERGE:");
+            Assert.AreEqual(PrototypeFeedbackKind.MergeSuccess, boardView.LastCellFeedbackKind);
+            Assert.IsTrue(controller.HasShownFeedback(PrototypeFeedbackKind.TilePlaced));
+            Assert.IsTrue(controller.HasShownFeedback(PrototypeFeedbackKind.InvalidPlacement));
+            Assert.IsTrue(controller.HasShownFeedback(PrototypeFeedbackKind.MergeSuccess));
+        }
+
+        [UnityTest]
         public IEnumerator PhoneHudLayout_KeepsTextBoardAndActionsSeparatedAcrossProgressionStates()
         {
             Screen.SetResolution(720, 1280, false);
@@ -309,6 +354,8 @@ namespace MergeShelter.Tests.PlayMode
 
             var weakResult = GetResultText().text;
             Assert.That(weakResult, Does.Contain("Defeat"));
+            AssertFeedback(controller, PrototypeFeedbackKind.WaveDefeat, "DEFEAT:");
+            Assert.IsTrue(controller.HasShownFeedback(PrototypeFeedbackKind.WaveStart));
 
             controller.StartLevel(9);
             var board = GetBoard(controller);
@@ -323,6 +370,8 @@ namespace MergeShelter.Tests.PlayMode
 
             var strongResult = GetResultText().text;
             Assert.That(strongResult, Does.Contain("Victory"));
+            AssertFeedback(controller, PrototypeFeedbackKind.WaveVictory, "WIN:");
+            Assert.IsTrue(controller.HasShownFeedback(PrototypeFeedbackKind.WaveStart));
             Assert.AreNotEqual(weakResult, strongResult);
         }
 
@@ -351,6 +400,7 @@ namespace MergeShelter.Tests.PlayMode
             Assert.IsTrue(controller.HasClaimedDailyReward);
             Assert.IsFalse(dailyRewardButton.gameObject.activeSelf);
             Assert.That(GetResultText().text, Does.Contain("Daily reward claimed"));
+            AssertFeedback(controller, PrototypeFeedbackKind.DailyRewardClaim, "DAILY:");
             Assert.That(GetRewardText().text, Does.Contain("claimed"));
 
             Assert.IsFalse(controller.ClaimDailyReward());
@@ -394,6 +444,7 @@ namespace MergeShelter.Tests.PlayMode
             Assert.IsFalse(controller.CanClaimQuest);
             Assert.IsFalse(claimQuestButton.gameObject.activeSelf);
             Assert.That(GetResultText().text, Does.Contain("Quest claimed"));
+            AssertFeedback(controller, PrototypeFeedbackKind.QuestClaim, "QUEST:");
             Assert.That(GetQuestText().text, Does.Contain("Tiles 10/10 claimed"));
         }
 
@@ -478,6 +529,7 @@ namespace MergeShelter.Tests.PlayMode
             AssertNewPlayerState(controller);
             Assert.IsFalse(new LocalJsonSaveService(_tempSaveDirectory).HasSave());
             Assert.That(GetResultText().text, Does.Contain("Save reset"));
+            AssertFeedback(controller, PrototypeFeedbackKind.ResetSave, "RESET:");
 
             yield return LoadPrototypeScene();
 
@@ -518,6 +570,7 @@ namespace MergeShelter.Tests.PlayMode
             Assert.AreEqual(500, controller.PendingRewardCoins);
             Assert.AreEqual(10, controller.PendingRewardParts);
             Assert.That(GetResultText().text, Does.Contain("Reward doubled"));
+            AssertFeedback(controller, PrototypeFeedbackKind.RewardDouble, "DOUBLE:");
             Assert.IsFalse(controller.DoubleReward());
             Assert.AreEqual(500, controller.PendingRewardCoins);
             Assert.AreEqual(10, controller.PendingRewardParts);
@@ -570,6 +623,7 @@ namespace MergeShelter.Tests.PlayMode
             Assert.IsTrue(startWaveButton.gameObject.activeSelf);
             Assert.IsTrue(controller.GetTileAt(0, 0).IsEmpty);
             Assert.That(GetResultText().text, Does.Contain("Revive used"));
+            AssertFeedback(controller, PrototypeFeedbackKind.Revive, "REVIVE:");
             Assert.IsFalse(controller.Revive());
             Assert.AreEqual(10, controller.CurrentLevelId);
             Assert.AreEqual(SceneName, SceneManager.GetActiveScene().name);
@@ -666,9 +720,11 @@ namespace MergeShelter.Tests.PlayMode
             Assert.AreEqual(50, controller.Coins);
             Assert.AreEqual(0, controller.Parts);
             Assert.AreEqual(2, controller.HighestUnlockedLevel);
+            AssertFeedback(controller, PrototypeFeedbackKind.RewardClaim, "REWARD:");
             Assert.IsFalse(controller.ClaimReward());
             Assert.AreEqual(50, controller.Coins);
             Assert.IsTrue(nextLevelButton.gameObject.activeSelf);
+            AssertFeedback(controller, PrototypeFeedbackKind.Blocked, "BLOCKED:");
 
             nextLevelButton.onClick.Invoke();
             yield return null;
@@ -678,6 +734,7 @@ namespace MergeShelter.Tests.PlayMode
             Assert.IsFalse(controller.IsLevelEnded);
             Assert.IsFalse(nextLevelButton.gameObject.activeSelf);
             Assert.IsTrue(startWaveButton.gameObject.activeSelf);
+            AssertFeedback(controller, PrototypeFeedbackKind.NextLevel, "NEXT:");
         }
 
         [UnityTest]
@@ -708,6 +765,7 @@ namespace MergeShelter.Tests.PlayMode
             Assert.IsFalse(controller.CanRetryLevel);
             Assert.IsFalse(retryButton.gameObject.activeSelf);
             Assert.IsTrue(controller.GetTileAt(0, 0).IsEmpty);
+            AssertFeedback(controller, PrototypeFeedbackKind.Retry, "RETRY:");
         }
 
         [UnityTest]
@@ -732,6 +790,7 @@ namespace MergeShelter.Tests.PlayMode
             Assert.AreEqual(1, controller.ShelterUpgradeLevel);
             Assert.AreEqual(0, controller.Coins);
             Assert.That(GetResultText().text, Does.Contain("Upgrade blocked"));
+            AssertFeedback(controller, PrototypeFeedbackKind.Blocked, "BLOCKED:");
 
             yield return WinCurrentLevelAndClaim(controller);
             Assert.IsTrue(controller.StartNextLevel());
@@ -749,6 +808,7 @@ namespace MergeShelter.Tests.PlayMode
             Assert.AreEqual(20, controller.Coins);
             Assert.Greater(controller.ShelterUpgradeCost, previousCost);
             Assert.That(GetResultText().text, Does.Contain("Shelter upgraded"));
+            AssertFeedback(controller, PrototypeFeedbackKind.ShelterUpgrade, "UPGRADE:");
             Assert.That(GetShelterUpgradeText().text, Does.Contain("Lv 2"));
 
             Assert.IsTrue(controller.StartNextLevel());
@@ -773,6 +833,31 @@ namespace MergeShelter.Tests.PlayMode
             var resultText = GameObject.Find("ResultText")?.GetComponent<Text>();
             Assert.NotNull(resultText);
             return resultText;
+        }
+
+        private static void AssertFeedback(PrototypeGameController controller, PrototypeFeedbackKind kind, string prefix)
+        {
+            Assert.AreEqual(kind, controller.LastFeedbackKind);
+            Assert.IsFalse(string.IsNullOrWhiteSpace(controller.LastFeedbackMessage));
+
+            var hudView = Object.FindObjectOfType<PrototypeHudView>();
+            Assert.NotNull(hudView);
+            Assert.AreEqual(kind, hudView.CurrentFeedbackKind);
+            Assert.That(GetResultText().text, Does.StartWith(prefix));
+        }
+
+        private static Button FindCellButton(int x, int y)
+        {
+            var button = GameObject.Find($"Cell_{x}_{y}")?.GetComponent<Button>();
+            Assert.NotNull(button);
+            return button;
+        }
+
+        private static Image GetCellImage(int x, int y)
+        {
+            var image = GameObject.Find($"Cell_{x}_{y}")?.GetComponent<Image>();
+            Assert.NotNull(image);
+            return image;
         }
 
         private static Text GetTutorialText()
