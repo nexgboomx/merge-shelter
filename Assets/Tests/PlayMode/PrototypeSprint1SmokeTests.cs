@@ -199,6 +199,102 @@ namespace MergeShelter.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator FirstRunTutorial_AdvancesThroughLevelOneActionsAndReset()
+        {
+            yield return LoadPrototypeScene();
+
+            var controller = Object.FindObjectOfType<PrototypeGameController>();
+            Assert.NotNull(controller);
+            Assert.AreEqual(PrototypeTutorialStep.PlaceFirstTile, controller.TutorialStep);
+            Assert.That(GetTutorialText().text, Does.Contain("tap an empty board cell"));
+
+            Assert.IsTrue(controller.TryPlaceNextTile(0, 0));
+            yield return null;
+            Assert.AreEqual(PrototypeTutorialStep.PlaceMoreTiles, controller.TutorialStep);
+            Assert.AreEqual(1, controller.TutorialTilesPlaced);
+            Assert.That(GetTutorialText().text, Does.Contain("place two more"));
+
+            Assert.IsTrue(controller.TryPlaceNextTile(1, 0));
+            yield return null;
+            Assert.AreEqual(PrototypeTutorialStep.MergeIntent, controller.TutorialStep);
+            Assert.AreEqual(2, controller.TutorialTilesPlaced);
+            Assert.That(GetTutorialText().text, Does.Contain("one more"));
+
+            Assert.IsTrue(controller.TryPlaceNextTile(2, 0));
+            yield return null;
+            Assert.AreEqual(PrototypeTutorialStep.StartWave, controller.TutorialStep);
+            Assert.AreEqual(3, controller.TutorialTilesPlaced);
+            Assert.That(GetTutorialText().text, Does.Contain("Start Wave"));
+
+            controller.StartWave();
+            yield return null;
+            Assert.AreEqual(PrototypeTutorialStep.ClaimReward, controller.TutorialStep);
+            Assert.IsTrue(controller.CanClaimReward);
+            Assert.That(GetTutorialText().text, Does.Contain("Claim Reward"));
+
+            Assert.IsTrue(controller.ClaimReward());
+            yield return null;
+            Assert.AreEqual(PrototypeTutorialStep.Continue, controller.TutorialStep);
+            Assert.IsTrue(controller.CanStartNextLevel);
+            Assert.That(GetTutorialText().text, Does.Contain("Next Level"));
+
+            Assert.IsTrue(controller.StartNextLevel());
+            yield return null;
+            Assert.AreEqual(PrototypeTutorialStep.Complete, controller.TutorialStep);
+            Assert.IsTrue(controller.IsTutorialComplete);
+            Assert.AreEqual(2, controller.CurrentLevelId);
+
+            controller.ResetSave();
+            yield return null;
+            AssertNewPlayerState(controller);
+            Assert.AreEqual(PrototypeTutorialStep.PlaceFirstTile, controller.TutorialStep);
+            Assert.AreEqual(0, controller.TutorialTilesPlaced);
+            Assert.That(GetTutorialText().text, Does.Contain("tap an empty board cell"));
+        }
+
+        [UnityTest]
+        public IEnumerator FirstRunTutorial_SaveLoadPreservesProgress()
+        {
+            yield return LoadPrototypeScene();
+
+            var controller = Object.FindObjectOfType<PrototypeGameController>();
+            Assert.NotNull(controller);
+            Assert.IsTrue(controller.TryPlaceNextTile(0, 0));
+            yield return null;
+            Assert.AreEqual(PrototypeTutorialStep.PlaceMoreTiles, controller.TutorialStep);
+            Assert.AreEqual(1, controller.TutorialTilesPlaced);
+            Assert.IsTrue(new LocalJsonSaveService(_tempSaveDirectory).HasSave());
+
+            yield return LoadPrototypeScene();
+
+            controller = Object.FindObjectOfType<PrototypeGameController>();
+            Assert.NotNull(controller);
+            Assert.AreEqual(PrototypeTutorialStep.PlaceMoreTiles, controller.TutorialStep);
+            Assert.AreEqual(1, controller.TutorialTilesPlaced);
+            Assert.That(GetTutorialText().text, Does.Contain("place two more"));
+        }
+
+        [UnityTest]
+        public IEnumerator FirstRunTutorial_DoesNotBlockNormalGameplay()
+        {
+            yield return LoadPrototypeScene();
+
+            var controller = Object.FindObjectOfType<PrototypeGameController>();
+            Assert.NotNull(controller);
+            Assert.AreEqual(PrototypeTutorialStep.PlaceFirstTile, controller.TutorialStep);
+
+            controller.StartLevel(9);
+            yield return null;
+            controller.StartWave();
+            yield return null;
+
+            Assert.AreEqual(10, controller.CurrentLevelId);
+            Assert.IsTrue(controller.IsLevelEnded);
+            Assert.IsTrue(controller.CanRetryLevel);
+            AssertVisibleActionButton("RetryButton");
+        }
+
+        [UnityTest]
         public IEnumerator WeakAndStrongBoards_ProduceDifferentWaveOutcomes()
         {
             yield return LoadPrototypeScene();
@@ -677,6 +773,13 @@ namespace MergeShelter.Tests.PlayMode
             var resultText = GameObject.Find("ResultText")?.GetComponent<Text>();
             Assert.NotNull(resultText);
             return resultText;
+        }
+
+        private static Text GetTutorialText()
+        {
+            var tutorialText = GameObject.Find("TutorialText")?.GetComponent<Text>();
+            Assert.NotNull(tutorialText);
+            return tutorialText;
         }
 
         private static Text GetHudText(string name)
