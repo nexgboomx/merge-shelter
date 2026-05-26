@@ -51,83 +51,83 @@ namespace MergeShelter.Levels
                     Tank(), Bomber(), Walker(), Walker(), Walker(), Walker()),
 
                 CreateLevel(11, "Barricade Drill", "Use Wood and Metal merges before claiming harder rewards.",
-                    new[] { TileType.Wood, TileType.Metal, TileType.Food }, 280, 6,
+                    new[] { TileType.Wood, TileType.Metal, TileType.Food }, 280, 5,
                     Tank(), Bomber(), Runner(), Walker(), Walker(), Walker()),
 
                 CreateLevel(12, "Runner Pack", "Runners punish empty boards. Fill lanes before the wave.",
-                    new[] { TileType.Wood, TileType.Metal, TileType.Food }, 310, 6,
+                    new[] { TileType.Wood, TileType.Metal, TileType.Food }, 310, 5,
                     Tank(), Tank(), Bomber(), Walker(), Walker()),
 
                 CreateLevel(13, "Supply Rush", "Food keeps HP above danger while Metal clears stragglers.",
-                    new[] { TileType.Wood, TileType.Metal, TileType.Food, TileType.Energy }, 340, 7,
+                    new[] { TileType.Wood, TileType.Metal, TileType.Food, TileType.Energy }, 340, 5,
                     Tank(), Bomber(), Bomber(), Runner(), Runner(), Walker()),
 
                 CreateLevel(14, "Power Cache", "Energy shields start to matter against mixed waves.",
-                    new[] { TileType.Wood, TileType.Metal, TileType.Food, TileType.Energy }, 370, 7,
+                    new[] { TileType.Wood, TileType.Metal, TileType.Food, TileType.Energy }, 370, 6,
                     Bruiser(), Tank(), Bomber(), Walker(), Walker()),
 
                 CreateLevel(15, "Double Barricade", "Build two useful merge groups before starting the wave.",
-                    new[] { TileType.Wood, TileType.Metal, TileType.Food }, 400, 8,
+                    new[] { TileType.Wood, TileType.Metal, TileType.Food }, 400, 6,
                     Bruiser(), Tank(), Tank(), Runner(), Runner(), Walker()),
 
                 CreateLevel(16, "Signal Fire", "Balance attack and shelter recovery before the pressure lands.",
-                    new[] { TileType.Wood, TileType.Metal, TileType.Food, TileType.Energy }, 430, 8,
+                    new[] { TileType.Wood, TileType.Metal, TileType.Food, TileType.Energy }, 430, 6,
                     Bruiser(), Tank(), Bomber(), Bomber(), Walker()),
 
                 CreateLevel(17, "Scrap Convoy", "Upgrades and cleaner merges should carry this convoy fight.",
-                    new[] { TileType.Wood, TileType.Metal, TileType.Energy }, 470, 9,
+                    new[] { TileType.Wood, TileType.Metal, TileType.Energy }, 470, 7,
                     Bruiser(), Bruiser(), Tank(), Bomber(), Runner()),
 
                 CreateLevel(18, "Flooded Street", "Food and Energy help preserve HP through longer pressure.",
-                    new[] { TileType.Wood, TileType.Metal, TileType.Food, TileType.Energy }, 510, 9,
+                    new[] { TileType.Wood, TileType.Metal, TileType.Food, TileType.Energy }, 510, 7,
                     SiegeTank(), Bruiser(), Tank(), Runner(), Runner(), Walker()),
 
                 CreateLevel(19, "Reinforced Wave", "A medium board can win if upgrades are not skipped.",
-                    new[] { TileType.Wood, TileType.Metal, TileType.Food, TileType.Energy }, 560, 10,
+                    new[] { TileType.Wood, TileType.Metal, TileType.Food, TileType.Energy }, 560, 8,
                     SiegeTank(), Bruiser(), Bruiser(), Bomber()),
 
                 CreateLevel(20, "Second Night Boss", "Use every tile type and shelter upgrades to stabilize.",
-                    new[] { TileType.Wood, TileType.Metal, TileType.Food, TileType.Energy }, 620, 12,
+                    new[] { TileType.Wood, TileType.Metal, TileType.Food, TileType.Energy }, 620, 8,
                     SiegeTank(), Demolisher(), Bruiser(), Tank(), Bomber()),
 
                 CreateLevel(21, "Outer District", "Late waves expect planned merges before the first tap on Start.",
-                    new[] { TileType.Wood, TileType.Metal, TileType.Food, TileType.Energy }, 680, 13,
+                    new[] { TileType.Wood, TileType.Metal, TileType.Food, TileType.Energy }, 680, 9,
                     SiegeTank(), Demolisher(), Bruiser(), Bruiser(), Runner()),
 
                 CreateLevel(22, "Noisy Breach", "Tanks test whether coins were spent on shelter upgrades.",
-                    new[] { TileType.Wood, TileType.Metal, TileType.Food, TileType.Energy }, 740, 14,
+                    new[] { TileType.Wood, TileType.Metal, TileType.Food, TileType.Energy }, 740, 9,
                     SiegeTank(), Demolisher(), Bruiser(), Tank(), Tank()),
 
                 CreateLevel(23, "Cracked Overpass", "Heavy enemies require stronger Wood and Metal tiers.",
-                    new[] { TileType.Wood, TileType.Metal, TileType.Food, TileType.Energy }, 800, 15,
+                    new[] { TileType.Wood, TileType.Metal, TileType.Food, TileType.Energy }, 800, 10,
                     Bulwark(), SiegeTank(), Demolisher(), Bomber()),
 
                 CreateLevel(24, "Blackout Line", "Energy shields buy time when demolishers arrive together.",
-                    new[] { TileType.Wood, TileType.Metal, TileType.Food, TileType.Energy }, 870, 16,
+                    new[] { TileType.Wood, TileType.Metal, TileType.Food, TileType.Energy }, 870, 10,
                     Bulwark(), SiegeTank(), Demolisher(), Demolisher(), Runner()),
 
                 CreateLevel(25, "Supply Collapse", "Strong boards should win, but weak boards will collapse.",
-                    new[] { TileType.Wood, TileType.Metal, TileType.Food, TileType.Energy }, 940, 17,
+                    new[] { TileType.Wood, TileType.Metal, TileType.Food, TileType.Energy }, 940, 11,
                     Bulwark(), SiegeTank(), SiegeTank(), Demolisher(), Bomber()),
 
                 CreateLevel(26, "Last Safe Block", "Use rewards, quests, and upgrades before taking this fight.",
-                    new[] { TileType.Wood, TileType.Metal, TileType.Food, TileType.Energy }, 1020, 18,
+                    new[] { TileType.Wood, TileType.Metal, TileType.Food, TileType.Energy }, 1020, 11,
                     AlphaBomber(), Bulwark(), SiegeTank(), Demolisher(), Bruiser()),
 
                 CreateLevel(27, "Pressure Lock", "Board planning matters more than filling random spaces.",
-                    new[] { TileType.Wood, TileType.Metal, TileType.Food, TileType.Energy }, 1100, 20,
+                    new[] { TileType.Wood, TileType.Metal, TileType.Food, TileType.Energy }, 1100, 12,
                     AlphaBomber(), Bulwark(), SiegeTank(), SiegeTank(), Demolisher()),
 
                 CreateLevel(28, "Shelter Siege", "A strong mixed board should barely hold the line.",
-                    new[] { TileType.Wood, TileType.Metal, TileType.Food, TileType.Energy }, 1190, 22,
+                    new[] { TileType.Wood, TileType.Metal, TileType.Food, TileType.Energy }, 1190, 13,
                     Colossus(), AlphaBomber(), Bulwark(), SiegeTank(), StormRunner()),
 
                 CreateLevel(29, "Final Perimeter", "Top-tier merges and upgrade timing decide this wave.",
-                    new[] { TileType.Wood, TileType.Metal, TileType.Food, TileType.Energy }, 1290, 24,
+                    new[] { TileType.Wood, TileType.Metal, TileType.Food, TileType.Energy }, 1290, 14,
                     Colossus(), AlphaBomber(), AlphaBomber(), Bulwark(), StormRunner()),
 
                 CreateLevel(30, "Prototype Stand", "Endpoint check: build a strong mixed board before starting.",
-                    new[] { TileType.Wood, TileType.Metal, TileType.Food, TileType.Energy }, 1400, 28,
+                    new[] { TileType.Wood, TileType.Metal, TileType.Food, TileType.Energy }, 1400, 15,
                     Colossus(), AlphaBomber(), Bulwark(), SiegeTank(), Demolisher(), StormRunner())
             };
         }

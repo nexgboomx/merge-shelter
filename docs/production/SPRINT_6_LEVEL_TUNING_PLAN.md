@@ -89,6 +89,13 @@ Sprint 6 should make Levels 1-30 exist, feel intentionally paced, and support re
 - Quest reward amounts should accelerate progress modestly without replacing level rewards.
 - Quest claim timing should be included in economy test scenarios.
 
+### Sprint 6 Tuned Economy Assumptions
+- Level coin rewards preserve the Sprint 4/5 early prototype values and then ramp by level band: low double digits in Levels 1-5, stronger milestone rewards through Level 10, midgame rewards through Level 20, and late prototype rewards through Level 30.
+- Shelter upgrade costs target this timing under normal reward claims: first upgrade after Level 2, second upgrade around Level 6, and later upgrades spaced across the mid/late prototype instead of every level.
+- Daily Reward plus the three Daily Quest rewards can pull the second upgrade forward to around Level 5, but the support package remains smaller than one average late-band level reward.
+- Parts rewards remain a secondary signal: Level 10 keeps the existing 5-part milestone, Levels 11-20 use modest single-digit parts, and Levels 21-30 rise slowly while preserving headroom for a future parts sink.
+- Automated economy tests validate upgrade timing, increasing upgrade costs, support reward impact, non-consecutive normal upgrade affordability, and conservative parts totals.
+
 ## Balance Assumptions
 
 ### Weak Board

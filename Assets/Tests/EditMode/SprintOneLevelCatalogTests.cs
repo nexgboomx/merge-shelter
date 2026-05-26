@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using MergeShelter.Board;
 using MergeShelter.Combat;
+using MergeShelter.Economy;
 using MergeShelter.Levels;
+using MergeShelter.Meta;
 using NUnit.Framework;
 
 namespace MergeShelter.Tests.EditMode
@@ -51,6 +53,94 @@ namespace MergeShelter.Tests.EditMode
             AssertBandAverageIncreases(levels, 1, 5, 6, 10, level => EvaluateEmptyBoard(level).EnemyPressure, "enemy pressure");
             AssertBandAverageIncreases(levels, 6, 10, 11, 20, level => EvaluateEmptyBoard(level).EnemyPressure, "enemy pressure");
             AssertBandAverageIncreases(levels, 11, 20, 21, 30, level => EvaluateEmptyBoard(level).EnemyPressure, "enemy pressure");
+        }
+
+        [Test]
+        public void Economy_FirstUpgradeIsAvailableAroundLevelsTwoOrThree()
+        {
+            var progression = new SessionProgressionState();
+            var firstUpgradeCost = progression.ShelterUpgradeCost;
+
+            Assert.AreEqual(100, firstUpgradeCost);
+            Assert.Less(CumulativeCoinsThroughLevel(1), firstUpgradeCost);
+            Assert.GreaterOrEqual(CumulativeCoinsThroughLevel(2), firstUpgradeCost);
+            Assert.GreaterOrEqual(CumulativeCoinsThroughLevel(3), firstUpgradeCost);
+        }
+
+        [Test]
+        public void Economy_SecondUpgradeFallsInTargetWindowWithNormalOrSupportPlay()
+        {
+            var normalUpgradeLevels = SimulateGreedyUpgradeLevels(includeDailyAndQuestSupport: false);
+            var supportedUpgradeLevels = SimulateGreedyUpgradeLevels(includeDailyAndQuestSupport: true);
+
+            Assert.GreaterOrEqual(normalUpgradeLevels.Count, 2);
+            Assert.GreaterOrEqual(supportedUpgradeLevels.Count, 2);
+
+            var normalSecondUpgradeLevel = normalUpgradeLevels[1];
+            var supportedSecondUpgradeLevel = supportedUpgradeLevels[1];
+
+            Assert.GreaterOrEqual(normalSecondUpgradeLevel, 5);
+            Assert.LessOrEqual(normalSecondUpgradeLevel, 8);
+            Assert.GreaterOrEqual(supportedSecondUpgradeLevel, 5);
+            Assert.LessOrEqual(supportedSecondUpgradeLevel, 8);
+            Assert.LessOrEqual(supportedSecondUpgradeLevel, normalSecondUpgradeLevel);
+        }
+
+        [Test]
+        public void Economy_UpgradeCostProgressionIncreasesOverTime()
+        {
+            var progression = new SessionProgressionState();
+            var costs = new List<int>();
+
+            for (var i = 0; i < 6; i++)
+            {
+                var cost = progression.ShelterUpgradeCost;
+                costs.Add(cost);
+                progression.AddCurrency(CurrencyType.Coins, cost);
+                Assert.IsTrue(progression.TryUpgradeShelter());
+            }
+
+            CollectionAssert.AreEqual(new[] { 100, 450, 1050 }, costs.Take(3).ToArray());
+            for (var i = 1; i < costs.Count; i++)
+                Assert.Greater(costs[i], costs[i - 1], $"Upgrade cost {i + 1} should be greater than upgrade cost {i}.");
+        }
+
+        [Test]
+        public void Economy_RewardsDoNotMakeEveryLevelImmediatelyUpgradeAffordable()
+        {
+            var upgradeLevels = SimulateGreedyUpgradeLevels(includeDailyAndQuestSupport: false);
+
+            Assert.Less(upgradeLevels.Count, 10, "Normal level rewards should not fund excessive upgrades by Level 30.");
+            for (var i = 1; i < upgradeLevels.Count; i++)
+                Assert.Greater(upgradeLevels[i] - upgradeLevels[i - 1], 1, "Normal rewards should not support upgrades on consecutive levels.");
+        }
+
+        [Test]
+        public void Economy_DailyAndQuestSupportHelpsTimingWithoutTrivializingLateCurve()
+        {
+            var normalUpgradeLevels = SimulateGreedyUpgradeLevels(includeDailyAndQuestSupport: false);
+            var supportedUpgradeLevels = SimulateGreedyUpgradeLevels(includeDailyAndQuestSupport: true);
+            var supportCoins = DailyReward.DefaultCoinReward + DefaultQuestSupportCoins();
+            var lateAverageReward = Average(SprintOneLevelCatalog.CreateLevels(), 21, 30, level => level.CoinReward);
+
+            Assert.Less(supportedUpgradeLevels[1], normalUpgradeLevels[1]);
+            Assert.LessOrEqual(supportedUpgradeLevels.Count, normalUpgradeLevels.Count + 1);
+            Assert.Less(supportedUpgradeLevels.Count, 10, "Daily and quest support should not make the full 30-level curve upgrade-saturated.");
+            Assert.Less(supportCoins, lateAverageReward, "One daily/quest support package should stay smaller than an average late-level reward.");
+        }
+
+        [Test]
+        public void Economy_PartsIncreaseAcrossBandsButRemainConservative()
+        {
+            var levels = SprintOneLevelCatalog.CreateLevels();
+            var lateAverageParts = Average(levels, 21, 30, level => level.PartsReward);
+            var totalParts = levels.Sum(level => level.PartsReward);
+
+            AssertBandAverageIncreases(levels, 1, 5, 6, 10, level => level.PartsReward, "parts rewards");
+            AssertBandAverageIncreases(levels, 6, 10, 11, 20, level => level.PartsReward, "parts rewards");
+            AssertBandAverageIncreases(levels, 11, 20, 21, 30, level => level.PartsReward, "parts rewards");
+            Assert.LessOrEqual(lateAverageParts, 12d, "Parts should remain a secondary signal in the late prototype band.");
+            Assert.LessOrEqual(totalParts, 225, "Total parts across Levels 1-30 should preserve future economy headroom.");
         }
 
         [Test]
@@ -223,6 +313,45 @@ namespace MergeShelter.Tests.EditMode
             return levels
                 .Where(level => level.LevelId >= startLevel && level.LevelId <= endLevel)
                 .Average(selector);
+        }
+
+        private static int CumulativeCoinsThroughLevel(int endLevel)
+        {
+            return SprintOneLevelCatalog.CreateLevels()
+                .Where(level => level.LevelId <= endLevel)
+                .Sum(level => level.CoinReward);
+        }
+
+        private static int DefaultQuestSupportCoins()
+        {
+            return new DailyQuestModel()
+                .GetQuestStates()
+                .Sum(quest => quest.RewardCoins);
+        }
+
+        private static IReadOnlyList<int> SimulateGreedyUpgradeLevels(bool includeDailyAndQuestSupport)
+        {
+            var progression = new SessionProgressionState();
+            var upgradeLevels = new List<int>();
+            var supportApplied = false;
+
+            foreach (var level in SprintOneLevelCatalog.CreateLevels())
+            {
+                progression.AddCurrency(CurrencyType.Coins, level.CoinReward);
+                if (includeDailyAndQuestSupport && !supportApplied && level.LevelId == 1)
+                {
+                    progression.AddCurrency(CurrencyType.Coins, DailyReward.DefaultCoinReward + DefaultQuestSupportCoins());
+                    supportApplied = true;
+                }
+
+                while (progression.CanAffordShelterUpgrade)
+                {
+                    Assert.IsTrue(progression.TryUpgradeShelter());
+                    upgradeLevels.Add(level.LevelId);
+                }
+            }
+
+            return upgradeLevels;
         }
 
         private static PrototypeBoardEvaluationResult EvaluateEmptyBoard(LevelDefinition level)
