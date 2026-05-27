@@ -134,12 +134,14 @@ namespace MergeShelter.Tests.PlayMode
             Assert.AreEqual(PrototypeFeedbackKind.TilePlaced, boardView.LastCellFeedbackKind);
             Assert.IsTrue(boardView.HasActiveCellFeedback);
             Assert.AreNotEqual(emptyColor, firstCellImage.color);
+            Assert.That(GetCellScale(0, 0), Is.EqualTo(PrototypeVisualKit.GetCellFeedbackScale(PrototypeFeedbackKind.TilePlaced)).Within(0.01f));
 
             firstCell.onClick.Invoke();
             yield return null;
 
             AssertFeedback(controller, PrototypeFeedbackKind.InvalidPlacement, "BLOCKED:");
             Assert.AreEqual(PrototypeFeedbackKind.InvalidPlacement, boardView.LastCellFeedbackKind);
+            Assert.That(GetCellScale(0, 0), Is.EqualTo(PrototypeVisualKit.GetCellFeedbackScale(PrototypeFeedbackKind.InvalidPlacement)).Within(0.01f));
 
             FindCellButton(1, 0).onClick.Invoke();
             yield return null;
@@ -150,9 +152,17 @@ namespace MergeShelter.Tests.PlayMode
 
             AssertFeedback(controller, PrototypeFeedbackKind.MergeSuccess, "MERGE:");
             Assert.AreEqual(PrototypeFeedbackKind.MergeSuccess, boardView.LastCellFeedbackKind);
+            Assert.That(GetCellScale(2, 0), Is.EqualTo(PrototypeVisualKit.GetCellFeedbackScale(PrototypeFeedbackKind.MergeSuccess)).Within(0.01f));
             Assert.IsTrue(controller.HasShownFeedback(PrototypeFeedbackKind.TilePlaced));
             Assert.IsTrue(controller.HasShownFeedback(PrototypeFeedbackKind.InvalidPlacement));
             Assert.IsTrue(controller.HasShownFeedback(PrototypeFeedbackKind.MergeSuccess));
+
+            yield return new WaitForSeconds(Mathf.Max(boardView.CellEffectDurationSeconds, hudView.ResultEffectDurationSeconds) + 0.05f);
+
+            Assert.IsFalse(boardView.HasActiveCellFeedback);
+            Assert.IsFalse(hudView.HasActiveResultEffect);
+            Assert.That(GetCellScale(2, 0), Is.EqualTo(1f).Within(0.01f));
+            AssertResultPanelNormal(hudView.CurrentFeedbackKind);
         }
 
         [UnityTest]
@@ -855,6 +865,10 @@ namespace MergeShelter.Tests.PlayMode
             var hudView = Object.FindObjectOfType<PrototypeHudView>();
             Assert.NotNull(hudView);
             Assert.AreEqual(kind, hudView.CurrentFeedbackKind);
+            Assert.AreEqual(kind, hudView.LastResultEffectKind);
+            Assert.IsTrue(hudView.HasActiveResultEffect, $"{kind} should start a short result panel effect.");
+            AssertResultPanelFlash(kind);
+            AssertActiveButtonsRemainTappable();
             Assert.That(GetResultText().text, Does.StartWith(prefix));
         }
 
@@ -870,6 +884,12 @@ namespace MergeShelter.Tests.PlayMode
             var image = GameObject.Find($"Cell_{x}_{y}")?.GetComponent<Image>();
             Assert.NotNull(image);
             return image;
+        }
+
+        private static float GetCellScale(int x, int y)
+        {
+            var button = FindCellButton(x, y);
+            return button.transform.localScale.x;
         }
 
         private static Image GetButtonImage(string name)
@@ -961,7 +981,34 @@ namespace MergeShelter.Tests.PlayMode
 
             var hudView = Object.FindObjectOfType<PrototypeHudView>();
             Assert.NotNull(hudView);
-            AssertColorApproximately(PrototypeVisualKit.GetResultPanelColor(hudView.CurrentFeedbackKind), image.color);
+            var expectedColor = hudView.HasActiveResultEffect
+                ? PrototypeVisualKit.GetResultPanelFlashColor(hudView.CurrentFeedbackKind)
+                : PrototypeVisualKit.GetResultPanelColor(hudView.CurrentFeedbackKind);
+            AssertColorApproximately(expectedColor, image.color);
+        }
+
+        private static void AssertResultPanelFlash(PrototypeFeedbackKind kind)
+        {
+            var panelImage = GameObject.Find(PrototypeHudView.ResultPanelName)?.GetComponent<Image>();
+            Assert.NotNull(panelImage);
+            AssertColorApproximately(PrototypeVisualKit.GetResultPanelFlashColor(kind), panelImage.color);
+        }
+
+        private static void AssertResultPanelNormal(PrototypeFeedbackKind kind)
+        {
+            var panelImage = GameObject.Find(PrototypeHudView.ResultPanelName)?.GetComponent<Image>();
+            Assert.NotNull(panelImage);
+            AssertColorApproximately(PrototypeVisualKit.GetResultPanelColor(kind), panelImage.color);
+        }
+
+        private static void AssertActiveButtonsRemainTappable()
+        {
+            foreach (var buttonName in ActionButtonNames)
+            {
+                var button = FindButton(buttonName);
+                if (button != null && button.gameObject.activeInHierarchy)
+                    Assert.IsTrue(button.interactable, $"{buttonName} should remain tappable while feedback effects are active.");
+            }
         }
 
         private static void AssertResultPanelBounds(Canvas canvas, Rect resultRect)

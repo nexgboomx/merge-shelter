@@ -71,6 +71,15 @@ namespace MergeShelter.Tests.EditMode
             Assert.AreNotEqual(
                 PrototypeVisualKit.GetResultPanelColor(PrototypeFeedbackKind.WaveVictory),
                 PrototypeVisualKit.GetResultPanelColor(PrototypeFeedbackKind.WaveDefeat));
+            Assert.AreNotEqual(
+                PrototypeVisualKit.GetResultPanelColor(PrototypeFeedbackKind.WaveVictory),
+                PrototypeVisualKit.GetResultPanelFlashColor(PrototypeFeedbackKind.WaveVictory));
+            Assert.Greater(
+                PrototypeVisualKit.GetCellFeedbackScale(PrototypeFeedbackKind.MergeSuccess),
+                PrototypeVisualKit.GetCellFeedbackScale(PrototypeFeedbackKind.TilePlaced));
+            Assert.Less(
+                PrototypeVisualKit.GetCellFeedbackScale(PrototypeFeedbackKind.InvalidPlacement),
+                1f);
         }
 
         private static float ColorDistance(Color first, Color second)

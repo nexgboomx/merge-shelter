@@ -188,11 +188,34 @@ namespace MergeShelter.UI
             }
         }
 
+        public static float GetCellFeedbackScale(PrototypeFeedbackKind kind)
+        {
+            switch (kind)
+            {
+                case PrototypeFeedbackKind.MergeSuccess:
+                    return 1.1f;
+                case PrototypeFeedbackKind.TilePlaced:
+                    return 1.05f;
+                case PrototypeFeedbackKind.InvalidPlacement:
+                case PrototypeFeedbackKind.Blocked:
+                    return 0.96f;
+                default:
+                    return 1.04f;
+            }
+        }
+
         public static Color GetResultPanelColor(PrototypeFeedbackKind kind)
         {
             return kind == PrototypeFeedbackKind.None
                 ? ResultPanelBackground
                 : Color.Lerp(ResultPanelBackground, GetFeedbackColor(kind), 0.16f);
+        }
+
+        public static Color GetResultPanelFlashColor(PrototypeFeedbackKind kind)
+        {
+            return kind == PrototypeFeedbackKind.None
+                ? ResultPanelBackground
+                : Color.Lerp(ResultPanelBackground, GetFeedbackColor(kind), 0.42f);
         }
 
         private static Color GetBaseButtonColor(PrototypeButtonVisualRole role)

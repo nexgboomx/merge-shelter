@@ -57,6 +57,7 @@ namespace MergeShelter.UI
 
         public PrototypeFeedbackKind LastCellFeedbackKind { get; private set; } = PrototypeFeedbackKind.None;
         public bool HasActiveCellFeedback => _feedbackCellX >= 0 && Time.unscaledTime < _feedbackCellClearTime;
+        public float CellEffectDurationSeconds => CellFeedbackDuration;
 
         private void Awake()
         {
@@ -82,6 +83,7 @@ namespace MergeShelter.UI
             {
                 _feedbackCellX = -1;
                 _feedbackCellY = -1;
+                ResetCellScales();
                 RefreshCells();
             }
 
@@ -231,6 +233,7 @@ namespace MergeShelter.UI
             {
                 X = x,
                 Y = y,
+                Transform = (RectTransform)cellObject.transform,
                 Background = background,
                 Label = label
             };
@@ -487,6 +490,7 @@ namespace MergeShelter.UI
             _feedbackCellClearTime = Time.unscaledTime + CellFeedbackDuration;
             _feedbackCellColor = GetFeedbackCellColor(kind);
             LastCellFeedbackKind = kind;
+            ApplyCellEffectScale(x, y, kind);
         }
 
         private Color GetCellDisplayColor(CellView cell, TileData tile)
@@ -748,10 +752,31 @@ namespace MergeShelter.UI
             return PrototypeVisualKit.GetCellFeedbackColor(kind);
         }
 
+        private void ApplyCellEffectScale(int x, int y, PrototypeFeedbackKind kind)
+        {
+            ResetCellScales();
+
+            foreach (var cell in _cells)
+            {
+                if (cell.X != x || cell.Y != y)
+                    continue;
+
+                cell.Transform.localScale = Vector3.one * PrototypeVisualKit.GetCellFeedbackScale(kind);
+                return;
+            }
+        }
+
+        private void ResetCellScales()
+        {
+            foreach (var cell in _cells)
+                cell.Transform.localScale = Vector3.one;
+        }
+
         private sealed class CellView
         {
             public int X;
             public int Y;
+            public RectTransform Transform;
             public Image Background;
             public Text Label;
         }

@@ -41,7 +41,7 @@ namespace MergeShelter.UI
         private const float ResultHeight = 72f;
         private const float ActionsLabelBottom = 208f;
         private const float ResultPulseScale = 1.04f;
-        private const float ResultPulseSeconds = 0.12f;
+        private const float ResultEffectSeconds = 0.18f;
 
         [SerializeField] private Text levelText;
         [SerializeField] private Text tutorialText;
@@ -60,8 +60,12 @@ namespace MergeShelter.UI
         [SerializeField] private Image resultPanelImage;
 
         private bool _isApplyingLayout;
+        private float _resultEffectClearTime;
         public PrototypeFeedbackKind CurrentFeedbackKind { get; private set; } = PrototypeFeedbackKind.None;
         public string CurrentFeedbackMessage { get; private set; } = string.Empty;
+        public PrototypeFeedbackKind LastResultEffectKind { get; private set; } = PrototypeFeedbackKind.None;
+        public bool HasActiveResultEffect => Time.unscaledTime < _resultEffectClearTime;
+        public float ResultEffectDurationSeconds => ResultEffectSeconds;
 
         private void Awake()
         {
@@ -75,6 +79,12 @@ namespace MergeShelter.UI
         {
             if (!_isApplyingLayout)
                 ApplyPhoneSafeLayout();
+        }
+
+        private void Update()
+        {
+            if (_resultEffectClearTime > 0f && Time.unscaledTime >= _resultEffectClearTime)
+                ClearResultPulse();
         }
 
         public void ApplyPhoneSafeLayout()
@@ -161,10 +171,17 @@ namespace MergeShelter.UI
                 resultText.transform.localScale = kind == PrototypeFeedbackKind.None
                     ? Vector3.one
                     : Vector3.one * ResultPulseScale;
+            }
 
-                CancelInvoke(nameof(ClearResultPulse));
-                if (kind != PrototypeFeedbackKind.None)
-                    Invoke(nameof(ClearResultPulse), ResultPulseSeconds);
+            if (kind == PrototypeFeedbackKind.None)
+            {
+                LastResultEffectKind = PrototypeFeedbackKind.None;
+                _resultEffectClearTime = 0f;
+            }
+            else
+            {
+                LastResultEffectKind = kind;
+                _resultEffectClearTime = Time.unscaledTime + ResultEffectSeconds;
             }
 
             ConfigureResultPanel();
@@ -429,7 +446,11 @@ namespace MergeShelter.UI
         private void ApplyResultPanelColor()
         {
             if (resultPanelImage != null)
-                resultPanelImage.color = PrototypeVisualKit.GetResultPanelColor(CurrentFeedbackKind);
+            {
+                resultPanelImage.color = HasActiveResultEffect
+                    ? PrototypeVisualKit.GetResultPanelFlashColor(CurrentFeedbackKind)
+                    : PrototypeVisualKit.GetResultPanelColor(CurrentFeedbackKind);
+            }
         }
 
         private static Text ResolveOrCreateText(Transform parent, Text current, string name, string fallbackText)
@@ -490,6 +511,9 @@ namespace MergeShelter.UI
         {
             if (resultText != null)
                 resultText.transform.localScale = Vector3.one;
+
+            _resultEffectClearTime = 0f;
+            ApplyResultPanelColor();
         }
 
         private static string FormatFeedbackMessage(PrototypeFeedbackKind kind, string message)
