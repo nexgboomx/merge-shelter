@@ -119,7 +119,10 @@ namespace MergeShelter.UI
         public void SetShelterHp(int current, int max)
         {
             if (shelterHpText != null)
+            {
                 shelterHpText.text = $"HP: {current}/{max}";
+                shelterHpText.color = GetShelterHpColor(current, max);
+            }
         }
 
         public void SetNextTile(TileData tile)
@@ -146,7 +149,7 @@ namespace MergeShelter.UI
                 CurrentFeedbackKind = kind;
                 CurrentFeedbackMessage = message ?? string.Empty;
                 resultText.text = FormatFeedbackMessage(kind, CurrentFeedbackMessage);
-                resultText.color = GetFeedbackColor(kind);
+                resultText.color = PrototypeVisualKit.GetFeedbackColor(kind);
                 resultText.transform.localScale = kind == PrototypeFeedbackKind.None
                     ? Vector3.one
                     : Vector3.one * ResultPulseScale;
@@ -191,15 +194,29 @@ namespace MergeShelter.UI
             var dailyRewardStatus = hasClaimedDailyReward ? "claimed" : canClaimDailyReward ? "available" : "unavailable";
 
             walletText.text = $"Coins: {coins} | Parts: {parts}";
+            walletText.color = PrototypeVisualKit.ResourceText;
 
             if (shelterUpgradeText != null)
+            {
                 shelterUpgradeText.text = $"Lv {shelterUpgradeLevel} | Upgrade {upgradeCost} ({affordText})";
+                shelterUpgradeText.color = canAffordUpgrade
+                    ? PrototypeVisualKit.ShelterHealthy
+                    : PrototypeVisualKit.SecondaryText;
+            }
 
             if (rewardText != null)
+            {
                 rewardText.text = $"Daily: {dailyRewardStatus} (+{dailyRewardCoins}c, +{dailyRewardParts}p)";
+                rewardText.color = canClaimDailyReward
+                    ? PrototypeVisualKit.WaveReady
+                    : PrototypeVisualKit.SecondaryText;
+            }
 
             if (questText != null)
+            {
                 questText.text = FormatQuestStatus(dailyQuests);
+                questText.color = PrototypeVisualKit.PrimaryText;
+            }
         }
 
         private static string FormatQuestStatus(IReadOnlyList<DailyQuestState> dailyQuests)
@@ -294,6 +311,7 @@ namespace MergeShelter.UI
             text.alignment = alignment;
             text.lineSpacing = 1.05f;
             text.raycastTarget = false;
+            text.color = PrototypeVisualKit.PrimaryText;
         }
 
         private void EnsureSectionLabelsAndText()
@@ -325,7 +343,7 @@ namespace MergeShelter.UI
             textObject.transform.SetParent(parent, false);
             var text = textObject.GetComponent<Text>();
             text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            text.color = Color.white;
+            text.color = PrototypeVisualKit.PrimaryText;
             text.text = fallbackText;
             ConfigureText(text, 12, TextAnchor.UpperLeft);
             return text;
@@ -340,6 +358,12 @@ namespace MergeShelter.UI
             var existing = canvas.transform.Find(OpaqueBackgroundName);
             if (existing != null)
             {
+                if (existing.TryGetComponent<Image>(out var existingImage))
+                {
+                    existingImage.color = PrototypeVisualKit.CanvasBackground;
+                    existingImage.raycastTarget = false;
+                }
+
                 existing.SetAsFirstSibling();
                 return;
             }
@@ -356,7 +380,7 @@ namespace MergeShelter.UI
             rectTransform.offsetMax = Vector2.zero;
 
             var image = backgroundObject.GetComponent<Image>();
-            image.color = new Color(0.12f, 0.12f, 0.12f, 1f);
+            image.color = PrototypeVisualKit.CanvasBackground;
             image.raycastTarget = false;
         }
 
@@ -415,33 +439,14 @@ namespace MergeShelter.UI
             }
         }
 
-        private static Color GetFeedbackColor(PrototypeFeedbackKind kind)
+        private static Color GetShelterHpColor(int current, int max)
         {
-            switch (kind)
-            {
-                case PrototypeFeedbackKind.TilePlaced:
-                case PrototypeFeedbackKind.WaveStart:
-                case PrototypeFeedbackKind.NextLevel:
-                case PrototypeFeedbackKind.Retry:
-                    return new Color(0.9f, 0.94f, 1f);
-                case PrototypeFeedbackKind.MergeSuccess:
-                case PrototypeFeedbackKind.WaveVictory:
-                case PrototypeFeedbackKind.RewardClaim:
-                case PrototypeFeedbackKind.DailyRewardClaim:
-                case PrototypeFeedbackKind.QuestClaim:
-                case PrototypeFeedbackKind.ShelterUpgrade:
-                case PrototypeFeedbackKind.RewardDouble:
-                case PrototypeFeedbackKind.Revive:
-                    return new Color(0.82f, 1f, 0.82f);
-                case PrototypeFeedbackKind.InvalidPlacement:
-                case PrototypeFeedbackKind.WaveDefeat:
-                case PrototypeFeedbackKind.Blocked:
-                    return new Color(1f, 0.84f, 0.72f);
-                case PrototypeFeedbackKind.ResetSave:
-                    return new Color(0.9f, 0.9f, 0.9f);
-                default:
-                    return Color.white;
-            }
+            if (max <= 0 || current <= 0)
+                return PrototypeVisualKit.ShelterDefeated;
+
+            return current < max / 2
+                ? PrototypeVisualKit.ShelterWarning
+                : PrototypeVisualKit.ShelterHealthy;
         }
     }
 }

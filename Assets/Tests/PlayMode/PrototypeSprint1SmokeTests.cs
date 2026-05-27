@@ -86,11 +86,18 @@ namespace MergeShelter.Tests.PlayMode
 
             var firstCell = GameObject.Find("Cell_0_0")?.GetComponent<Button>();
             Assert.NotNull(firstCell);
+            AssertColorApproximately(PrototypeVisualKit.EmptyCell, GetCellImage(0, 0).color);
+            AssertColorApproximately(PrototypeVisualKit.GetActionButtonColor("StartWaveButton", true), GetButtonImage("StartWaveButton").color);
 
             firstCell.onClick.Invoke();
             yield return null;
 
             Assert.IsFalse(controller.GetTileAt(0, 0).IsEmpty);
+            yield return new WaitForSeconds(0.32f);
+            AssertColorApproximately(
+                PrototypeVisualKit.GetTileFillColor(new TileData(TileType.Wood, 1)),
+                GetCellImage(0, 0).color);
+            Assert.That(GameObject.Find("Cell_0_0/Label")?.GetComponent<Text>()?.text, Does.Contain("[W]"));
 
             var startWaveButton = GameObject.Find("StartWaveButton")?.GetComponent<Button>();
             Assert.NotNull(startWaveButton);
@@ -863,6 +870,13 @@ namespace MergeShelter.Tests.PlayMode
             return image;
         }
 
+        private static Image GetButtonImage(string name)
+        {
+            var image = FindButton(name)?.GetComponent<Image>();
+            Assert.NotNull(image, $"{name} should have a button image.");
+            return image;
+        }
+
         private static Text GetTutorialText()
         {
             var tutorialText = GameObject.Find("TutorialText")?.GetComponent<Text>();
@@ -898,6 +912,7 @@ namespace MergeShelter.Tests.PlayMode
             Assert.NotNull(backgroundImage);
             Assert.IsFalse(backgroundImage.raycastTarget);
             Assert.GreaterOrEqual(backgroundImage.color.a, 0.99f);
+            AssertColorApproximately(PrototypeVisualKit.CanvasBackground, backgroundImage.color);
 
             var rectTransform = background.GetComponent<RectTransform>();
             Assert.NotNull(rectTransform);
@@ -1045,6 +1060,15 @@ namespace MergeShelter.Tests.PlayMode
                    first.xMax > second.xMin + tolerance &&
                    first.yMin < second.yMax - tolerance &&
                    first.yMax > second.yMin + tolerance;
+        }
+
+        private static void AssertColorApproximately(Color expected, Color actual)
+        {
+            const float tolerance = 0.01f;
+            Assert.That(actual.r, Is.EqualTo(expected.r).Within(tolerance));
+            Assert.That(actual.g, Is.EqualTo(expected.g).Within(tolerance));
+            Assert.That(actual.b, Is.EqualTo(expected.b).Within(tolerance));
+            Assert.That(actual.a, Is.EqualTo(expected.a).Within(tolerance));
         }
 
         private static Text GetWalletText()

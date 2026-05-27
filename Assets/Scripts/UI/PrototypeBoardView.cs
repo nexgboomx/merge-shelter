@@ -192,7 +192,7 @@ namespace MergeShelter.UI
             cellObject.transform.SetParent(parent, false);
 
             var background = cellObject.AddComponent<Image>();
-            background.color = new Color(0.18f, 0.2f, 0.22f);
+            background.color = PrototypeVisualKit.EmptyCell;
 
             var button = cellObject.AddComponent<Button>();
             button.targetGraphic = background;
@@ -229,7 +229,7 @@ namespace MergeShelter.UI
             label.resizeTextForBestFit = true;
             label.resizeTextMinSize = 10;
             label.resizeTextMaxSize = 18;
-            label.color = Color.white;
+            label.color = PrototypeVisualKit.PrimaryText;
             label.raycastTarget = false;
             return label;
         }
@@ -246,31 +246,31 @@ namespace MergeShelter.UI
         private void BuildProgressionButtons()
         {
             if (claimRewardButton == null)
-                claimRewardButton = CreateActionButton("ClaimRewardButton", "Claim Reward", new Vector2(0f, -280f), new Color(0.2f, 0.45f, 0.72f));
+                claimRewardButton = CreateActionButton("ClaimRewardButton", "Claim Reward", new Vector2(0f, -280f), PrototypeVisualKit.GetActionButtonColor("ClaimRewardButton", false));
 
             if (nextLevelButton == null)
-                nextLevelButton = CreateActionButton("NextLevelButton", "Next Level", new Vector2(0f, -330f), new Color(0.2f, 0.48f, 0.3f));
+                nextLevelButton = CreateActionButton("NextLevelButton", "Next Level", new Vector2(0f, -330f), PrototypeVisualKit.GetActionButtonColor("NextLevelButton", false));
 
             if (retryButton == null)
-                retryButton = CreateActionButton("RetryButton", "Retry", new Vector2(0f, -280f), new Color(0.52f, 0.28f, 0.18f));
+                retryButton = CreateActionButton("RetryButton", "Retry", new Vector2(0f, -280f), PrototypeVisualKit.GetActionButtonColor("RetryButton", false));
 
             if (upgradeShelterButton == null)
-                upgradeShelterButton = CreateActionButton("UpgradeShelterButton", "Upgrade Shelter", new Vector2(210f, -280f), new Color(0.45f, 0.35f, 0.14f));
+                upgradeShelterButton = CreateActionButton("UpgradeShelterButton", "Upgrade Shelter", new Vector2(210f, -280f), PrototypeVisualKit.GetActionButtonColor("UpgradeShelterButton", false));
 
             if (dailyRewardButton == null)
-                dailyRewardButton = CreateActionButton("DailyRewardButton", "Daily Reward", new Vector2(-210f, -280f), new Color(0.3f, 0.33f, 0.65f));
+                dailyRewardButton = CreateActionButton("DailyRewardButton", "Daily Reward", new Vector2(-210f, -280f), PrototypeVisualKit.GetActionButtonColor("DailyRewardButton", false));
 
             if (claimQuestButton == null)
-                claimQuestButton = CreateActionButton("ClaimQuestButton", "Claim Quest", new Vector2(210f, -330f), new Color(0.33f, 0.42f, 0.2f));
+                claimQuestButton = CreateActionButton("ClaimQuestButton", "Claim Quest", new Vector2(210f, -330f), PrototypeVisualKit.GetActionButtonColor("ClaimQuestButton", false));
 
             if (doubleRewardButton == null)
-                doubleRewardButton = CreateActionButton("DoubleRewardButton", "Double Reward", new Vector2(-210f, -330f), new Color(0.42f, 0.24f, 0.55f));
+                doubleRewardButton = CreateActionButton("DoubleRewardButton", "Double Reward", new Vector2(-210f, -330f), PrototypeVisualKit.GetActionButtonColor("DoubleRewardButton", false));
 
             if (reviveButton == null)
-                reviveButton = CreateActionButton("ReviveButton", "Revive", new Vector2(-210f, -330f), new Color(0.48f, 0.22f, 0.28f));
+                reviveButton = CreateActionButton("ReviveButton", "Revive", new Vector2(-210f, -330f), PrototypeVisualKit.GetActionButtonColor("ReviveButton", false));
 
             if (resetSaveButton == null)
-                resetSaveButton = CreateActionButton("ResetSaveButton", "Reset Save", new Vector2(0f, -380f), new Color(0.24f, 0.24f, 0.24f));
+                resetSaveButton = CreateActionButton("ResetSaveButton", "Reset Save", new Vector2(0f, -380f), PrototypeVisualKit.GetActionButtonColor("ResetSaveButton", false));
 
             claimRewardButton.onClick.RemoveListener(OnClaimRewardClicked);
             claimRewardButton.onClick.AddListener(OnClaimRewardClicked);
@@ -300,7 +300,7 @@ namespace MergeShelter.UI
                 "StartWaveButton",
                 "Start Wave",
                 new Vector2(0f, -(boardHeight * 0.5f + 40f)),
-                new Color(0.13f, 0.42f, 0.32f));
+                PrototypeVisualKit.GetActionButtonColor("StartWaveButton", false));
         }
 
         private Button CreateActionButton(string name, string labelText, Vector2 anchoredPosition, Color backgroundColor)
@@ -325,6 +325,7 @@ namespace MergeShelter.UI
             label.text = labelText;
             label.fontSize = 20;
             label.resizeTextMaxSize = 20;
+            label.color = PrototypeVisualKit.ButtonText;
 
             return button;
         }
@@ -443,6 +444,7 @@ namespace MergeShelter.UI
             {
                 var tile = gameController.GetTileAt(cell.X, cell.Y);
                 cell.Label.text = FormatTileLabel(tile);
+                cell.Label.color = PrototypeVisualKit.GetTileTextColor(tile);
                 cell.Background.color = GetCellDisplayColor(cell, tile);
             }
         }
@@ -601,13 +603,14 @@ namespace MergeShelter.UI
                 ButtonBottomRow + row * ButtonRowSpacing);
 
             if (button.targetGraphic is Image image)
-                image.color = GetActionButtonColor(button.name, isPrimary);
+                image.color = PrototypeVisualKit.GetActionButtonColor(button.name, isPrimary);
 
             var label = button.GetComponentInChildren<Text>(true);
             if (label != null)
             {
                 label.fontSize = isPrimary ? 22 : 20;
                 label.resizeTextMaxSize = label.fontSize;
+                label.color = PrototypeVisualKit.ButtonText;
             }
         }
 
@@ -634,46 +637,6 @@ namespace MergeShelter.UI
             return false;
         }
 
-        private static Color GetActionButtonColor(string buttonName, bool isPrimary)
-        {
-            Color color;
-            switch (buttonName)
-            {
-                case "StartWaveButton":
-                    color = new Color(0.13f, 0.48f, 0.34f);
-                    break;
-                case "ClaimRewardButton":
-                    color = new Color(0.2f, 0.45f, 0.72f);
-                    break;
-                case "NextLevelButton":
-                    color = new Color(0.2f, 0.48f, 0.3f);
-                    break;
-                case "RetryButton":
-                    color = new Color(0.52f, 0.28f, 0.18f);
-                    break;
-                case "ReviveButton":
-                    color = new Color(0.48f, 0.22f, 0.28f);
-                    break;
-                case "DailyRewardButton":
-                    color = new Color(0.3f, 0.33f, 0.65f);
-                    break;
-                case "UpgradeShelterButton":
-                    color = new Color(0.45f, 0.35f, 0.14f);
-                    break;
-                case "ClaimQuestButton":
-                    color = new Color(0.33f, 0.42f, 0.2f);
-                    break;
-                case "DoubleRewardButton":
-                    color = new Color(0.42f, 0.24f, 0.55f);
-                    break;
-                default:
-                    color = new Color(0.24f, 0.24f, 0.24f);
-                    break;
-            }
-
-            return isPrimary ? Color.Lerp(color, Color.white, 0.16f) : color;
-        }
-
         private Font GetDefaultFont()
         {
             if (_defaultFont == null)
@@ -684,43 +647,17 @@ namespace MergeShelter.UI
 
         private static string FormatTileLabel(TileData tile)
         {
-            return tile.IsEmpty ? "+" : $"{tile.Type}\nT{tile.Tier}";
+            return PrototypeVisualKit.FormatTileLabel(tile);
         }
 
         private static Color GetTileColor(TileData tile)
         {
-            if (tile.IsEmpty)
-                return new Color(0.18f, 0.2f, 0.22f);
-
-            switch (tile.Type)
-            {
-                case TileType.Wood:
-                    return new Color(0.47f, 0.28f, 0.13f);
-                case TileType.Metal:
-                    return new Color(0.36f, 0.43f, 0.48f);
-                case TileType.Food:
-                    return new Color(0.23f, 0.5f, 0.27f);
-                case TileType.Energy:
-                    return new Color(0.18f, 0.38f, 0.62f);
-                default:
-                    return new Color(0.18f, 0.2f, 0.22f);
-            }
+            return PrototypeVisualKit.GetTileFillColor(tile);
         }
 
         private static Color GetFeedbackCellColor(PrototypeFeedbackKind kind)
         {
-            switch (kind)
-            {
-                case PrototypeFeedbackKind.MergeSuccess:
-                    return new Color(0.42f, 0.88f, 0.6f);
-                case PrototypeFeedbackKind.InvalidPlacement:
-                case PrototypeFeedbackKind.Blocked:
-                    return new Color(0.92f, 0.28f, 0.22f);
-                case PrototypeFeedbackKind.TilePlaced:
-                    return new Color(0.94f, 0.78f, 0.34f);
-                default:
-                    return Color.white;
-            }
+            return PrototypeVisualKit.GetCellFeedbackColor(kind);
         }
 
         private sealed class CellView

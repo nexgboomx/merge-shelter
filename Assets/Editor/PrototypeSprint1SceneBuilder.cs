@@ -134,7 +134,7 @@ namespace MergeShelter.EditorTools
             rectTransform.offsetMax = Vector2.zero;
 
             var image = rectTransform.gameObject.AddComponent<Image>();
-            image.color = new Color(0.12f, 0.12f, 0.12f, 1f);
+            image.color = PrototypeVisualKit.CanvasBackground;
             image.raycastTarget = false;
         }
 
@@ -164,7 +164,7 @@ namespace MergeShelter.EditorTools
             var text = rectTransform.gameObject.AddComponent<Text>();
             text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             text.fontSize = fontSize;
-            text.color = Color.white;
+            text.color = PrototypeVisualKit.PrimaryText;
             text.alignment = TextAnchor.UpperLeft;
             text.resizeTextForBestFit = false;
             text.resizeTextMinSize = fontSize;
@@ -189,7 +189,7 @@ namespace MergeShelter.EditorTools
             var text = rectTransform.gameObject.AddComponent<Text>();
             text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             text.fontSize = fontSize;
-            text.color = Color.white;
+            text.color = PrototypeVisualKit.PrimaryText;
             text.alignment = TextAnchor.UpperLeft;
             text.resizeTextForBestFit = false;
             text.resizeTextMinSize = fontSize;
@@ -212,7 +212,7 @@ namespace MergeShelter.EditorTools
             rectTransform.sizeDelta = size;
 
             var image = rectTransform.gameObject.AddComponent<Image>();
-            image.color = new Color(0.13f, 0.42f, 0.32f);
+            image.color = PrototypeVisualKit.GetActionButtonColor(name, false);
 
             var button = rectTransform.gameObject.AddComponent<Button>();
             button.targetGraphic = image;
@@ -226,7 +226,7 @@ namespace MergeShelter.EditorTools
             var text = label.gameObject.AddComponent<Text>();
             text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             text.fontSize = 20;
-            text.color = Color.white;
+            text.color = PrototypeVisualKit.ButtonText;
             text.alignment = TextAnchor.MiddleCenter;
             text.raycastTarget = false;
             text.text = labelText;
