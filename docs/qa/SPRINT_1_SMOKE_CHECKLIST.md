@@ -235,6 +235,29 @@ This checklist is the minimum quality gate for the first playable prototype.
 - P0/P1 blockers: none after code fix `c91a5cb`. No crash/freeze occurred, so `adb logcat -d` was not run.
 - Security note: Testing used only the Merge Shelter package, safe metadata commands, allowed install/launch/force-stop commands, foreground verification, and game-only screenshots/input after foreground verification. No personal apps, notifications, storage, or personal device data were opened, pulled, browsed, or inspected.
 
+## Sprint 6 Android Physical Device Smoke Notes - 2026-05-27
+
+- Machine OS: Ubuntu 24.04.3 LTS, Linux 6.17.0-1017-oem x86_64.
+- Unity version: 6000.3.16f1 (a56f230f6470).
+- Device manufacturer/model: samsung SM-S918B.
+- Android version/API: Android 16 / API 36.
+- APK filename: `merge-shelter-sprint6-tuning-device-debug.apk`.
+- APK output path: `Builds/Android/merge-shelter-sprint6-tuning-device-debug.apk`.
+- EditMode tests: passed 59/59 (`Logs/sprint6-editmode-results.xml`).
+- PlayMode tests: passed 17/17 (`Logs/sprint6-playmode-results.xml`).
+- Install result: passed with Unity embedded adb at `/home/phung-truong/Unity/Hub/Editor/6000.3.16f1/Editor/Data/PlaybackEngines/AndroidPlayer/SDK/platform-tools/adb`.
+- Launch result: passed with `adb shell monkey -p com.DefaultCompany.mergeshelter 1`; foreground was verified as `com.DefaultCompany.mergeshelter/com.unity3d.player.UnityPlayerGameActivity`.
+- Level catalog result: passed. Automated tests validate the 30-level catalog, sequential LevelIds 1-30, broad pressure/reward curve, Level 1 tutorial support, Level 10 retry/revive regression coverage, and Level 30 strong-board beatability. Physical smoke progressed normally from Level 1 through Level 16.
+- Economy/upgrade result: passed. Daily reward, all three daily quest claims, reward double, level rewards, and shelter upgrade UI worked on device. Shelter upgraded to Lv 2 and subsequent levels started with 125/125 HP; later rewards made the next upgrade affordable without breaking HUD layout.
+- Tutorial regression result: passed. Reset/new-player state showed first-tile guidance; tile placement advanced tutorial copy, three Wood tiles merged, Start Wave guidance appeared, victory moved to Claim Reward guidance, Claim Reward unlocked the next-level guidance, and Reset Save restored the first tutorial step.
+- Gameplay smoke result: passed. Validated launch, board visibility, board taps, merge feedback, Start Wave, victory, Claim Reward, Next Level, Daily Reward, Daily Quest claim, Reward Double, shelter upgrade, Retry, Revive, and normal progression through early and mid prototype levels.
+- Level 10 Retry/Revive regression: passed in PlayMode tests for Level 10 specifically. On physical device, the same stale-revive regression path was validated on Level 16 after normal unlock progression because the upgraded shelter made empty Level 10 survivable; Revive hid immediately, stale Revive tap did not alter state or black-screen, a second defeat showed Retry only, and Retry returned to a playable state.
+- Save/load result: passed. After force-stopping and relaunching only Merge Shelter, Level 4, coins/parts, Shelter Lv 2, daily claimed state, quest claimed states, and completed tutorial state persisted correctly.
+- Reset Save result: passed. Reset Save returned the app to new-player Level 1 with coins/parts reset to 0, Shelter Lv 1, daily reward available, quests at 0 progress, empty board, first-run tutorial guidance, and readable HUD.
+- UI/HUD result: passed on SM-S918B portrait. HUD text stayed readable with no observed ghosting or blocking overlap across tutorial, early progression, reward/quest/daily/upgrade actions, save/load, mid-level progression, defeat, revive, stale tap, retry, and reset.
+- P0/P1 blockers: none observed. No crash, freeze, launch failure, install failure, or Android black-screen regression occurred, so `adb logcat -d` was not run.
+- Security note: Testing used only the Merge Shelter package, safe device metadata commands, allowed install/launch/force-stop commands, foreground verification, and game-only screenshots/input after foreground verification. No personal apps, notifications, storage, or personal device data were opened, pulled, browsed, or inspected.
+
 ## Severity Rules
 
 | Severity | Definition |

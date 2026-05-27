@@ -18,7 +18,10 @@ namespace MergeShelter.Meta
 
         public int GetUpgradeCost()
         {
-            return 100 + (Level - 1) * 75;
+            if (Level <= 1)
+                return 100;
+
+            return 450 + (Level - 2) * 600;
         }
 
         public int GetMaxHealthBonus()
