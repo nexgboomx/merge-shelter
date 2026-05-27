@@ -38,6 +38,11 @@ namespace MergeShelter.UI
         public static readonly Color CanvasBackground = new(0.08f, 0.1f, 0.1f, 1f);
         public static readonly Color PanelBackground = new(0.13f, 0.17f, 0.18f, 1f);
         public static readonly Color PanelBorder = new(0.31f, 0.36f, 0.35f, 1f);
+        public static readonly Color BoardPanelBackground = new(0.1f, 0.13f, 0.14f, 1f);
+        public static readonly Color CellBorder = new(0.34f, 0.41f, 0.39f, 1f);
+        public static readonly Color ActionPanelBackground = new(0.09f, 0.12f, 0.13f, 1f);
+        public static readonly Color ResultPanelBackground = new(0.11f, 0.14f, 0.15f, 1f);
+        public static readonly Color ButtonBorder = new(0.49f, 0.54f, 0.5f, 1f);
         public static readonly Color PrimaryText = new(0.94f, 0.94f, 0.88f, 1f);
         public static readonly Color SecondaryText = new(0.74f, 0.76f, 0.72f, 1f);
         public static readonly Color SectionText = new(0.66f, 0.7f, 0.66f, 1f);
@@ -181,6 +186,13 @@ namespace MergeShelter.UI
                 default:
                     return PrimaryText;
             }
+        }
+
+        public static Color GetResultPanelColor(PrototypeFeedbackKind kind)
+        {
+            return kind == PrototypeFeedbackKind.None
+                ? ResultPanelBackground
+                : Color.Lerp(ResultPanelBackground, GetFeedbackColor(kind), 0.16f);
         }
 
         private static Color GetBaseButtonColor(PrototypeButtonVisualRole role)

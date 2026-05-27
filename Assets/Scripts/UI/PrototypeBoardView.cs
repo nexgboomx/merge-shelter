@@ -12,6 +12,8 @@ namespace MergeShelter.UI
     /// </summary>
     public sealed class PrototypeBoardView : MonoBehaviour
     {
+        public const string ActionPanelName = "ActionButtonPanel";
+
         private const float ReferenceWidth = 720f;
         private const float ReferenceHeight = 1280f;
         private const float BoardVerticalOffset = 64f;
@@ -38,6 +40,7 @@ namespace MergeShelter.UI
         [SerializeField] private Button doubleRewardButton;
         [SerializeField] private Button reviveButton;
         [SerializeField] private Button resetSaveButton;
+        [SerializeField] private Image actionPanelImage;
         [SerializeField] private int cellSize = 72;
         [SerializeField] private int cellSpacing = 6;
 
@@ -60,6 +63,7 @@ namespace MergeShelter.UI
             ResolveController();
             ConfigureCanvasScaler();
             ConfigureViewRoot();
+            EnsureActionPanel();
             BuildBoard();
             BuildStartWaveButton();
             BuildProgressionButtons();
@@ -183,7 +187,23 @@ namespace MergeShelter.UI
             boardRoot.pivot = new Vector2(0.5f, 0.5f);
             boardRoot.anchoredPosition = new Vector2(0f, BoardVerticalOffset);
             boardRoot.sizeDelta = new Vector2(totalWidth, totalHeight);
+            ApplyBoardPanelStyle();
             return boardRoot;
+        }
+
+        private void ApplyBoardPanelStyle()
+        {
+            if (boardRoot == null)
+                return;
+
+            var image = boardRoot.GetComponent<Image>() ?? boardRoot.gameObject.AddComponent<Image>();
+            image.color = PrototypeVisualKit.BoardPanelBackground;
+            image.raycastTarget = false;
+
+            var outline = boardRoot.GetComponent<Outline>() ?? boardRoot.gameObject.AddComponent<Outline>();
+            outline.effectColor = PrototypeVisualKit.PanelBorder;
+            outline.effectDistance = new Vector2(3f, -3f);
+            outline.useGraphicAlpha = false;
         }
 
         private CellView CreateCell(RectTransform parent, int x, int y)
@@ -193,6 +213,11 @@ namespace MergeShelter.UI
 
             var background = cellObject.AddComponent<Image>();
             background.color = PrototypeVisualKit.EmptyCell;
+
+            var outline = cellObject.AddComponent<Outline>();
+            outline.effectColor = PrototypeVisualKit.CellBorder;
+            outline.effectDistance = new Vector2(2f, -2f);
+            outline.useGraphicAlpha = false;
 
             var button = cellObject.AddComponent<Button>();
             button.targetGraphic = background;
@@ -229,6 +254,7 @@ namespace MergeShelter.UI
             label.resizeTextForBestFit = true;
             label.resizeTextMinSize = 10;
             label.resizeTextMaxSize = 18;
+            label.fontStyle = FontStyle.Bold;
             label.color = PrototypeVisualKit.PrimaryText;
             label.raycastTarget = false;
             return label;
@@ -317,6 +343,11 @@ namespace MergeShelter.UI
 
             var background = buttonObject.AddComponent<Image>();
             background.color = backgroundColor;
+
+            var outline = buttonObject.AddComponent<Outline>();
+            outline.effectColor = PrototypeVisualKit.ButtonBorder;
+            outline.effectDistance = new Vector2(2f, -2f);
+            outline.useGraphicAlpha = false;
 
             var button = buttonObject.AddComponent<Button>();
             button.targetGraphic = background;
@@ -532,6 +563,7 @@ namespace MergeShelter.UI
             {
                 ConfigureCanvasScaler();
                 ConfigureViewRoot();
+                EnsureActionPanel();
 
                 if (boardRoot != null)
                 {
@@ -551,6 +583,7 @@ namespace MergeShelter.UI
                 PlaceActionButton(claimRewardButton, 0, 2);
                 PlaceActionButton(nextLevelButton, 0, 2);
                 PlaceActionButton(retryButton, 0, 2);
+                ConfigureActionPanel();
             }
             finally
             {
@@ -605,13 +638,68 @@ namespace MergeShelter.UI
             if (button.targetGraphic is Image image)
                 image.color = PrototypeVisualKit.GetActionButtonColor(button.name, isPrimary);
 
+            var outline = button.GetComponent<Outline>() ?? button.gameObject.AddComponent<Outline>();
+            outline.effectColor = isPrimary
+                ? PrototypeVisualKit.PrimaryText
+                : PrototypeVisualKit.ButtonBorder;
+            outline.effectDistance = isPrimary
+                ? new Vector2(3f, -3f)
+                : new Vector2(2f, -2f);
+            outline.useGraphicAlpha = false;
+
             var label = button.GetComponentInChildren<Text>(true);
             if (label != null)
             {
                 label.fontSize = isPrimary ? 22 : 20;
                 label.resizeTextMaxSize = label.fontSize;
                 label.color = PrototypeVisualKit.ButtonText;
+                label.fontStyle = FontStyle.Bold;
             }
+        }
+
+        private void EnsureActionPanel()
+        {
+            if (actionPanelImage != null)
+            {
+                actionPanelImage.color = PrototypeVisualKit.ActionPanelBackground;
+                actionPanelImage.raycastTarget = false;
+                actionPanelImage.transform.SetAsFirstSibling();
+                return;
+            }
+
+            var existing = transform.Find(ActionPanelName);
+            if (existing != null && existing.TryGetComponent<Image>(out var existingImage))
+            {
+                actionPanelImage = existingImage;
+                actionPanelImage.raycastTarget = false;
+                actionPanelImage.transform.SetAsFirstSibling();
+                return;
+            }
+
+            var panelObject = new GameObject(ActionPanelName, typeof(RectTransform), typeof(Image));
+            panelObject.transform.SetParent(transform, false);
+            panelObject.transform.SetAsFirstSibling();
+            actionPanelImage = panelObject.GetComponent<Image>();
+            actionPanelImage.color = PrototypeVisualKit.ActionPanelBackground;
+            actionPanelImage.raycastTarget = false;
+        }
+
+        private void ConfigureActionPanel()
+        {
+            if (actionPanelImage == null)
+                return;
+
+            var rectTransform = (RectTransform)actionPanelImage.transform;
+            rectTransform.anchorMin = new Vector2(0.5f, 0f);
+            rectTransform.anchorMax = new Vector2(0.5f, 0f);
+            rectTransform.pivot = new Vector2(0.5f, 0.5f);
+            rectTransform.anchoredPosition = new Vector2(0f, ButtonBottomRow + ButtonRowSpacing);
+            rectTransform.sizeDelta = new Vector2(
+                ButtonWidth * 3f + ButtonColumnSpacing * 2f + 32f,
+                ButtonRowSpacing * 2f + PrimaryButtonHeight + 28f);
+            actionPanelImage.color = PrototypeVisualKit.ActionPanelBackground;
+            actionPanelImage.raycastTarget = false;
+            actionPanelImage.transform.SetAsFirstSibling();
         }
 
         private bool IsPrimaryAction(Button button)

@@ -15,7 +15,13 @@ namespace MergeShelter.Tests.EditMode
             Assert.GreaterOrEqual(PrototypeVisualKit.CanvasBackground.a, 0.99f);
             Assert.GreaterOrEqual(PrototypeVisualKit.PanelBackground.a, 0.99f);
             Assert.GreaterOrEqual(PrototypeVisualKit.PanelBorder.a, 0.99f);
+            Assert.GreaterOrEqual(PrototypeVisualKit.BoardPanelBackground.a, 0.99f);
+            Assert.GreaterOrEqual(PrototypeVisualKit.CellBorder.a, 0.99f);
+            Assert.GreaterOrEqual(PrototypeVisualKit.ActionPanelBackground.a, 0.99f);
+            Assert.GreaterOrEqual(PrototypeVisualKit.ResultPanelBackground.a, 0.99f);
             Assert.Greater(ColorDistance(PrototypeVisualKit.CanvasBackground, PrototypeVisualKit.PanelBackground), 0.04f);
+            Assert.Greater(ColorDistance(PrototypeVisualKit.EmptyCell, PrototypeVisualKit.CellBorder), 0.08f);
+            Assert.Greater(ColorDistance(PrototypeVisualKit.ActionPanelBackground, PrototypeVisualKit.PanelBorder), 0.18f);
             Assert.Greater(ColorDistance(PrototypeVisualKit.ShelterHealthy, PrototypeVisualKit.ShelterDefeated), 0.35f);
             Assert.Greater(ColorDistance(PrototypeVisualKit.WaveVictory, PrototypeVisualKit.WaveDefeat), 0.25f);
         }
@@ -62,6 +68,9 @@ namespace MergeShelter.Tests.EditMode
             Assert.AreNotEqual(
                 PrototypeVisualKit.GetFeedbackColor(PrototypeFeedbackKind.WaveVictory),
                 PrototypeVisualKit.GetFeedbackColor(PrototypeFeedbackKind.WaveDefeat));
+            Assert.AreNotEqual(
+                PrototypeVisualKit.GetResultPanelColor(PrototypeFeedbackKind.WaveVictory),
+                PrototypeVisualKit.GetResultPanelColor(PrototypeFeedbackKind.WaveDefeat));
         }
 
         private static float ColorDistance(Color first, Color second)

@@ -19,6 +19,7 @@ namespace MergeShelter.UI
         public const string ShelterUpgradeTextName = "ShelterUpgradeText";
         public const string RewardTextName = "RewardText";
         public const string QuestTextName = "QuestText";
+        public const string ResultPanelName = "ResultStatusPanel";
 
         private const float HorizontalPadding = 24f;
         private const float TopPadding = 16f;
@@ -56,6 +57,7 @@ namespace MergeShelter.UI
         [SerializeField] private Text questText;
         [SerializeField] private Text resultText;
         [SerializeField] private Text walletText;
+        [SerializeField] private Image resultPanelImage;
 
         private bool _isApplyingLayout;
         public PrototypeFeedbackKind CurrentFeedbackKind { get; private set; } = PrototypeFeedbackKind.None;
@@ -65,6 +67,7 @@ namespace MergeShelter.UI
         {
             EnsureOpaqueCanvasBackground();
             EnsureSectionLabelsAndText();
+            EnsureResultPanel();
             ApplyPhoneSafeLayout();
         }
 
@@ -83,6 +86,7 @@ namespace MergeShelter.UI
             try
             {
                 EnsureSectionLabelsAndText();
+                EnsureResultPanel();
                 ConfigureTopText(levelText, TopPadding, LevelHeight, 20, TextAnchor.UpperLeft);
                 ConfigureTopText(tutorialText, TutorialTop, TutorialHeight, 14, TextAnchor.UpperLeft);
                 ConfigureTopText(shelterLabelText, ShelterLabelTop, SectionLabelHeight, 11, TextAnchor.UpperLeft);
@@ -97,6 +101,8 @@ namespace MergeShelter.UI
                 ConfigureTopText(nextTileText, BoardLabelTop, SectionLabelHeight, 12, TextAnchor.UpperRight, 0.5f, 1f, 8f, HorizontalPadding);
                 ConfigureBottomText(resultText, ResultBottom, ResultHeight, 14, TextAnchor.UpperLeft);
                 ConfigureBottomText(actionsLabelText, ActionsLabelBottom, SectionLabelHeight, 11, TextAnchor.UpperLeft);
+                ConfigureResultPanel();
+                ApplyHudVisualStyles();
             }
             finally
             {
@@ -143,11 +149,13 @@ namespace MergeShelter.UI
 
         private void SetResultInternal(PrototypeFeedbackKind kind, string message)
         {
+            CurrentFeedbackKind = kind;
+            CurrentFeedbackMessage = message ?? string.Empty;
+            EnsureResultPanel();
+
             if (resultText != null)
             {
                 ConfigureBottomText(resultText, ResultBottom, ResultHeight, 14, TextAnchor.UpperLeft);
-                CurrentFeedbackKind = kind;
-                CurrentFeedbackMessage = message ?? string.Empty;
                 resultText.text = FormatFeedbackMessage(kind, CurrentFeedbackMessage);
                 resultText.color = PrototypeVisualKit.GetFeedbackColor(kind);
                 resultText.transform.localScale = kind == PrototypeFeedbackKind.None
@@ -158,6 +166,9 @@ namespace MergeShelter.UI
                 if (kind != PrototypeFeedbackKind.None)
                     Invoke(nameof(ClearResultPulse), ResultPulseSeconds);
             }
+
+            ConfigureResultPanel();
+            ApplyResultPanelColor();
         }
 
         public void SetWallet(int coins, int parts)
@@ -167,6 +178,7 @@ namespace MergeShelter.UI
             {
                 ConfigureTopText(walletText, WalletTop, WalletHeight, 12, TextAnchor.UpperLeft);
                 walletText.text = $"Coins: {coins} | Parts: {parts}";
+                walletText.color = PrototypeVisualKit.ResourceText;
             }
         }
 
@@ -314,6 +326,39 @@ namespace MergeShelter.UI
             text.color = PrototypeVisualKit.PrimaryText;
         }
 
+        private void ApplyHudVisualStyles()
+        {
+            ApplySectionLabelStyle(shelterLabelText);
+            ApplySectionLabelStyle(boardLabelText);
+            ApplySectionLabelStyle(actionsLabelText);
+            ApplySectionLabelStyle(rewardsLabelText);
+            ApplySectionLabelStyle(questsLabelText);
+
+            ApplyTextColor(levelText, PrototypeVisualKit.PrimaryText);
+            ApplyTextColor(tutorialText, PrototypeVisualKit.SecondaryText);
+            ApplyTextColor(nextTileText, PrototypeVisualKit.SecondaryText);
+
+            if (resultText != null)
+                resultText.color = PrototypeVisualKit.GetFeedbackColor(CurrentFeedbackKind);
+
+            ApplyResultPanelColor();
+        }
+
+        private static void ApplySectionLabelStyle(Text text)
+        {
+            if (text == null)
+                return;
+
+            text.color = PrototypeVisualKit.SectionText;
+            text.fontStyle = FontStyle.Bold;
+        }
+
+        private static void ApplyTextColor(Text text, Color color)
+        {
+            if (text != null)
+                text.color = color;
+        }
+
         private void EnsureSectionLabelsAndText()
         {
             var canvas = GetComponentInParent<Canvas>();
@@ -328,6 +373,63 @@ namespace MergeShelter.UI
             shelterUpgradeText = ResolveOrCreateText(canvas.transform, shelterUpgradeText, ShelterUpgradeTextName, "Lv 1 | Upgrade 100");
             rewardText = ResolveOrCreateText(canvas.transform, rewardText, RewardTextName, "Daily: available");
             questText = ResolveOrCreateText(canvas.transform, questText, QuestTextName, "Tiles 0/10 | Level 0/1 | Reward 0/1");
+        }
+
+        private void EnsureResultPanel()
+        {
+            var canvas = GetComponentInParent<Canvas>();
+            if (canvas == null)
+                return;
+
+            if (resultPanelImage != null)
+            {
+                resultPanelImage.raycastTarget = false;
+                ApplyResultPanelColor();
+                return;
+            }
+
+            var existing = canvas.transform.Find(ResultPanelName);
+            if (existing != null && existing.TryGetComponent<Image>(out var existingImage))
+            {
+                resultPanelImage = existingImage;
+                resultPanelImage.raycastTarget = false;
+                return;
+            }
+
+            var panelObject = new GameObject(ResultPanelName, typeof(RectTransform), typeof(Image));
+            panelObject.transform.SetParent(canvas.transform, false);
+            resultPanelImage = panelObject.GetComponent<Image>();
+            resultPanelImage.raycastTarget = false;
+            ApplyResultPanelColor();
+        }
+
+        private void ConfigureResultPanel()
+        {
+            if (resultPanelImage == null)
+                return;
+
+            var rectTransform = (RectTransform)resultPanelImage.transform;
+            rectTransform.anchorMin = new Vector2(0f, 0f);
+            rectTransform.anchorMax = new Vector2(1f, 0f);
+            rectTransform.pivot = new Vector2(0.5f, 0f);
+            rectTransform.offsetMin = new Vector2(-32f, ResultBottom - 8f);
+            rectTransform.offsetMax = new Vector2(32f, ResultBottom + ResultHeight + 8f);
+
+            if (resultText != null)
+            {
+                var panelIndex = resultPanelImage.transform.GetSiblingIndex();
+                var resultIndex = resultText.transform.GetSiblingIndex();
+                if (panelIndex == 0)
+                    resultPanelImage.transform.SetSiblingIndex(1);
+                else if (panelIndex > resultIndex)
+                    resultPanelImage.transform.SetSiblingIndex(Mathf.Max(1, resultIndex));
+            }
+        }
+
+        private void ApplyResultPanelColor()
+        {
+            if (resultPanelImage != null)
+                resultPanelImage.color = PrototypeVisualKit.GetResultPanelColor(CurrentFeedbackKind);
         }
 
         private static Text ResolveOrCreateText(Transform parent, Text current, string name, string fallbackText)

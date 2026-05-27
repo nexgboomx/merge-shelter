@@ -87,6 +87,8 @@ namespace MergeShelter.Tests.PlayMode
             var firstCell = GameObject.Find("Cell_0_0")?.GetComponent<Button>();
             Assert.NotNull(firstCell);
             AssertColorApproximately(PrototypeVisualKit.EmptyCell, GetCellImage(0, 0).color);
+            AssertBoardPanelStyle();
+            AssertCellUsesVisualBorder(0, 0);
             AssertColorApproximately(PrototypeVisualKit.GetActionButtonColor("StartWaveButton", true), GetButtonImage("StartWaveButton").color);
 
             firstCell.onClick.Invoke();
@@ -897,10 +899,97 @@ namespace MergeShelter.Tests.PlayMode
                 Assert.NotNull(GetHudText(textName));
 
             Assert.NotNull(GameObject.Find("BoardGrid")?.GetComponent<RectTransform>());
+            AssertBoardPanelStyle();
+            AssertActionPanelStyle();
+            AssertResultPanelExists();
+            AssertHudSectionLabelStyles();
             AssertOpaqueCanvasBackground();
 
             foreach (var buttonName in ActionButtonNames)
                 Assert.NotNull(FindButton(buttonName), $"{buttonName} should exist.");
+        }
+
+        private static void AssertBoardPanelStyle()
+        {
+            var boardGrid = GameObject.Find("BoardGrid");
+            Assert.NotNull(boardGrid);
+
+            var image = boardGrid.GetComponent<Image>();
+            Assert.NotNull(image, "BoardGrid should have a visual panel background.");
+            Assert.IsFalse(image.raycastTarget);
+            AssertColorApproximately(PrototypeVisualKit.BoardPanelBackground, image.color);
+
+            var outline = boardGrid.GetComponent<Outline>();
+            Assert.NotNull(outline, "BoardGrid should have a visible border.");
+            AssertColorApproximately(PrototypeVisualKit.PanelBorder, outline.effectColor);
+        }
+
+        private static void AssertCellUsesVisualBorder(int x, int y)
+        {
+            var cell = GameObject.Find($"Cell_{x}_{y}");
+            Assert.NotNull(cell);
+
+            var outline = cell.GetComponent<Outline>();
+            Assert.NotNull(outline, $"Cell_{x}_{y} should have a visible border.");
+            AssertColorApproximately(PrototypeVisualKit.CellBorder, outline.effectColor);
+        }
+
+        private static void AssertActionPanelStyle()
+        {
+            var panel = GameObject.Find(PrototypeBoardView.ActionPanelName);
+            Assert.NotNull(panel, "Action buttons should sit on a grouped visual panel.");
+
+            var image = panel.GetComponent<Image>();
+            Assert.NotNull(image);
+            Assert.IsFalse(image.raycastTarget);
+            AssertColorApproximately(PrototypeVisualKit.ActionPanelBackground, image.color);
+
+            var rectTransform = panel.GetComponent<RectTransform>();
+            Assert.NotNull(rectTransform);
+            Assert.Greater(rectTransform.sizeDelta.x, 650f);
+            Assert.Greater(rectTransform.sizeDelta.y, 180f);
+        }
+
+        private static void AssertResultPanelExists()
+        {
+            var panel = GameObject.Find(PrototypeHudView.ResultPanelName);
+            Assert.NotNull(panel, "Result/status text should be visually bounded.");
+
+            var image = panel.GetComponent<Image>();
+            Assert.NotNull(image);
+            Assert.IsFalse(image.raycastTarget);
+
+            var hudView = Object.FindObjectOfType<PrototypeHudView>();
+            Assert.NotNull(hudView);
+            AssertColorApproximately(PrototypeVisualKit.GetResultPanelColor(hudView.CurrentFeedbackKind), image.color);
+        }
+
+        private static void AssertResultPanelBounds(Canvas canvas, Rect resultRect)
+        {
+            AssertResultPanelExists();
+
+            var panelRectTransform = GameObject.Find(PrototypeHudView.ResultPanelName)?.GetComponent<RectTransform>();
+            Assert.NotNull(panelRectTransform);
+            var panelRect = GetCanvasRect(canvas, panelRectTransform);
+            Assert.IsTrue(
+                RectContains(panelRect, resultRect),
+                $"Result/status panel should contain ResultText. panel={FormatRect(panelRect)} result={FormatRect(resultRect)}");
+        }
+
+        private static void AssertHudSectionLabelStyles()
+        {
+            AssertSectionLabelStyle(PrototypeHudView.ShelterSectionLabelName);
+            AssertSectionLabelStyle(PrototypeHudView.BoardSectionLabelName);
+            AssertSectionLabelStyle(PrototypeHudView.ActionsSectionLabelName);
+            AssertSectionLabelStyle(PrototypeHudView.RewardsSectionLabelName);
+            AssertSectionLabelStyle(PrototypeHudView.QuestsSectionLabelName);
+        }
+
+        private static void AssertSectionLabelStyle(string name)
+        {
+            var text = GetHudText(name);
+            AssertColorApproximately(PrototypeVisualKit.SectionText, text.color);
+            Assert.AreEqual(FontStyle.Bold, text.fontStyle);
         }
 
         private static void AssertOpaqueCanvasBackground()
@@ -936,6 +1025,11 @@ namespace MergeShelter.Tests.PlayMode
             var rectTransform = (RectTransform)button.transform;
             Assert.GreaterOrEqual(rectTransform.sizeDelta.x, 218f, $"{name} should be visually emphasized as the primary next action.");
             Assert.GreaterOrEqual(rectTransform.sizeDelta.y, 50f, $"{name} should be visually emphasized as the primary next action.");
+            AssertColorApproximately(PrototypeVisualKit.GetActionButtonColor(name, true), GetButtonImage(name).color);
+
+            var outline = button.GetComponent<Outline>();
+            Assert.NotNull(outline, $"{name} should keep a visible primary outline.");
+            AssertColorApproximately(PrototypeVisualKit.PrimaryText, outline.effectColor);
         }
 
         private static void AssertPhoneSafeLayout()
@@ -986,6 +1080,9 @@ namespace MergeShelter.Tests.PlayMode
                     $"BoardGrid overlaps {textName}.");
             }
 
+            AssertHudSectionLabelStyles();
+            AssertResultPanelBounds(canvas, hudRects["ResultText"]);
+            AssertActionPanelStyle();
             AssertActiveActionButtonsDoNotOverlap(canvas, hudRects["ResultText"]);
         }
 
@@ -1013,6 +1110,15 @@ namespace MergeShelter.Tests.PlayMode
             {
                 var first = activeButtons[i];
                 Assert.IsTrue(first.interactable, $"{first.name} should be tappable.");
+                var isPrimary = IsExpectedPrimaryAction(first.name);
+                AssertColorApproximately(PrototypeVisualKit.GetActionButtonColor(first.name, isPrimary), GetButtonImage(first.name).color);
+
+                var outline = first.GetComponent<Outline>();
+                Assert.NotNull(outline, $"{first.name} should keep a role border.");
+                AssertColorApproximately(
+                    isPrimary ? PrototypeVisualKit.PrimaryText : PrototypeVisualKit.ButtonBorder,
+                    outline.effectColor);
+
                 var firstRect = GetCanvasRect(canvas, (RectTransform)first.transform);
                 Assert.Greater(firstRect.width, 120f, $"{first.name} should keep a tappable width.");
                 Assert.Greater(firstRect.height, 36f, $"{first.name} should keep a tappable height.");
@@ -1027,6 +1133,15 @@ namespace MergeShelter.Tests.PlayMode
                         $"{first.name} overlaps {second.name}.");
                 }
             }
+        }
+
+        private static bool IsExpectedPrimaryAction(string buttonName)
+        {
+            return buttonName == "StartWaveButton" ||
+                   buttonName == "ClaimRewardButton" ||
+                   buttonName == "NextLevelButton" ||
+                   buttonName == "RetryButton" ||
+                   buttonName == "ReviveButton";
         }
 
         private static Rect GetCanvasRect(Canvas canvas, RectTransform rectTransform)
@@ -1060,6 +1175,20 @@ namespace MergeShelter.Tests.PlayMode
                    first.xMax > second.xMin + tolerance &&
                    first.yMin < second.yMax - tolerance &&
                    first.yMax > second.yMin + tolerance;
+        }
+
+        private static bool RectContains(Rect outer, Rect inner)
+        {
+            const float tolerance = 1f;
+            return outer.xMin <= inner.xMin + tolerance &&
+                   outer.xMax >= inner.xMax - tolerance &&
+                   outer.yMin <= inner.yMin + tolerance &&
+                   outer.yMax >= inner.yMax - tolerance;
+        }
+
+        private static string FormatRect(Rect rect)
+        {
+            return $"({rect.xMin:F1},{rect.yMin:F1})-({rect.xMax:F1},{rect.yMax:F1})";
         }
 
         private static void AssertColorApproximately(Color expected, Color actual)
