@@ -31,8 +31,9 @@ namespace MergeShelter.EditorTools
             hud.transform.SetParent(canvas.transform, false);
             var hudView = hud.AddComponent<PrototypeHudView>();
 
-            var levelText = CreateHudText(canvas.transform, "LevelText", new Vector2(24f, -16f), new Vector2(672f, 30f), 20);
-            var tutorialText = CreateHudText(canvas.transform, "TutorialText", new Vector2(24f, -50f), new Vector2(672f, 36f), 14);
+            var levelText = CreateHudText(canvas.transform, "LevelText", new Vector2(24f, -16f), new Vector2(672f, 24f), 18);
+            var objectiveText = CreateHudText(canvas.transform, PrototypeHudView.ObjectiveTextName, new Vector2(24f, -42f), new Vector2(672f, 18f), 12, "Goal:");
+            var tutorialText = CreateHudText(canvas.transform, "TutorialText", new Vector2(24f, -62f), new Vector2(672f, 28f), 13);
             var shelterLabelText = CreateHudText(canvas.transform, PrototypeHudView.ShelterSectionLabelName, new Vector2(24f, -94f), new Vector2(672f, 14f), 11, "SHELTER");
             var shelterHpText = CreateHudText(canvas.transform, "ShelterHpText", new Vector2(24f, -112f), new Vector2(328f, 24f), 14);
             var shelterUpgradeText = CreateHudText(canvas.transform, PrototypeHudView.ShelterUpgradeTextName, new Vector2(368f, -112f), new Vector2(328f, 24f), 12);
@@ -70,6 +71,7 @@ namespace MergeShelter.EditorTools
             WireHud(
                 hudView,
                 levelText,
+                objectiveText,
                 tutorialText,
                 shelterLabelText,
                 shelterHpText,
@@ -236,6 +238,7 @@ namespace MergeShelter.EditorTools
         private static void WireHud(
             PrototypeHudView hudView,
             Text levelText,
+            Text objectiveText,
             Text tutorialText,
             Text shelterLabelText,
             Text shelterHpText,
@@ -252,6 +255,7 @@ namespace MergeShelter.EditorTools
         {
             var serializedObject = new SerializedObject(hudView);
             serializedObject.FindProperty("levelText").objectReferenceValue = levelText;
+            serializedObject.FindProperty("objectiveText").objectReferenceValue = objectiveText;
             serializedObject.FindProperty("tutorialText").objectReferenceValue = tutorialText;
             serializedObject.FindProperty("shelterLabelText").objectReferenceValue = shelterLabelText;
             serializedObject.FindProperty("shelterHpText").objectReferenceValue = shelterHpText;

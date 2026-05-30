@@ -23,6 +23,8 @@ namespace MergeShelter.Tests.EditMode
                 var level = levels[i];
                 Assert.AreEqual(i + 1, level.LevelId);
                 Assert.IsFalse(string.IsNullOrWhiteSpace(level.DisplayName), $"Level {level.LevelId} needs a display name.");
+                Assert.IsFalse(string.IsNullOrWhiteSpace(level.Objective), $"Level {level.LevelId} needs an objective.");
+                Assert.LessOrEqual(level.Objective.Length, 60, $"Level {level.LevelId} objective should be concise for mobile.");
                 Assert.IsFalse(string.IsNullOrWhiteSpace(level.TutorialMessage), $"Level {level.LevelId} needs a status message.");
                 Assert.IsNotEmpty(level.AvailableTiles, $"Level {level.LevelId} needs available tiles.");
                 Assert.IsNotEmpty(level.Enemies, $"Level {level.LevelId} needs enemies.");
@@ -150,6 +152,8 @@ namespace MergeShelter.Tests.EditMode
 
             Assert.AreEqual(1, level.LevelId);
             Assert.AreEqual("First Night", level.DisplayName);
+            Assert.IsFalse(string.IsNullOrWhiteSpace(level.Objective));
+            Assert.That(level.Objective, Does.Contain("Survive"));
             CollectionAssert.AreEqual(new[] { TileType.Wood }, level.AvailableTiles);
             Assert.That(level.TutorialMessage, Does.Contain("Wood"));
             Assert.Less(EvaluateEmptyBoard(level).EnemyPressure, 50);
@@ -277,6 +281,38 @@ namespace MergeShelter.Tests.EditMode
                     }
                 }
             }
+        }
+
+        [Test]
+        public void DefeatHints_AreActionableAndDoNotExposeRawFailReasons()
+        {
+            var failReasons = new[]
+            {
+                PrototypeBoardEvaluator.WeakWall,
+                PrototypeBoardEvaluator.LowAttack,
+                PrototypeBoardEvaluator.NoHeal,
+                PrototypeBoardEvaluator.NoEnergy,
+                PrototypeBoardEvaluator.BoardBlocked,
+                PrototypeBoardEvaluator.Overwhelmed,
+                PrototypeBoardEvaluator.Unknown
+            };
+
+            foreach (var reason in failReasons)
+            {
+                var hint = PrototypeBoardEvaluator.GetDefeatHint(reason);
+                Assert.IsFalse(string.IsNullOrWhiteSpace(hint), $"Fail reason '{reason}' should produce a hint.");
+                Assert.That(hint, Does.Not.Contain("weak_wall"));
+                Assert.That(hint, Does.Not.Contain("low_attack"));
+                Assert.That(hint, Does.Not.Contain("no_heal"));
+                Assert.That(hint, Does.Not.Contain("no_energy"));
+                Assert.That(hint, Does.Not.Contain("board_blocked"));
+                Assert.That(hint, Does.Not.Contain("overwhelmed"));
+                Assert.That(hint, Does.Not.Contain("unknown"));
+                Assert.LessOrEqual(hint.Length, 60, $"Hint for '{reason}' should be concise.");
+            }
+
+            Assert.IsFalse(string.IsNullOrWhiteSpace(PrototypeBoardEvaluator.GetDefeatHint(null)));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(PrototypeBoardEvaluator.GetDefeatHint(string.Empty)));
         }
 
         private static readonly string[] UsefulFailReasons =

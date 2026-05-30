@@ -77,6 +77,27 @@ namespace MergeShelter.Combat
             return result;
         }
 
+        public static string GetDefeatHint(string failReason)
+        {
+            switch (failReason)
+            {
+                case WeakWall:
+                    return "Try merging more Wood tiles for stronger walls.";
+                case LowAttack:
+                    return "Merge Metal tiles to boost your attack power.";
+                case NoHeal:
+                    return "Add Food tiles to recover shelter HP.";
+                case NoEnergy:
+                    return "Merge Energy tiles to charge your shields.";
+                case BoardBlocked:
+                    return "Leave empty spaces for future merges.";
+                case Overwhelmed:
+                    return "Upgrade your shelter and build higher-tier merges.";
+                default:
+                    return "Build a balanced board before starting the wave.";
+            }
+        }
+
         private static int CalculateEnemyPressure(IReadOnlyList<EnemyData> enemies)
         {
             if (enemies == null || enemies.Count == 0)

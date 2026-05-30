@@ -19,13 +19,16 @@ namespace MergeShelter.UI
         public const string ShelterUpgradeTextName = "ShelterUpgradeText";
         public const string RewardTextName = "RewardText";
         public const string QuestTextName = "QuestText";
+        public const string ObjectiveTextName = "ObjectiveText";
         public const string ResultPanelName = "ResultStatusPanel";
 
         private const float HorizontalPadding = 24f;
         private const float TopPadding = 16f;
-        private const float LevelHeight = 30f;
-        private const float TutorialTop = 50f;
-        private const float TutorialHeight = 36f;
+        private const float LevelHeight = 24f;
+        private const float ObjectiveTop = 42f;
+        private const float ObjectiveHeight = 18f;
+        private const float TutorialTop = 62f;
+        private const float TutorialHeight = 28f;
         private const float ShelterLabelTop = 94f;
         private const float SectionLabelHeight = 14f;
         private const float StatusTop = 112f;
@@ -44,6 +47,7 @@ namespace MergeShelter.UI
         private const float ResultEffectSeconds = 0.18f;
 
         [SerializeField] private Text levelText;
+        [SerializeField] private Text objectiveText;
         [SerializeField] private Text tutorialText;
         [SerializeField] private Text shelterLabelText;
         [SerializeField] private Text shelterHpText;
@@ -97,8 +101,9 @@ namespace MergeShelter.UI
             {
                 EnsureSectionLabelsAndText();
                 EnsureResultPanel();
-                ConfigureTopText(levelText, TopPadding, LevelHeight, 20, TextAnchor.UpperLeft);
-                ConfigureTopText(tutorialText, TutorialTop, TutorialHeight, 14, TextAnchor.UpperLeft);
+                ConfigureTopText(levelText, TopPadding, LevelHeight, 18, TextAnchor.UpperLeft);
+                ConfigureTopText(objectiveText, ObjectiveTop, ObjectiveHeight, 12, TextAnchor.UpperLeft);
+                ConfigureTopText(tutorialText, TutorialTop, TutorialHeight, 13, TextAnchor.UpperLeft);
                 ConfigureTopText(shelterLabelText, ShelterLabelTop, SectionLabelHeight, 11, TextAnchor.UpperLeft);
                 ConfigureTopText(shelterHpText, StatusTop, StatusHeight, 14, TextAnchor.MiddleLeft, 0f, 0.5f, HorizontalPadding, 8f);
                 ConfigureTopText(shelterUpgradeText, StatusTop, StatusHeight, 12, TextAnchor.MiddleRight, 0.5f, 1f, 8f, HorizontalPadding);
@@ -124,6 +129,13 @@ namespace MergeShelter.UI
         {
             if (levelText != null)
                 levelText.text = $"Level {levelId}: {displayName}";
+        }
+
+        public void SetObjective(string objective)
+        {
+            EnsureSectionLabelsAndText();
+            if (objectiveText != null)
+                objectiveText.text = string.IsNullOrWhiteSpace(objective) ? string.Empty : $"Goal: {objective}";
         }
 
         public void SetTutorial(string message)
@@ -352,6 +364,7 @@ namespace MergeShelter.UI
             ApplySectionLabelStyle(questsLabelText);
 
             ApplyTextColor(levelText, PrototypeVisualKit.PrimaryText);
+            ApplyTextColor(objectiveText, PrototypeVisualKit.WaveReady);
             ApplyTextColor(tutorialText, PrototypeVisualKit.SecondaryText);
             ApplyTextColor(nextTileText, PrototypeVisualKit.SecondaryText);
 
@@ -382,6 +395,7 @@ namespace MergeShelter.UI
             if (canvas == null)
                 return;
 
+            objectiveText = ResolveOrCreateText(canvas.transform, objectiveText, ObjectiveTextName, "Goal:");
             shelterLabelText = ResolveOrCreateText(canvas.transform, shelterLabelText, ShelterSectionLabelName, "SHELTER");
             boardLabelText = ResolveOrCreateText(canvas.transform, boardLabelText, BoardSectionLabelName, "BOARD");
             actionsLabelText = ResolveOrCreateText(canvas.transform, actionsLabelText, ActionsSectionLabelName, "ACTIONS");

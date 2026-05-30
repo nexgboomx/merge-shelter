@@ -325,7 +325,10 @@ namespace MergeShelter.Core
             });
 
             StartSelectedLevel(preserveReviveUsage: true);
-            ShowFeedback(PrototypeFeedbackKind.Revive, "Revive used. Level restarted with a fresh shelter.");
+            var reviveObjective = !string.IsNullOrWhiteSpace(_currentLevel.Objective)
+                ? $" Goal: {_currentLevel.Objective}."
+                : string.Empty;
+            ShowFeedback(PrototypeFeedbackKind.Revive, $"Revive used. Level restarted with a fresh shelter.{reviveObjective}");
             ProgressionChanged?.Invoke();
             return true;
         }
@@ -409,7 +412,10 @@ namespace MergeShelter.Core
             }
 
             StartSelectedLevel();
-            ShowFeedback(PrototypeFeedbackKind.Retry, "Retry started. Rebuild stronger before the wave.");
+            var retryObjective = !string.IsNullOrWhiteSpace(_currentLevel.Objective)
+                ? $" Goal: {_currentLevel.Objective}."
+                : string.Empty;
+            ShowFeedback(PrototypeFeedbackKind.Retry, $"Retry started. Rebuild stronger before the wave.{retryObjective}");
             return true;
         }
 
@@ -577,10 +583,13 @@ namespace MergeShelter.Core
             AdvanceTutorialAfterWaveCompleted();
             RefreshHud();
             var explanation = _lastBoardEvaluation?.ResultExplanation ?? "Victory!";
+            var objectiveSuffix = !string.IsNullOrWhiteSpace(_currentLevel.Objective)
+                ? $" Objective complete: {_currentLevel.Objective}."
+                : string.Empty;
             var rewardMessage = rewardStored
                 ? $" Reward pending: +{_currentLevel.CoinReward} coins, +{_currentLevel.PartsReward} parts."
                 : " Reward is already pending.";
-            ShowFeedback(PrototypeFeedbackKind.WaveVictory, $"{explanation}{rewardMessage}{FormatQuestCompletionSuffix(questProgress)}");
+            ShowFeedback(PrototypeFeedbackKind.WaveVictory, $"{explanation}{objectiveSuffix}{rewardMessage}{FormatQuestCompletionSuffix(questProgress)}");
             PreviewAvailableAdOffers();
             ProgressionChanged?.Invoke();
         }
@@ -600,8 +609,10 @@ namespace MergeShelter.Core
                 ["fail_reason"] = failReason
             });
             RefreshHud();
-            ShowFeedback(PrototypeFeedbackKind.WaveDefeat, _lastBoardEvaluation?.ResultExplanation ??
-                                                  "Defeat. Your shelter was overwhelmed. Try stronger merges before the wave.");
+            var defeatExplanation = _lastBoardEvaluation?.ResultExplanation ??
+                                    "Defeat. Your shelter was overwhelmed.";
+            var defeatHint = PrototypeBoardEvaluator.GetDefeatHint(failReason);
+            ShowFeedback(PrototypeFeedbackKind.WaveDefeat, $"{defeatExplanation} {defeatHint}");
             PreviewAvailableAdOffers();
             ProgressionChanged?.Invoke();
         }
@@ -609,6 +620,7 @@ namespace MergeShelter.Core
         private void RefreshHud()
         {
             hudView?.SetLevel(_currentLevel.LevelId, _currentLevel.DisplayName);
+            hudView?.SetObjective(_currentLevel.Objective);
             hudView?.SetTutorial(IsTutorialComplete ? _currentLevel.TutorialMessage : GetTutorialMessage());
             hudView?.SetShelterHp(_shelter.CurrentHealth, _shelter.MaxHealth);
             hudView?.SetNextTile(_nextTile);

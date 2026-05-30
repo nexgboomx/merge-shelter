@@ -10,6 +10,7 @@ namespace MergeShelter.Levels
     {
         public int LevelId;
         public string DisplayName;
+        public string Objective;
         public string TutorialMessage;
         public List<TileType> AvailableTiles = new();
         public List<EnemyData> Enemies = new();
