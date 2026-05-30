@@ -30,6 +30,7 @@ namespace MergeShelter.Tests.PlayMode
             PrototypeHudView.ShelterUpgradeTextName,
             PrototypeHudView.BoardSectionLabelName,
             "NextTileText",
+            PrototypeHudView.WaveRosterTextName,
             PrototypeHudView.ActionsSectionLabelName,
             PrototypeHudView.RewardsSectionLabelName,
             "WalletText",
@@ -89,6 +90,10 @@ namespace MergeShelter.Tests.PlayMode
             Assert.That(objectiveText.text, Does.Contain("Goal:"));
             Assert.That(objectiveText.text, Does.Contain("Survive"));
 
+            var waveRosterText = GetHudText(PrototypeHudView.WaveRosterTextName);
+            Assert.That(waveRosterText.text, Does.StartWith("Wave:"));
+            Assert.That(waveRosterText.text, Does.Contain("Walker"));
+
             var firstCell = GameObject.Find("Cell_0_0")?.GetComponent<Button>();
             Assert.NotNull(firstCell);
             AssertColorApproximately(PrototypeVisualKit.EmptyCell, GetCellImage(0, 0).color);
@@ -113,6 +118,8 @@ namespace MergeShelter.Tests.PlayMode
             yield return null;
 
             Assert.IsFalse(string.IsNullOrWhiteSpace(GetResultText().text));
+            Assert.That(GetHudText(PrototypeHudView.WaveRosterTextName).text, Is.Empty,
+                "Wave roster should clear after wave resolves.");
         }
 
         [UnityTest]
@@ -1147,6 +1154,7 @@ namespace MergeShelter.Tests.PlayMode
         private static bool IsCompactHudText(string textName)
         {
             return textName == PrototypeHudView.ObjectiveTextName ||
+                   textName == PrototypeHudView.WaveRosterTextName ||
                    textName == PrototypeHudView.ShelterSectionLabelName ||
                    textName == PrototypeHudView.BoardSectionLabelName ||
                    textName == PrototypeHudView.ActionsSectionLabelName ||

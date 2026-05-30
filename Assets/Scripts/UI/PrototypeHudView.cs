@@ -20,6 +20,7 @@ namespace MergeShelter.UI
         public const string RewardTextName = "RewardText";
         public const string QuestTextName = "QuestText";
         public const string ObjectiveTextName = "ObjectiveText";
+        public const string WaveRosterTextName = "WaveRosterText";
         public const string ResultPanelName = "ResultStatusPanel";
 
         private const float HorizontalPadding = 24f;
@@ -40,6 +41,8 @@ namespace MergeShelter.UI
         private const float QuestTop = 234f;
         private const float QuestHeight = 40f;
         private const float BoardLabelTop = 286f;
+        private const float WaveRosterTop = 302f;
+        private const float WaveRosterHeight = 28f;
         private const float ResultBottom = 250f;
         private const float ResultHeight = 72f;
         private const float ActionsLabelBottom = 208f;
@@ -54,6 +57,7 @@ namespace MergeShelter.UI
         [SerializeField] private Text shelterUpgradeText;
         [SerializeField] private Text boardLabelText;
         [SerializeField] private Text nextTileText;
+        [SerializeField] private Text waveRosterText;
         [SerializeField] private Text actionsLabelText;
         [SerializeField] private Text rewardsLabelText;
         [SerializeField] private Text rewardText;
@@ -114,6 +118,7 @@ namespace MergeShelter.UI
                 ConfigureTopText(questText, QuestTop, QuestHeight, 12, TextAnchor.UpperLeft);
                 ConfigureTopText(boardLabelText, BoardLabelTop, SectionLabelHeight, 11, TextAnchor.UpperLeft, 0f, 0.5f, HorizontalPadding, 8f);
                 ConfigureTopText(nextTileText, BoardLabelTop, SectionLabelHeight, 12, TextAnchor.UpperRight, 0.5f, 1f, 8f, HorizontalPadding);
+                ConfigureTopText(waveRosterText, WaveRosterTop, WaveRosterHeight, 11, TextAnchor.UpperLeft);
                 ConfigureBottomText(resultText, ResultBottom, ResultHeight, 14, TextAnchor.UpperLeft);
                 ConfigureBottomText(actionsLabelText, ActionsLabelBottom, SectionLabelHeight, 11, TextAnchor.UpperLeft);
                 ConfigureResultPanel();
@@ -136,6 +141,13 @@ namespace MergeShelter.UI
             EnsureSectionLabelsAndText();
             if (objectiveText != null)
                 objectiveText.text = string.IsNullOrWhiteSpace(objective) ? string.Empty : $"Goal: {objective}";
+        }
+
+        public void SetWaveRoster(string roster)
+        {
+            EnsureSectionLabelsAndText();
+            if (waveRosterText != null)
+                waveRosterText.text = roster ?? string.Empty;
         }
 
         public void SetTutorial(string message)
@@ -365,6 +377,7 @@ namespace MergeShelter.UI
 
             ApplyTextColor(levelText, PrototypeVisualKit.PrimaryText);
             ApplyTextColor(objectiveText, PrototypeVisualKit.WaveReady);
+            ApplyTextColor(waveRosterText, PrototypeVisualKit.SecondaryText);
             ApplyTextColor(tutorialText, PrototypeVisualKit.SecondaryText);
             ApplyTextColor(nextTileText, PrototypeVisualKit.SecondaryText);
 
@@ -396,6 +409,7 @@ namespace MergeShelter.UI
                 return;
 
             objectiveText = ResolveOrCreateText(canvas.transform, objectiveText, ObjectiveTextName, "Goal:");
+            waveRosterText = ResolveOrCreateText(canvas.transform, waveRosterText, WaveRosterTextName, "Wave:");
             shelterLabelText = ResolveOrCreateText(canvas.transform, shelterLabelText, ShelterSectionLabelName, "SHELTER");
             boardLabelText = ResolveOrCreateText(canvas.transform, boardLabelText, BoardSectionLabelName, "BOARD");
             actionsLabelText = ResolveOrCreateText(canvas.transform, actionsLabelText, ActionsSectionLabelName, "ACTIONS");

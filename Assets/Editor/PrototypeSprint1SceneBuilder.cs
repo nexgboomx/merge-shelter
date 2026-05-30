@@ -47,6 +47,7 @@ namespace MergeShelter.EditorTools
             var boardLabelText = CreateHudText(canvas.transform, PrototypeHudView.BoardSectionLabelName, new Vector2(24f, -286f), new Vector2(328f, 14f), 11, "BOARD");
             var nextTileText = CreateHudText(canvas.transform, "NextTileText", new Vector2(368f, -286f), new Vector2(328f, 14f), 12);
             nextTileText.alignment = TextAnchor.MiddleRight;
+            var waveRosterText = CreateHudText(canvas.transform, PrototypeHudView.WaveRosterTextName, new Vector2(24f, -302f), new Vector2(672f, 28f), 11, "Wave:");
             var actionsLabelText = CreateBottomHudText(canvas.transform, PrototypeHudView.ActionsSectionLabelName, 208f, new Vector2(672f, 14f), 11);
             actionsLabelText.text = "ACTIONS";
             var resultText = CreateBottomHudText(canvas.transform, "ResultText", 250f, new Vector2(672f, 72f), 14);
@@ -73,6 +74,7 @@ namespace MergeShelter.EditorTools
                 levelText,
                 objectiveText,
                 tutorialText,
+                waveRosterText,
                 shelterLabelText,
                 shelterHpText,
                 shelterUpgradeText,
@@ -240,6 +242,7 @@ namespace MergeShelter.EditorTools
             Text levelText,
             Text objectiveText,
             Text tutorialText,
+            Text waveRosterText,
             Text shelterLabelText,
             Text shelterHpText,
             Text shelterUpgradeText,
@@ -257,6 +260,7 @@ namespace MergeShelter.EditorTools
             serializedObject.FindProperty("levelText").objectReferenceValue = levelText;
             serializedObject.FindProperty("objectiveText").objectReferenceValue = objectiveText;
             serializedObject.FindProperty("tutorialText").objectReferenceValue = tutorialText;
+            serializedObject.FindProperty("waveRosterText").objectReferenceValue = waveRosterText;
             serializedObject.FindProperty("shelterLabelText").objectReferenceValue = shelterLabelText;
             serializedObject.FindProperty("shelterHpText").objectReferenceValue = shelterHpText;
             serializedObject.FindProperty("shelterUpgradeText").objectReferenceValue = shelterUpgradeText;

@@ -185,31 +185,33 @@ namespace MergeShelter.Levels
             };
         }
 
-        private static EnemyData Walker() => CreateEnemy("walker", 10, 8, 1.0f);
+        private static EnemyData Walker() => CreateEnemy("walker", "Walker", "basic", 10, 8, 1.0f);
 
-        private static EnemyData Runner() => CreateEnemy("runner", 8, 6, 1.6f);
+        private static EnemyData Runner() => CreateEnemy("runner", "Runner", "fast", 8, 6, 1.6f);
 
-        private static EnemyData Tank() => CreateEnemy("tank", 25, 14, 0.6f);
+        private static EnemyData Tank() => CreateEnemy("tank", "Tank", "tough", 25, 14, 0.6f);
 
-        private static EnemyData Bomber() => CreateEnemy("bomber", 15, 22, 0.8f);
+        private static EnemyData Bomber() => CreateEnemy("bomber", "Bomber", "walls", 15, 22, 0.8f);
 
-        private static EnemyData Bruiser() => CreateEnemy("bruiser", 38, 18, 0.7f);
+        private static EnemyData Bruiser() => CreateEnemy("bruiser", "Bruiser", "strong", 38, 18, 0.7f);
 
-        private static EnemyData SiegeTank() => CreateEnemy("siege_tank", 52, 24, 0.5f);
+        private static EnemyData SiegeTank() => CreateEnemy("siege_tank", "Siege Tank", "heavy", 52, 24, 0.5f);
 
-        private static EnemyData Demolisher() => CreateEnemy("demolisher", 32, 34, 0.75f);
+        private static EnemyData Demolisher() => CreateEnemy("demolisher", "Demolisher", "destroy", 32, 34, 0.75f);
 
-        private static EnemyData Bulwark() => CreateEnemy("bulwark", 70, 28, 0.45f);
+        private static EnemyData Bulwark() => CreateEnemy("bulwark", "Bulwark", "armored", 70, 28, 0.45f);
 
-        private static EnemyData StormRunner() => CreateEnemy("storm_runner", 26, 24, 1.7f);
+        private static EnemyData StormRunner() => CreateEnemy("storm_runner", "Storm Runner", "rush", 26, 24, 1.7f);
 
-        private static EnemyData AlphaBomber() => CreateEnemy("alpha_bomber", 45, 46, 0.7f);
+        private static EnemyData AlphaBomber() => CreateEnemy("alpha_bomber", "Alpha Bomber", "blast", 45, 46, 0.7f);
 
-        private static EnemyData Colossus() => CreateEnemy("colossus", 85, 42, 0.35f);
+        private static EnemyData Colossus() => CreateEnemy("colossus", "Colossus", "massive", 85, 42, 0.35f);
 
-        private static EnemyData CreateEnemy(string id, int maxHealth, int damage, float speed) => new EnemyData
+        private static EnemyData CreateEnemy(string id, string displayName, string behaviorTag, int maxHealth, int damage, float speed) => new EnemyData
         {
             EnemyId = id,
+            DisplayName = displayName,
+            BehaviorTag = behaviorTag,
             MaxHealth = maxHealth,
             Damage = damage,
             Speed = speed

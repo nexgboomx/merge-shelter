@@ -284,6 +284,69 @@ namespace MergeShelter.Tests.EditMode
         }
 
         [Test]
+        public void AllEnemies_HaveDisplayNameAndBehaviorTag()
+        {
+            var levels = SprintOneLevelCatalog.CreateLevels();
+            var seenIds = new HashSet<string>();
+
+            foreach (var level in levels)
+            {
+                foreach (var enemy in level.Enemies)
+                {
+                    Assert.IsFalse(string.IsNullOrWhiteSpace(enemy.DisplayName), $"Enemy '{enemy.EnemyId}' in Level {level.LevelId} needs a display name.");
+                    Assert.IsFalse(string.IsNullOrWhiteSpace(enemy.BehaviorTag), $"Enemy '{enemy.EnemyId}' in Level {level.LevelId} needs a behavior tag.");
+                    Assert.LessOrEqual(enemy.DisplayName.Length, 20, $"Enemy '{enemy.EnemyId}' display name should be concise.");
+                    Assert.LessOrEqual(enemy.BehaviorTag.Length, 10, $"Enemy '{enemy.EnemyId}' behavior tag should be short.");
+                    Assert.That(enemy.DisplayName, Does.Not.Contain("_"), $"Display name should not expose raw ID underscore for '{enemy.EnemyId}'.");
+                    seenIds.Add(enemy.EnemyId);
+                }
+            }
+
+            Assert.GreaterOrEqual(seenIds.Count, 11, "All 11 enemy types should appear across the 30 levels.");
+        }
+
+        [Test]
+        public void WaveRoster_GroupsDuplicateEnemies()
+        {
+            var enemies = new List<EnemyData>
+            {
+                new EnemyData { EnemyId = "walker", DisplayName = "Walker", BehaviorTag = "basic" },
+                new EnemyData { EnemyId = "walker", DisplayName = "Walker", BehaviorTag = "basic" },
+                new EnemyData { EnemyId = "bomber", DisplayName = "Bomber", BehaviorTag = "walls" }
+            };
+
+            var roster = EnemyData.FormatWaveRoster(enemies);
+            Assert.That(roster, Does.StartWith("Wave:"));
+            Assert.That(roster, Does.Contain("2× Walker"));
+            Assert.That(roster, Does.Contain("Bomber"));
+            Assert.That(roster, Does.Not.Contain("walker"));
+            Assert.That(roster, Does.Not.Contain("bomber"));
+        }
+
+        [Test]
+        public void WaveRoster_LevelOneIsReadable()
+        {
+            var level = SprintOneLevelCatalog.CreateLevels()[0];
+            var roster = EnemyData.FormatWaveRoster(level.Enemies);
+
+            Assert.That(roster, Does.StartWith("Wave:"));
+            Assert.That(roster, Does.Contain("Walker"));
+            Assert.That(roster, Does.Contain("basic"));
+            Assert.LessOrEqual(roster.Length, 80, "Level 1 roster should be short.");
+        }
+
+        [Test]
+        public void WaveRoster_LevelThirtyIsReadable()
+        {
+            var level = SprintOneLevelCatalog.CreateLevels()[29];
+            var roster = EnemyData.FormatWaveRoster(level.Enemies);
+
+            Assert.That(roster, Does.StartWith("Wave:"));
+            Assert.That(roster, Does.Not.Contain("_"));
+            Assert.Greater(roster.Length, 20, "Level 30 roster should list multiple enemy types.");
+        }
+
+        [Test]
         public void DefeatHints_AreActionableAndDoNotExposeRawFailReasons()
         {
             var failReasons = new[]

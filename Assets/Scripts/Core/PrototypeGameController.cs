@@ -621,6 +621,7 @@ namespace MergeShelter.Core
         {
             hudView?.SetLevel(_currentLevel.LevelId, _currentLevel.DisplayName);
             hudView?.SetObjective(_currentLevel.Objective);
+            hudView?.SetWaveRoster(_levelEnded ? string.Empty : EnemyData.FormatWaveRoster(_currentLevel.Enemies));
             hudView?.SetTutorial(IsTutorialComplete ? _currentLevel.TutorialMessage : GetTutorialMessage());
             hudView?.SetShelterHp(_shelter.CurrentHealth, _shelter.MaxHealth);
             hudView?.SetNextTile(_nextTile);
