@@ -19,6 +19,7 @@ namespace MergeShelter.UI
         public const string ShelterUpgradeTextName = "ShelterUpgradeText";
         public const string RewardTextName = "RewardText";
         public const string QuestTextName = "QuestText";
+        public const string ResultPanelName = "ResultStatusPanel";
 
         private const float HorizontalPadding = 24f;
         private const float TopPadding = 16f;
@@ -40,7 +41,7 @@ namespace MergeShelter.UI
         private const float ResultHeight = 72f;
         private const float ActionsLabelBottom = 208f;
         private const float ResultPulseScale = 1.04f;
-        private const float ResultPulseSeconds = 0.12f;
+        private const float ResultEffectSeconds = 0.18f;
 
         [SerializeField] private Text levelText;
         [SerializeField] private Text tutorialText;
@@ -56,15 +57,21 @@ namespace MergeShelter.UI
         [SerializeField] private Text questText;
         [SerializeField] private Text resultText;
         [SerializeField] private Text walletText;
+        [SerializeField] private Image resultPanelImage;
 
         private bool _isApplyingLayout;
+        private float _resultEffectClearTime;
         public PrototypeFeedbackKind CurrentFeedbackKind { get; private set; } = PrototypeFeedbackKind.None;
         public string CurrentFeedbackMessage { get; private set; } = string.Empty;
+        public PrototypeFeedbackKind LastResultEffectKind { get; private set; } = PrototypeFeedbackKind.None;
+        public bool HasActiveResultEffect => Time.unscaledTime < _resultEffectClearTime;
+        public float ResultEffectDurationSeconds => ResultEffectSeconds;
 
         private void Awake()
         {
             EnsureOpaqueCanvasBackground();
             EnsureSectionLabelsAndText();
+            EnsureResultPanel();
             ApplyPhoneSafeLayout();
         }
 
@@ -72,6 +79,12 @@ namespace MergeShelter.UI
         {
             if (!_isApplyingLayout)
                 ApplyPhoneSafeLayout();
+        }
+
+        private void Update()
+        {
+            if (_resultEffectClearTime > 0f && Time.unscaledTime >= _resultEffectClearTime)
+                ClearResultPulse();
         }
 
         public void ApplyPhoneSafeLayout()
@@ -83,6 +96,7 @@ namespace MergeShelter.UI
             try
             {
                 EnsureSectionLabelsAndText();
+                EnsureResultPanel();
                 ConfigureTopText(levelText, TopPadding, LevelHeight, 20, TextAnchor.UpperLeft);
                 ConfigureTopText(tutorialText, TutorialTop, TutorialHeight, 14, TextAnchor.UpperLeft);
                 ConfigureTopText(shelterLabelText, ShelterLabelTop, SectionLabelHeight, 11, TextAnchor.UpperLeft);
@@ -97,6 +111,8 @@ namespace MergeShelter.UI
                 ConfigureTopText(nextTileText, BoardLabelTop, SectionLabelHeight, 12, TextAnchor.UpperRight, 0.5f, 1f, 8f, HorizontalPadding);
                 ConfigureBottomText(resultText, ResultBottom, ResultHeight, 14, TextAnchor.UpperLeft);
                 ConfigureBottomText(actionsLabelText, ActionsLabelBottom, SectionLabelHeight, 11, TextAnchor.UpperLeft);
+                ConfigureResultPanel();
+                ApplyHudVisualStyles();
             }
             finally
             {
@@ -119,7 +135,10 @@ namespace MergeShelter.UI
         public void SetShelterHp(int current, int max)
         {
             if (shelterHpText != null)
+            {
                 shelterHpText.text = $"HP: {current}/{max}";
+                shelterHpText.color = GetShelterHpColor(current, max);
+            }
         }
 
         public void SetNextTile(TileData tile)
@@ -140,21 +159,33 @@ namespace MergeShelter.UI
 
         private void SetResultInternal(PrototypeFeedbackKind kind, string message)
         {
+            CurrentFeedbackKind = kind;
+            CurrentFeedbackMessage = message ?? string.Empty;
+            EnsureResultPanel();
+
             if (resultText != null)
             {
                 ConfigureBottomText(resultText, ResultBottom, ResultHeight, 14, TextAnchor.UpperLeft);
-                CurrentFeedbackKind = kind;
-                CurrentFeedbackMessage = message ?? string.Empty;
                 resultText.text = FormatFeedbackMessage(kind, CurrentFeedbackMessage);
-                resultText.color = GetFeedbackColor(kind);
+                resultText.color = PrototypeVisualKit.GetFeedbackColor(kind);
                 resultText.transform.localScale = kind == PrototypeFeedbackKind.None
                     ? Vector3.one
                     : Vector3.one * ResultPulseScale;
-
-                CancelInvoke(nameof(ClearResultPulse));
-                if (kind != PrototypeFeedbackKind.None)
-                    Invoke(nameof(ClearResultPulse), ResultPulseSeconds);
             }
+
+            if (kind == PrototypeFeedbackKind.None)
+            {
+                LastResultEffectKind = PrototypeFeedbackKind.None;
+                _resultEffectClearTime = 0f;
+            }
+            else
+            {
+                LastResultEffectKind = kind;
+                _resultEffectClearTime = Time.unscaledTime + ResultEffectSeconds;
+            }
+
+            ConfigureResultPanel();
+            ApplyResultPanelColor();
         }
 
         public void SetWallet(int coins, int parts)
@@ -164,6 +195,7 @@ namespace MergeShelter.UI
             {
                 ConfigureTopText(walletText, WalletTop, WalletHeight, 12, TextAnchor.UpperLeft);
                 walletText.text = $"Coins: {coins} | Parts: {parts}";
+                walletText.color = PrototypeVisualKit.ResourceText;
             }
         }
 
@@ -191,15 +223,29 @@ namespace MergeShelter.UI
             var dailyRewardStatus = hasClaimedDailyReward ? "claimed" : canClaimDailyReward ? "available" : "unavailable";
 
             walletText.text = $"Coins: {coins} | Parts: {parts}";
+            walletText.color = PrototypeVisualKit.ResourceText;
 
             if (shelterUpgradeText != null)
+            {
                 shelterUpgradeText.text = $"Lv {shelterUpgradeLevel} | Upgrade {upgradeCost} ({affordText})";
+                shelterUpgradeText.color = canAffordUpgrade
+                    ? PrototypeVisualKit.ShelterHealthy
+                    : PrototypeVisualKit.SecondaryText;
+            }
 
             if (rewardText != null)
+            {
                 rewardText.text = $"Daily: {dailyRewardStatus} (+{dailyRewardCoins}c, +{dailyRewardParts}p)";
+                rewardText.color = canClaimDailyReward
+                    ? PrototypeVisualKit.WaveReady
+                    : PrototypeVisualKit.SecondaryText;
+            }
 
             if (questText != null)
+            {
                 questText.text = FormatQuestStatus(dailyQuests);
+                questText.color = PrototypeVisualKit.PrimaryText;
+            }
         }
 
         private static string FormatQuestStatus(IReadOnlyList<DailyQuestState> dailyQuests)
@@ -294,6 +340,40 @@ namespace MergeShelter.UI
             text.alignment = alignment;
             text.lineSpacing = 1.05f;
             text.raycastTarget = false;
+            text.color = PrototypeVisualKit.PrimaryText;
+        }
+
+        private void ApplyHudVisualStyles()
+        {
+            ApplySectionLabelStyle(shelterLabelText);
+            ApplySectionLabelStyle(boardLabelText);
+            ApplySectionLabelStyle(actionsLabelText);
+            ApplySectionLabelStyle(rewardsLabelText);
+            ApplySectionLabelStyle(questsLabelText);
+
+            ApplyTextColor(levelText, PrototypeVisualKit.PrimaryText);
+            ApplyTextColor(tutorialText, PrototypeVisualKit.SecondaryText);
+            ApplyTextColor(nextTileText, PrototypeVisualKit.SecondaryText);
+
+            if (resultText != null)
+                resultText.color = PrototypeVisualKit.GetFeedbackColor(CurrentFeedbackKind);
+
+            ApplyResultPanelColor();
+        }
+
+        private static void ApplySectionLabelStyle(Text text)
+        {
+            if (text == null)
+                return;
+
+            text.color = PrototypeVisualKit.SectionText;
+            text.fontStyle = FontStyle.Bold;
+        }
+
+        private static void ApplyTextColor(Text text, Color color)
+        {
+            if (text != null)
+                text.color = color;
         }
 
         private void EnsureSectionLabelsAndText()
@@ -312,6 +392,67 @@ namespace MergeShelter.UI
             questText = ResolveOrCreateText(canvas.transform, questText, QuestTextName, "Tiles 0/10 | Level 0/1 | Reward 0/1");
         }
 
+        private void EnsureResultPanel()
+        {
+            var canvas = GetComponentInParent<Canvas>();
+            if (canvas == null)
+                return;
+
+            if (resultPanelImage != null)
+            {
+                resultPanelImage.raycastTarget = false;
+                ApplyResultPanelColor();
+                return;
+            }
+
+            var existing = canvas.transform.Find(ResultPanelName);
+            if (existing != null && existing.TryGetComponent<Image>(out var existingImage))
+            {
+                resultPanelImage = existingImage;
+                resultPanelImage.raycastTarget = false;
+                return;
+            }
+
+            var panelObject = new GameObject(ResultPanelName, typeof(RectTransform), typeof(Image));
+            panelObject.transform.SetParent(canvas.transform, false);
+            resultPanelImage = panelObject.GetComponent<Image>();
+            resultPanelImage.raycastTarget = false;
+            ApplyResultPanelColor();
+        }
+
+        private void ConfigureResultPanel()
+        {
+            if (resultPanelImage == null)
+                return;
+
+            var rectTransform = (RectTransform)resultPanelImage.transform;
+            rectTransform.anchorMin = new Vector2(0f, 0f);
+            rectTransform.anchorMax = new Vector2(1f, 0f);
+            rectTransform.pivot = new Vector2(0.5f, 0f);
+            rectTransform.offsetMin = new Vector2(-32f, ResultBottom - 8f);
+            rectTransform.offsetMax = new Vector2(32f, ResultBottom + ResultHeight + 8f);
+
+            if (resultText != null)
+            {
+                var panelIndex = resultPanelImage.transform.GetSiblingIndex();
+                var resultIndex = resultText.transform.GetSiblingIndex();
+                if (panelIndex == 0)
+                    resultPanelImage.transform.SetSiblingIndex(1);
+                else if (panelIndex > resultIndex)
+                    resultPanelImage.transform.SetSiblingIndex(Mathf.Max(1, resultIndex));
+            }
+        }
+
+        private void ApplyResultPanelColor()
+        {
+            if (resultPanelImage != null)
+            {
+                resultPanelImage.color = HasActiveResultEffect
+                    ? PrototypeVisualKit.GetResultPanelFlashColor(CurrentFeedbackKind)
+                    : PrototypeVisualKit.GetResultPanelColor(CurrentFeedbackKind);
+            }
+        }
+
         private static Text ResolveOrCreateText(Transform parent, Text current, string name, string fallbackText)
         {
             if (current != null)
@@ -325,7 +466,7 @@ namespace MergeShelter.UI
             textObject.transform.SetParent(parent, false);
             var text = textObject.GetComponent<Text>();
             text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            text.color = Color.white;
+            text.color = PrototypeVisualKit.PrimaryText;
             text.text = fallbackText;
             ConfigureText(text, 12, TextAnchor.UpperLeft);
             return text;
@@ -340,6 +481,12 @@ namespace MergeShelter.UI
             var existing = canvas.transform.Find(OpaqueBackgroundName);
             if (existing != null)
             {
+                if (existing.TryGetComponent<Image>(out var existingImage))
+                {
+                    existingImage.color = PrototypeVisualKit.CanvasBackground;
+                    existingImage.raycastTarget = false;
+                }
+
                 existing.SetAsFirstSibling();
                 return;
             }
@@ -356,7 +503,7 @@ namespace MergeShelter.UI
             rectTransform.offsetMax = Vector2.zero;
 
             var image = backgroundObject.GetComponent<Image>();
-            image.color = new Color(0.12f, 0.12f, 0.12f, 1f);
+            image.color = PrototypeVisualKit.CanvasBackground;
             image.raycastTarget = false;
         }
 
@@ -364,6 +511,9 @@ namespace MergeShelter.UI
         {
             if (resultText != null)
                 resultText.transform.localScale = Vector3.one;
+
+            _resultEffectClearTime = 0f;
+            ApplyResultPanelColor();
         }
 
         private static string FormatFeedbackMessage(PrototypeFeedbackKind kind, string message)
@@ -415,33 +565,14 @@ namespace MergeShelter.UI
             }
         }
 
-        private static Color GetFeedbackColor(PrototypeFeedbackKind kind)
+        private static Color GetShelterHpColor(int current, int max)
         {
-            switch (kind)
-            {
-                case PrototypeFeedbackKind.TilePlaced:
-                case PrototypeFeedbackKind.WaveStart:
-                case PrototypeFeedbackKind.NextLevel:
-                case PrototypeFeedbackKind.Retry:
-                    return new Color(0.9f, 0.94f, 1f);
-                case PrototypeFeedbackKind.MergeSuccess:
-                case PrototypeFeedbackKind.WaveVictory:
-                case PrototypeFeedbackKind.RewardClaim:
-                case PrototypeFeedbackKind.DailyRewardClaim:
-                case PrototypeFeedbackKind.QuestClaim:
-                case PrototypeFeedbackKind.ShelterUpgrade:
-                case PrototypeFeedbackKind.RewardDouble:
-                case PrototypeFeedbackKind.Revive:
-                    return new Color(0.82f, 1f, 0.82f);
-                case PrototypeFeedbackKind.InvalidPlacement:
-                case PrototypeFeedbackKind.WaveDefeat:
-                case PrototypeFeedbackKind.Blocked:
-                    return new Color(1f, 0.84f, 0.72f);
-                case PrototypeFeedbackKind.ResetSave:
-                    return new Color(0.9f, 0.9f, 0.9f);
-                default:
-                    return Color.white;
-            }
+            if (max <= 0 || current <= 0)
+                return PrototypeVisualKit.ShelterDefeated;
+
+            return current < max / 2
+                ? PrototypeVisualKit.ShelterWarning
+                : PrototypeVisualKit.ShelterHealthy;
         }
     }
 }
