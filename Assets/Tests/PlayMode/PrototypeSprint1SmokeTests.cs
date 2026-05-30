@@ -152,6 +152,7 @@ namespace MergeShelter.Tests.PlayMode
             yield return null;
 
             AssertFeedback(controller, PrototypeFeedbackKind.InvalidPlacement, "BLOCKED:");
+            Assert.That(GetResultText().text, Does.Contain("merge"));
             Assert.AreEqual(PrototypeFeedbackKind.InvalidPlacement, boardView.LastCellFeedbackKind);
             Assert.That(GetCellScale(0, 0), Is.EqualTo(PrototypeVisualKit.GetCellFeedbackScale(PrototypeFeedbackKind.InvalidPlacement)).Within(0.01f));
 
@@ -839,6 +840,7 @@ namespace MergeShelter.Tests.PlayMode
             yield return WinCurrentLevelAndClaim(controller);
             Assert.AreEqual(120, controller.Coins);
             Assert.IsTrue(controller.CanAffordShelterUpgrade);
+            Assert.That(GetResultText().text, Does.Contain("Upgrade available"));
 
             var previousCost = controller.ShelterUpgradeCost;
             upgradeButton.onClick.Invoke();

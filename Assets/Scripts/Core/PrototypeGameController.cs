@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text;
 using MergeShelter.Ads;
 using MergeShelter.Analytics;
 using MergeShelter.Board;
@@ -210,7 +211,8 @@ namespace MergeShelter.Core
             SaveProgression();
             RefreshHud();
             var nextLevelMessage = CanStartNextLevel ? $" Level {_progression.SelectedLevel + 1} unlocked." : string.Empty;
-            ShowFeedback(PrototypeFeedbackKind.RewardClaim, $"Reward claimed: +{reward.Coins} coins, +{reward.Parts} parts.{nextLevelMessage}{FormatQuestCompletionSuffix(questProgress)}{FormatTutorialSuffix(tutorialAdvanced)}");
+            var upgradePrompt = FormatUpgradePrompt();
+            ShowFeedback(PrototypeFeedbackKind.RewardClaim, $"Reward claimed: +{reward.Coins} coins, +{reward.Parts} parts.{nextLevelMessage}{upgradePrompt}{FormatQuestCompletionSuffix(questProgress)}{FormatTutorialSuffix(tutorialAdvanced)}");
             ProgressionChanged?.Invoke();
             return true;
         }
@@ -455,7 +457,7 @@ namespace MergeShelter.Core
             _nextTile = _tileGenerator.GenerateNextTile();
             RefreshHud();
             hudView?.SetResult(IsTutorialComplete
-                ? "Place tiles, merge, then start the wave."
+                ? GetBuildPhasePrompt()
                 : GetTutorialResultHint());
             BoardChanged?.Invoke();
             ProgressionChanged?.Invoke();
@@ -478,7 +480,7 @@ namespace MergeShelter.Core
                     ["level_id"] = _currentLevel.LevelId,
                     ["reason"] = "invalid_placement"
                 });
-                ShowFeedback(PrototypeFeedbackKind.InvalidPlacement, "Invalid cell. Choose an empty board space.");
+                ShowFeedback(PrototypeFeedbackKind.InvalidPlacement, "Cell occupied. Place near matching tiles to set up merges.");
                 return false;
             }
 
@@ -818,6 +820,45 @@ namespace MergeShelter.Core
                 default:
                     return _currentLevel != null ? _currentLevel.TutorialMessage : string.Empty;
             }
+        }
+
+        private string GetBuildPhasePrompt()
+        {
+            var tiles = _currentLevel?.AvailableTiles;
+            if (tiles == null || tiles.Count == 0)
+                return "Place tiles, merge, then start the wave.";
+
+            var builder = new StringBuilder();
+            foreach (var tile in tiles)
+            {
+                if (builder.Length > 0)
+                    builder.Append(", ");
+
+                builder.Append(GetTileRoleHint(tile));
+            }
+
+            builder.Append(". Merge 3 matching tiles, then start the wave.");
+            return builder.ToString();
+        }
+
+        private static string GetTileRoleHint(TileType tileType)
+        {
+            switch (tileType)
+            {
+                case TileType.Wood: return "Wood (walls)";
+                case TileType.Metal: return "Metal (turrets)";
+                case TileType.Food: return "Food (healing)";
+                case TileType.Energy: return "Energy (shields)";
+                default: return tileType.ToString();
+            }
+        }
+
+        private string FormatUpgradePrompt()
+        {
+            if (!_progression.CanAffordShelterUpgrade)
+                return string.Empty;
+
+            return $" Upgrade available: Shelter Lv {_progression.ShelterUpgradeLevel + 1} for {_progression.ShelterUpgradeCost} coins.";
         }
 
         private string GetTutorialResultHint()
