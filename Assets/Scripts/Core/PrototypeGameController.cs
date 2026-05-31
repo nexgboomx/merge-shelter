@@ -212,7 +212,7 @@ namespace MergeShelter.Core
             RefreshHud();
             var nextLevelMessage = CanStartNextLevel ? $" Level {_progression.SelectedLevel + 1} unlocked." : string.Empty;
             var upgradePrompt = FormatUpgradePrompt();
-            ShowFeedback(PrototypeFeedbackKind.RewardClaim, $"Reward claimed: +{reward.Coins} coins, +{reward.Parts} parts.{nextLevelMessage}{upgradePrompt}{FormatQuestCompletionSuffix(questProgress)}{FormatTutorialSuffix(tutorialAdvanced)}");
+            ShowFeedback(PrototypeFeedbackKind.RewardClaim, $"Reward claimed: +{reward.Coins} coins, +{reward.Parts} parts.{nextLevelMessage}{upgradePrompt}{FormatQuestProgressSuffix(questProgress)}{FormatTutorialSuffix(tutorialAdvanced)}");
             ProgressionChanged?.Invoke();
             return true;
         }
@@ -246,7 +246,7 @@ namespace MergeShelter.Core
             if (!_progression.TryClaimDailyQuest(out var reward))
             {
                 RefreshHud();
-                ShowFeedback(PrototypeFeedbackKind.Blocked, "No completed daily quest is ready to claim.");
+                ShowFeedback(PrototypeFeedbackKind.Blocked, "No quest ready. Finish progress first; claimed quests pay once.");
                 ProgressionChanged?.Invoke();
                 return false;
             }
@@ -517,7 +517,7 @@ namespace MergeShelter.Core
             var questProgress = RecordQuestProgress(DailyQuestModel.PlaceTilesQuestId, 1);
             _nextTile = _tileGenerator.GenerateNextTile();
             RefreshHud();
-            ShowFeedback(feedbackKind, $"{resultMessage}{FormatQuestCompletionSuffix(questProgress)}");
+            ShowFeedback(feedbackKind, $"{resultMessage}{FormatQuestProgressSuffix(questProgress)}");
             BoardChanged?.Invoke();
             ProgressionChanged?.Invoke();
             return true;
@@ -591,7 +591,7 @@ namespace MergeShelter.Core
             var rewardMessage = rewardStored
                 ? $" Reward pending: +{_currentLevel.CoinReward} coins, +{_currentLevel.PartsReward} parts."
                 : " Reward is already pending.";
-            ShowFeedback(PrototypeFeedbackKind.WaveVictory, $"{explanation}{objectiveSuffix}{rewardMessage}{FormatQuestCompletionSuffix(questProgress)}");
+            ShowFeedback(PrototypeFeedbackKind.WaveVictory, $"{explanation}{objectiveSuffix}{rewardMessage}{FormatQuestProgressSuffix(questProgress)}");
             PreviewAvailableAdOffers();
             ProgressionChanged?.Invoke();
         }
@@ -916,9 +916,23 @@ namespace MergeShelter.Core
             return progress;
         }
 
-        private static string FormatQuestCompletionSuffix(DailyQuestProgressResult progress)
+        private static string FormatQuestProgressSuffix(DailyQuestProgressResult progress)
         {
-            return progress.NewlyCompleted ? $" Quest complete: {progress.Title}." : string.Empty;
+            if (progress.IsEmpty)
+                return string.Empty;
+
+            if (progress.NewlyCompleted)
+                return $" Quest ready: {progress.Title} ({FormatQuestReward(progress.RewardCoins, progress.RewardParts)}).";
+
+            return $" Quest: {progress.Title} {progress.Progress}/{progress.Target}.";
+        }
+
+        private static string FormatQuestReward(int coins, int parts)
+        {
+            if (parts > 0)
+                return $"+{coins}c, +{parts}p";
+
+            return $"+{coins}c";
         }
 
         private bool ShowMockRewardedAd(AdPlacement placement)

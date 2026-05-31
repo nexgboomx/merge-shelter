@@ -39,9 +39,9 @@ namespace MergeShelter.UI
         private const float WalletHeight = 22f;
         private const float QuestsLabelTop = 216f;
         private const float QuestTop = 234f;
-        private const float QuestHeight = 40f;
-        private const float BoardLabelTop = 286f;
-        private const float WaveRosterTop = 302f;
+        private const float QuestHeight = 48f;
+        private const float BoardLabelTop = 294f;
+        private const float WaveRosterTop = 310f;
         private const float WaveRosterHeight = 28f;
         private const float ResultBottom = 250f;
         private const float ResultHeight = 72f;
@@ -115,7 +115,7 @@ namespace MergeShelter.UI
                 ConfigureTopText(walletText, WalletTop, WalletHeight, 12, TextAnchor.MiddleLeft, 0f, 0.5f, HorizontalPadding, 8f);
                 ConfigureTopText(rewardText, WalletTop, WalletHeight, 12, TextAnchor.MiddleRight, 0.5f, 1f, 8f, HorizontalPadding);
                 ConfigureTopText(questsLabelText, QuestsLabelTop, SectionLabelHeight, 11, TextAnchor.UpperLeft);
-                ConfigureTopText(questText, QuestTop, QuestHeight, 12, TextAnchor.UpperLeft);
+                ConfigureTopText(questText, QuestTop, QuestHeight, 10, TextAnchor.UpperLeft);
                 ConfigureTopText(boardLabelText, BoardLabelTop, SectionLabelHeight, 11, TextAnchor.UpperLeft, 0f, 0.5f, HorizontalPadding, 8f);
                 ConfigureTopText(nextTileText, BoardLabelTop, SectionLabelHeight, 12, TextAnchor.UpperRight, 0.5f, 1f, 8f, HorizontalPadding);
                 ConfigureTopText(waveRosterText, WaveRosterTop, WaveRosterHeight, 11, TextAnchor.UpperLeft);
@@ -242,7 +242,7 @@ namespace MergeShelter.UI
             ConfigureTopText(walletText, WalletTop, WalletHeight, 12, TextAnchor.MiddleLeft, 0f, 0.5f, HorizontalPadding, 8f);
             ConfigureTopText(shelterUpgradeText, StatusTop, StatusHeight, 12, TextAnchor.MiddleRight, 0.5f, 1f, 8f, HorizontalPadding);
             ConfigureTopText(rewardText, WalletTop, WalletHeight, 12, TextAnchor.MiddleRight, 0.5f, 1f, 8f, HorizontalPadding);
-            ConfigureTopText(questText, QuestTop, QuestHeight, 12, TextAnchor.UpperLeft);
+            ConfigureTopText(questText, QuestTop, QuestHeight, 10, TextAnchor.UpperLeft);
             var affordText = canAffordUpgrade ? "can afford" : $"need {upgradeCost - coins} more";
             var dailyRewardStatus = hasClaimedDailyReward ? "claimed" : canClaimDailyReward ? "available" : "unavailable";
 
@@ -282,10 +282,10 @@ namespace MergeShelter.UI
             {
                 var quest = dailyQuests[i];
                 if (i > 0)
-                    builder.Append(" | ");
+                    builder.AppendLine();
 
-                builder.Append(GetShortQuestTitle(quest));
-                builder.Append(' ');
+                builder.Append(GetQuestTitle(quest));
+                builder.Append(": ");
                 builder.Append(quest.Progress);
                 builder.Append('/');
                 builder.Append(quest.Target);
@@ -293,25 +293,28 @@ namespace MergeShelter.UI
                 if (quest.Claimed)
                     builder.Append(" claimed");
                 else if (quest.Completed)
-                    builder.Append(" ready");
+                    builder.Append(" READY");
+
+                if (!quest.Claimed)
+                {
+                    builder.Append(" +");
+                    builder.Append(quest.RewardCoins);
+                    builder.Append('c');
+                    if (quest.RewardParts > 0)
+                    {
+                        builder.Append(" +");
+                        builder.Append(quest.RewardParts);
+                        builder.Append('p');
+                    }
+                }
             }
 
             return builder.ToString();
         }
 
-        private static string GetShortQuestTitle(DailyQuestState quest)
+        private static string GetQuestTitle(DailyQuestState quest)
         {
-            switch (quest.QuestId)
-            {
-                case DailyQuestModel.PlaceTilesQuestId:
-                    return "Tiles";
-                case DailyQuestModel.CompleteLevelQuestId:
-                    return "Level";
-                case DailyQuestModel.ClaimRewardQuestId:
-                    return "Reward";
-                default:
-                    return string.IsNullOrWhiteSpace(quest.Title) ? "Quest" : quest.Title;
-            }
+            return string.IsNullOrWhiteSpace(quest.Title) ? "Quest" : quest.Title;
         }
 
         private static void ConfigureTopText(
@@ -417,7 +420,7 @@ namespace MergeShelter.UI
             questsLabelText = ResolveOrCreateText(canvas.transform, questsLabelText, QuestsSectionLabelName, "QUESTS");
             shelterUpgradeText = ResolveOrCreateText(canvas.transform, shelterUpgradeText, ShelterUpgradeTextName, "Lv 1 | Upgrade 100");
             rewardText = ResolveOrCreateText(canvas.transform, rewardText, RewardTextName, "Daily: available");
-            questText = ResolveOrCreateText(canvas.transform, questText, QuestTextName, "Tiles 0/10 | Level 0/1 | Reward 0/1");
+            questText = ResolveOrCreateText(canvas.transform, questText, QuestTextName, "Place 10 Tiles: 0/10");
         }
 
         private void EnsureResultPanel()

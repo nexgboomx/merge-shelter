@@ -207,6 +207,9 @@ namespace MergeShelter.Tests.PlayMode
             {
                 Assert.IsTrue(controller.TryPlaceNextTile(i % controller.BoardWidth, i / controller.BoardWidth));
                 yield return null;
+
+                if (i == 0)
+                    Assert.That(GetResultText().text, Does.Contain("Quest: Place 10 Tiles 1/10"));
             }
 
             AssertVisibleActionButton("ClaimQuestButton");
@@ -454,6 +457,14 @@ namespace MergeShelter.Tests.PlayMode
             var claimQuestButton = FindButton("ClaimQuestButton");
             Assert.NotNull(claimQuestButton);
             Assert.IsFalse(claimQuestButton.gameObject.activeSelf);
+            Assert.That(GetQuestText().text, Does.Contain("Place 10 Tiles: 0/10"));
+            Assert.That(GetQuestText().text, Does.Contain("Complete 1 Level: 0/1"));
+            Assert.That(GetQuestText().text, Does.Contain("Claim 1 Reward: 0/1"));
+
+            Assert.IsFalse(controller.ClaimQuest());
+            Assert.That(GetResultText().text, Does.Contain("No quest ready"));
+            Assert.That(GetResultText().text, Does.Contain("claimed quests pay once"));
+            AssertFeedback(controller, PrototypeFeedbackKind.Blocked, "BLOCKED:");
 
             for (var i = 0; i < 10; i++)
             {
@@ -466,7 +477,10 @@ namespace MergeShelter.Tests.PlayMode
             Assert.IsFalse(placeQuest.Claimed);
             Assert.IsTrue(controller.CanClaimQuest);
             Assert.IsTrue(claimQuestButton.gameObject.activeSelf);
-            Assert.That(GetQuestText().text, Does.Contain("Tiles 10/10 ready"));
+            Assert.That(GetQuestText().text, Does.Contain("Place 10 Tiles: 10/10 READY"));
+            Assert.That(GetQuestText().text, Does.Contain("+40c"));
+            Assert.That(GetResultText().text, Does.Contain("Quest ready: Place 10 Tiles"));
+            Assert.That(GetResultText().text, Does.Contain("+40c"));
 
             var startingCoins = controller.Coins;
             var startingParts = controller.Parts;
@@ -480,8 +494,16 @@ namespace MergeShelter.Tests.PlayMode
             Assert.IsFalse(controller.CanClaimQuest);
             Assert.IsFalse(claimQuestButton.gameObject.activeSelf);
             Assert.That(GetResultText().text, Does.Contain("Quest claimed"));
+            Assert.That(GetResultText().text, Does.Contain("+40 coins"));
+            Assert.That(GetResultText().text, Does.Contain("+0 parts"));
             AssertFeedback(controller, PrototypeFeedbackKind.QuestClaim, "QUEST:");
-            Assert.That(GetQuestText().text, Does.Contain("Tiles 10/10 claimed"));
+            Assert.That(GetQuestText().text, Does.Contain("Place 10 Tiles: 10/10 claimed"));
+            Assert.That(GetQuestText().text, Does.Not.Contain("Place 10 Tiles: 10/10 READY"));
+
+            Assert.IsFalse(controller.ClaimQuest());
+            Assert.AreEqual(startingCoins + placeQuest.RewardCoins, controller.Coins);
+            Assert.AreEqual(startingParts + placeQuest.RewardParts, controller.Parts);
+            Assert.That(GetResultText().text, Does.Contain("No quest ready"));
         }
 
         [UnityTest]
@@ -531,7 +553,9 @@ namespace MergeShelter.Tests.PlayMode
             Assert.IsFalse(controller.CanClaimDailyReward);
             Assert.That(GetShelterUpgradeText().text, Does.Contain("Lv 2"));
             Assert.That(GetRewardText().text, Does.Contain("claimed"));
-            Assert.That(GetQuestText().text, Does.Contain("Tiles 10/10 claimed"));
+            Assert.That(GetQuestText().text, Does.Contain("Place 10 Tiles: 10/10 claimed"));
+            Assert.That(GetQuestText().text, Does.Contain("Complete 1 Level: 1/1 READY"));
+            Assert.That(GetQuestText().text, Does.Contain("Claim 1 Reward: 1/1 READY"));
 
             var placeQuest = GetQuest(controller, DailyQuestModel.PlaceTilesQuestId);
             Assert.AreEqual(10, placeQuest.Progress);
@@ -568,6 +592,9 @@ namespace MergeShelter.Tests.PlayMode
             AssertNewPlayerState(controller);
             Assert.IsFalse(new LocalJsonSaveService(_tempSaveDirectory).HasSave());
             Assert.That(GetResultText().text, Does.Contain("Save reset"));
+            Assert.That(GetQuestText().text, Does.Contain("Place 10 Tiles: 0/10"));
+            Assert.That(GetQuestText().text, Does.Contain("Complete 1 Level: 0/1"));
+            Assert.That(GetQuestText().text, Does.Contain("Claim 1 Reward: 0/1"));
             AssertFeedback(controller, PrototypeFeedbackKind.ResetSave, "RESET:");
 
             yield return LoadPrototypeScene();
@@ -575,6 +602,9 @@ namespace MergeShelter.Tests.PlayMode
             controller = Object.FindObjectOfType<PrototypeGameController>();
             Assert.NotNull(controller);
             AssertNewPlayerState(controller);
+            Assert.That(GetQuestText().text, Does.Contain("Place 10 Tiles: 0/10"));
+            Assert.That(GetQuestText().text, Does.Contain("Complete 1 Level: 0/1"));
+            Assert.That(GetQuestText().text, Does.Contain("Claim 1 Reward: 0/1"));
         }
 
         [UnityTest]
