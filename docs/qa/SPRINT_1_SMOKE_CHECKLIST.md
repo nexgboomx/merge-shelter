@@ -282,6 +282,30 @@ This checklist is the minimum quality gate for the first playable prototype.
 - P0/P1 blockers: none observed. No crash, freeze, launch failure, install failure, or Android black-screen regression occurred. `adb logcat -d` was not needed.
 - Security note: Testing used only the Merge Shelter package, safe device metadata commands (`ro.product.manufacturer`, `ro.product.model`, `ro.build.version.release`, `ro.build.version.sdk`), allowed install/launch/force-stop commands, foreground verification before all screenshots and input, and game-only screenshots/input after foreground verification. No personal apps, notifications, storage, or personal device data were opened, pulled, browsed, or inspected.
 
+## Sprint 8 Android Physical Device Smoke Notes - 2026-05-31
+
+- Machine OS: Ubuntu 24.04.3 LTS, Linux 6.17.0-1017-oem x86_64.
+- Unity version: 6000.3.16f1 (a56f230f6470).
+- Device manufacturer/model: samsung SM-S918B.
+- Android version/API: Android 16 / API 36.
+- APK filename: `merge-shelter-sprint8-playability-device-debug.apk`.
+- APK output path: `Builds/Android/merge-shelter-sprint8-playability-device-debug.apk`.
+- EditMode tests: passed 67/67 (`Logs/sprint8-qa-editmode-results.xml`).
+- PlayMode tests: passed 17/17 (`Logs/sprint8-qa-playmode-results.xml`).
+- Install result: passed with `adb install -r` using Unity's embedded adb at `/home/phung-truong/Unity/Hub/Editor/6000.3.16f1/Editor/Data/PlaybackEngines/AndroidPlayer/SDK/platform-tools/adb`.
+- Launch result: passed with `adb shell monkey -p com.DefaultCompany.mergeshelter 1`; foreground was verified as `com.DefaultCompany.mergeshelter/com.unity3d.player.UnityPlayerGameActivity`.
+- Level objective result: passed. Level 1 showed `Goal: Survive the first wave`; Level 4 and Level 10 showed readable objectives on the SM-S918B portrait screen. Victory messages referenced objective completion.
+- Enemy/wave roster result: passed. Wave rosters were visible before Start Wave, grouped duplicate enemies, and used player-facing display names/tags. Confirmed examples included `2x Walker (basic)`, `2x Walker (basic) - 2x Runner (fast)`, and `Tank (tough) - Bomber (walls) - 4x Walker (basic)`. Raw IDs such as `walker`, `siege_tank`, or `alpha_bomber` were not shown in the tested rosters.
+- Decision prompt result: passed. Build prompts gave tile-purpose guidance, including `Wood (walls), Metal (turrets). Merge 3 matching tiles, then start the wave.` Invalid placement showed actionable guidance to place near matching tiles, reward claim prompted Next Level/upgrade when relevant, and shelter upgrade feedback clearly stated the HP benefit.
+- Tutorial regression result: passed. New-player Level 1 started with first-tile guidance; tile placement advanced tutorial copy, three Wood tiles merged into Wood T2, Start Wave guidance appeared, victory prompted Claim Reward, Claim Reward prompted Next Level, and Reset Save restarted the first tutorial step.
+- Gameplay/economy regression result: passed. Validated board tap, merge 3 matching tiles, Start Wave, Claim Reward, Next Level, normal progression through Levels 1-3, the 30-level catalog via automated tests, Daily Reward, Daily Quest rewards, Reward Double one-use behavior, and Shelter Upgrade from Lv 1 to Lv 2.
+- Level 10 Retry/Revive regression: passed physically on Level 10 using a no-upgrade path after Reset Save. Empty-board Level 10 produced a real defeat with player-facing hint text and no raw fail-reason constants. Retry returned to playable Level 10. Revive restored HP, hid the Revive button, and returned to playable Level 10. A second defeat after revive showed Retry only, with Revive unavailable, and no black screen occurred.
+- Save/load result: passed. After force-stopping and relaunching only Merge Shelter, Level 4, coins/parts, Shelter Lv 2, daily reward claimed state, daily quest claimed state, tutorial/build prompt, and grouped wave roster persisted correctly.
+- Reset Save result: passed. Reset Save returned to new-player Level 1 with coins/parts reset to 0, Shelter Lv 1, daily reward available, quests reset to 0 progress, empty board, first-run tutorial guidance, and `RESET: Save reset. Progress returned to Level 1.` feedback.
+- UI/HUD result: passed on SM-S918B portrait. Objectives, tutorial/status text, wallet, HP, quest state, board, wave roster, result panel, and action buttons remained readable and tappable with no observed overlap, ghosting/redraw regression, black screen, crash, or freeze.
+- P0/P1 blockers: none observed. `adb logcat -d` was not run because the app did not crash, freeze, or fail to launch.
+- Security note: Testing was limited to the Merge Shelter app and no personal apps/data were accessed. Only allowed ADB commands were used; screenshots and input were performed only after foreground verification showed `com.DefaultCompany.mergeshelter`.
+
 ## Severity Rules
 
 | Severity | Definition |

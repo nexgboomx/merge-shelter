@@ -23,12 +23,14 @@ namespace MergeShelter.Tests.PlayMode
         private static readonly string[] HudTextNames =
         {
             "LevelText",
+            PrototypeHudView.ObjectiveTextName,
             "TutorialText",
             PrototypeHudView.ShelterSectionLabelName,
             "ShelterHpText",
             PrototypeHudView.ShelterUpgradeTextName,
             PrototypeHudView.BoardSectionLabelName,
             "NextTileText",
+            PrototypeHudView.WaveRosterTextName,
             PrototypeHudView.ActionsSectionLabelName,
             PrototypeHudView.RewardsSectionLabelName,
             "WalletText",
@@ -84,6 +86,14 @@ namespace MergeShelter.Tests.PlayMode
             Assert.NotNull(canvas);
             Assert.NotNull(GameObject.Find("EventSystem"));
 
+            var objectiveText = GetHudText(PrototypeHudView.ObjectiveTextName);
+            Assert.That(objectiveText.text, Does.Contain("Goal:"));
+            Assert.That(objectiveText.text, Does.Contain("Survive"));
+
+            var waveRosterText = GetHudText(PrototypeHudView.WaveRosterTextName);
+            Assert.That(waveRosterText.text, Does.StartWith("Wave:"));
+            Assert.That(waveRosterText.text, Does.Contain("Walker"));
+
             var firstCell = GameObject.Find("Cell_0_0")?.GetComponent<Button>();
             Assert.NotNull(firstCell);
             AssertColorApproximately(PrototypeVisualKit.EmptyCell, GetCellImage(0, 0).color);
@@ -108,6 +118,8 @@ namespace MergeShelter.Tests.PlayMode
             yield return null;
 
             Assert.IsFalse(string.IsNullOrWhiteSpace(GetResultText().text));
+            Assert.That(GetHudText(PrototypeHudView.WaveRosterTextName).text, Is.Empty,
+                "Wave roster should clear after wave resolves.");
         }
 
         [UnityTest]
@@ -140,6 +152,7 @@ namespace MergeShelter.Tests.PlayMode
             yield return null;
 
             AssertFeedback(controller, PrototypeFeedbackKind.InvalidPlacement, "BLOCKED:");
+            Assert.That(GetResultText().text, Does.Contain("merge"));
             Assert.AreEqual(PrototypeFeedbackKind.InvalidPlacement, boardView.LastCellFeedbackKind);
             Assert.That(GetCellScale(0, 0), Is.EqualTo(PrototypeVisualKit.GetCellFeedbackScale(PrototypeFeedbackKind.InvalidPlacement)).Within(0.01f));
 
@@ -373,6 +386,9 @@ namespace MergeShelter.Tests.PlayMode
 
             var weakResult = GetResultText().text;
             Assert.That(weakResult, Does.Contain("Defeat"));
+            Assert.That(weakResult, Does.Not.Contain("weak_wall"));
+            Assert.That(weakResult, Does.Not.Contain("low_attack"));
+            Assert.That(weakResult, Does.Not.Contain("overwhelmed"));
             AssertFeedback(controller, PrototypeFeedbackKind.WaveDefeat, "DEFEAT:");
             Assert.IsTrue(controller.HasShownFeedback(PrototypeFeedbackKind.WaveStart));
 
@@ -389,6 +405,7 @@ namespace MergeShelter.Tests.PlayMode
 
             var strongResult = GetResultText().text;
             Assert.That(strongResult, Does.Contain("Victory"));
+            Assert.That(strongResult, Does.Contain("Objective complete"));
             AssertFeedback(controller, PrototypeFeedbackKind.WaveVictory, "WIN:");
             Assert.IsTrue(controller.HasShownFeedback(PrototypeFeedbackKind.WaveStart));
             Assert.AreNotEqual(weakResult, strongResult);
@@ -645,6 +662,7 @@ namespace MergeShelter.Tests.PlayMode
             Assert.IsTrue(startWaveButton.gameObject.activeSelf);
             Assert.IsTrue(controller.GetTileAt(0, 0).IsEmpty);
             Assert.That(GetResultText().text, Does.Contain("Revive used"));
+            Assert.That(GetResultText().text, Does.Contain("Goal:"));
             AssertFeedback(controller, PrototypeFeedbackKind.Revive, "REVIVE:");
             Assert.IsFalse(controller.Revive());
             Assert.AreEqual(10, controller.CurrentLevelId);
@@ -787,6 +805,7 @@ namespace MergeShelter.Tests.PlayMode
             Assert.IsFalse(controller.CanRetryLevel);
             Assert.IsFalse(retryButton.gameObject.activeSelf);
             Assert.IsTrue(controller.GetTileAt(0, 0).IsEmpty);
+            Assert.That(GetResultText().text, Does.Contain("Goal:"));
             AssertFeedback(controller, PrototypeFeedbackKind.Retry, "RETRY:");
         }
 
@@ -821,6 +840,7 @@ namespace MergeShelter.Tests.PlayMode
             yield return WinCurrentLevelAndClaim(controller);
             Assert.AreEqual(120, controller.Coins);
             Assert.IsTrue(controller.CanAffordShelterUpgrade);
+            Assert.That(GetResultText().text, Does.Contain("Upgrade available"));
 
             var previousCost = controller.ShelterUpgradeCost;
             upgradeButton.onClick.Invoke();
@@ -1135,7 +1155,9 @@ namespace MergeShelter.Tests.PlayMode
 
         private static bool IsCompactHudText(string textName)
         {
-            return textName == PrototypeHudView.ShelterSectionLabelName ||
+            return textName == PrototypeHudView.ObjectiveTextName ||
+                   textName == PrototypeHudView.WaveRosterTextName ||
+                   textName == PrototypeHudView.ShelterSectionLabelName ||
                    textName == PrototypeHudView.BoardSectionLabelName ||
                    textName == PrototypeHudView.ActionsSectionLabelName ||
                    textName == PrototypeHudView.RewardsSectionLabelName ||

@@ -31,8 +31,9 @@ namespace MergeShelter.EditorTools
             hud.transform.SetParent(canvas.transform, false);
             var hudView = hud.AddComponent<PrototypeHudView>();
 
-            var levelText = CreateHudText(canvas.transform, "LevelText", new Vector2(24f, -16f), new Vector2(672f, 30f), 20);
-            var tutorialText = CreateHudText(canvas.transform, "TutorialText", new Vector2(24f, -50f), new Vector2(672f, 36f), 14);
+            var levelText = CreateHudText(canvas.transform, "LevelText", new Vector2(24f, -16f), new Vector2(672f, 24f), 18);
+            var objectiveText = CreateHudText(canvas.transform, PrototypeHudView.ObjectiveTextName, new Vector2(24f, -42f), new Vector2(672f, 18f), 12, "Goal:");
+            var tutorialText = CreateHudText(canvas.transform, "TutorialText", new Vector2(24f, -62f), new Vector2(672f, 28f), 13);
             var shelterLabelText = CreateHudText(canvas.transform, PrototypeHudView.ShelterSectionLabelName, new Vector2(24f, -94f), new Vector2(672f, 14f), 11, "SHELTER");
             var shelterHpText = CreateHudText(canvas.transform, "ShelterHpText", new Vector2(24f, -112f), new Vector2(328f, 24f), 14);
             var shelterUpgradeText = CreateHudText(canvas.transform, PrototypeHudView.ShelterUpgradeTextName, new Vector2(368f, -112f), new Vector2(328f, 24f), 12);
@@ -46,6 +47,7 @@ namespace MergeShelter.EditorTools
             var boardLabelText = CreateHudText(canvas.transform, PrototypeHudView.BoardSectionLabelName, new Vector2(24f, -286f), new Vector2(328f, 14f), 11, "BOARD");
             var nextTileText = CreateHudText(canvas.transform, "NextTileText", new Vector2(368f, -286f), new Vector2(328f, 14f), 12);
             nextTileText.alignment = TextAnchor.MiddleRight;
+            var waveRosterText = CreateHudText(canvas.transform, PrototypeHudView.WaveRosterTextName, new Vector2(24f, -302f), new Vector2(672f, 28f), 11, "Wave:");
             var actionsLabelText = CreateBottomHudText(canvas.transform, PrototypeHudView.ActionsSectionLabelName, 208f, new Vector2(672f, 14f), 11);
             actionsLabelText.text = "ACTIONS";
             var resultText = CreateBottomHudText(canvas.transform, "ResultText", 250f, new Vector2(672f, 72f), 14);
@@ -70,7 +72,9 @@ namespace MergeShelter.EditorTools
             WireHud(
                 hudView,
                 levelText,
+                objectiveText,
                 tutorialText,
+                waveRosterText,
                 shelterLabelText,
                 shelterHpText,
                 shelterUpgradeText,
@@ -236,7 +240,9 @@ namespace MergeShelter.EditorTools
         private static void WireHud(
             PrototypeHudView hudView,
             Text levelText,
+            Text objectiveText,
             Text tutorialText,
+            Text waveRosterText,
             Text shelterLabelText,
             Text shelterHpText,
             Text shelterUpgradeText,
@@ -252,7 +258,9 @@ namespace MergeShelter.EditorTools
         {
             var serializedObject = new SerializedObject(hudView);
             serializedObject.FindProperty("levelText").objectReferenceValue = levelText;
+            serializedObject.FindProperty("objectiveText").objectReferenceValue = objectiveText;
             serializedObject.FindProperty("tutorialText").objectReferenceValue = tutorialText;
+            serializedObject.FindProperty("waveRosterText").objectReferenceValue = waveRosterText;
             serializedObject.FindProperty("shelterLabelText").objectReferenceValue = shelterLabelText;
             serializedObject.FindProperty("shelterHpText").objectReferenceValue = shelterHpText;
             serializedObject.FindProperty("shelterUpgradeText").objectReferenceValue = shelterUpgradeText;
