@@ -310,24 +310,24 @@ This checklist is the minimum quality gate for the first playable prototype.
 
 - Machine OS: Linux 6.17.0-1017-oem x86_64 GNU/Linux.
 - Unity version: 6000.3.16f1 (a56f230f6470).
-- Device manufacturer/model: not recorded; no physical Android device was detected by ADB during this QA pass.
-- Android version/API: not recorded; no physical Android device was detected by ADB during this QA pass.
+- Device manufacturer/model: samsung SM-S918B.
+- Android version/API: Android 16 / API 36.
 - APK filename: `merge-shelter-sprint9-retention-loop-device-debug.apk`.
 - APK output path: `Builds/Android/merge-shelter-sprint9-retention-loop-device-debug.apk`.
 - EditMode tests: passed 67/67 (`Logs/sprint9-qa-editmode-results.xml`).
 - PlayMode tests: passed 18/18 (`Logs/sprint9-qa-playmode-results.xml`).
-- Install result: not run. Unity embedded ADB was available at `/home/phung-truong/Unity/Hub/Editor/6000.3.16f1/Editor/Data/PlaybackEngines/AndroidPlayer/SDK/platform-tools/adb`, but `adb devices -l` returned no attached devices.
-- Launch result: not run because no Android device was detected.
-- Daily reward result: not run on physical device. Automated PlayMode coverage passed for daily reward one-use claim and claimed HUD state.
-- Daily quest result: not run on physical device. Automated PlayMode coverage passed for quest title/progress display, ready/claimed states, one-time reward grant, blocked claim feedback, save/load persistence, and reset behavior.
-- Level navigation result: not run on physical device. Automated PlayMode coverage passed for Previous Level, Replay, Next Unlocked, locked future-level blocking, pending-reward navigation blocking, selected-level persistence, and reset returning navigation to Level 1.
-- Session resume/save-load result: not run on physical device. Automated PlayMode coverage passed for selected/current level, highest unlocked level, coins/parts, shelter upgrade, daily reward, quest state, and tutorial persistence across scene reload.
-- Reset Save result: not run on physical device. Automated PlayMode coverage passed for return to new-player Level 1, reset quest progress, reset claimed state, empty board, and daily reward availability.
-- Tutorial/objective/wave roster regression: not run on physical device. Automated tests passed for existing Sprint 8 objective/wave roster and tutorial flows.
-- Reward double/revive regression: not run on physical device. Automated PlayMode coverage passed for one-use Reward Double, Revive hiding after use, stale Revive click safety, retry, and no black-screen state in the tested scene flow.
-- UI/HUD result: not run on physical device. Automated PlayMode phone-safe layout coverage passed with the Sprint 9 level navigation controls included.
-- P0/P1 blockers: QA environment blocker only: physical Android smoke could not be completed because no device was visible to ADB. No app P0/P1 device result can be certified until a physical device is connected and authorized.
-- Security note: Testing was limited to local Unity tests/build plus the allowed `adb devices -l` device check. No Merge Shelter install/launch, screenshots, input automation, personal apps, or personal device data were accessed.
+- Install result: passed with `adb install -r` using Unity embedded ADB at `/home/phung-truong/Unity/Hub/Editor/6000.3.16f1/Editor/Data/PlaybackEngines/AndroidPlayer/SDK/platform-tools/adb`.
+- Launch result: passed with `adb shell monkey -p com.DefaultCompany.mergeshelter 1`; foreground was verified as `com.DefaultCompany.mergeshelter/com.unity3d.player.UnityPlayerGameActivity` before screenshots and input.
+- Daily reward result: passed. Daily reward state was readable as available, claim granted +75 coins and +1 parts, and claimed state remained readable with the action no longer claimable.
+- Daily quest result: passed. Quest rows showed titles and progress. Complete 1 Level and Claim 1 Reward reached READY, Claim Quest granted their coin/parts rewards once, and claimed states were readable. Place 10 Tiles progress updated to 1/10 after a tile placement. Blocked-claim feedback is covered by passing PlayMode tests.
+- Level navigation result: passed. New-player Level 1 had no Previous Level and no Next Unlocked button, with Replay available. Pending reward hid navigation until reward claim. After unlocking Level 2, Previous Level returned cleanly to Level 1, Next Unlocked returned cleanly to Level 2, Replay restarted Level 2 and cleared a placed tile, and no locked future-level button was exposed beyond the unlocked range.
+- Session resume/save-load result: passed. After force-stopping and relaunching only Merge Shelter, Level 2 remained selected, highest unlocked level remained Level 2, coins/parts, Shelter Lv 2 with 125/125 HP, daily reward claimed state, quest claimed/progress state, tutorial state, objective, wave roster, and navigation state persisted.
+- Reset Save result: passed. Reset Save returned to new-player Level 1 with coins/parts reset to 0, Shelter Lv 1, 100/100 HP, daily reward available, quests reset to 0 progress/unclaimed, empty board, first-run tutorial copy, Replay only, and no Previous/Next Unlocked buttons.
+- Tutorial/objective/wave roster regression: passed. Level 1 and Level 2 showed readable goals, short tutorial/decision prompts, and grouped wave rosters. The 30-level catalog remained covered by passing automated tests.
+- Reward double/revive regression: Reward Double passed physically and doubled the pending Level 1 reward once. Revive was not physically re-reached in this Sprint 9 unlocked-flow smoke because Level 1 and Level 2 empty-board waves resolved as victories; PlayMode revive regression still passed for Revive hiding, stale click safety, retry, and no black-screen state.
+- UI/HUD result: passed on SM-S918B portrait. HUD text, result panel, board, daily/quest state, level navigation controls, and action buttons remained readable/tappable with no observed overlap, ghosting/redraw regression, black screen, crash, or freeze.
+- P0/P1 blockers: none observed in the physical Sprint 9 smoke paths tested. Remaining coverage gap: physical Revive was not revalidated in this run because the normal unlocked flow did not reach a defeat state.
+- Security note: Testing was limited to the Merge Shelter app and no personal apps/data were accessed. Only allowed ADB commands were used; screenshots and input were performed only after foreground verification showed `com.DefaultCompany.mergeshelter`.
 
 ## Severity Rules
 
