@@ -124,6 +124,16 @@ namespace MergeShelter.Core
             _progression.SelectedLevel < _progression.HighestUnlockedLevel &&
             _progression.SelectedLevel < _levels.Count;
         public bool CanRetryLevel => _levelEnded && _lastLevelFailed;
+        public bool CanUseLevelNavigation => !_levelEnded && !_progression.HasPendingReward;
+        public bool CanSelectPreviousUnlockedLevel =>
+            CanUseLevelNavigation &&
+            _progression.SelectedLevel > SessionProgressionState.FirstLevel;
+        public bool CanReplaySelectedLevel => CanUseLevelNavigation;
+        public bool CanSelectNextUnlockedLevel =>
+            CanUseLevelNavigation &&
+            _levels != null &&
+            _progression.SelectedLevel < _progression.HighestUnlockedLevel &&
+            _progression.SelectedLevel < _levels.Count;
         public PrototypeTutorialStep TutorialStep => _tutorialStep;
         public int TutorialTilesPlaced => _tutorialTilesPlaced;
         public bool IsTutorialComplete => _tutorialStep == PrototypeTutorialStep.Complete;
@@ -160,7 +170,17 @@ namespace MergeShelter.Core
 
         public bool TryStartLevel(int levelId)
         {
-            if (!_progression.TrySelectLevel(levelId))
+            if (_progression.HasPendingReward)
+            {
+                ShowFeedback(PrototypeFeedbackKind.Blocked, "Claim the pending reward before changing levels.");
+                ProgressionChanged?.Invoke();
+                return false;
+            }
+
+            if (_levels == null ||
+                levelId < SessionProgressionState.FirstLevel ||
+                levelId > _levels.Count ||
+                !_progression.TrySelectLevel(levelId))
             {
                 ShowFeedback(PrototypeFeedbackKind.Blocked, $"Level {levelId} is locked. Claim rewards to unlock it.");
                 ProgressionChanged?.Invoke();
@@ -176,6 +196,46 @@ namespace MergeShelter.Core
             StartSelectedLevel();
             SaveProgression();
             return true;
+        }
+
+        public bool SelectPreviousUnlockedLevel()
+        {
+            if (!CanUseLevelNavigation)
+                return BlockLevelNavigation();
+
+            if (_progression.SelectedLevel <= SessionProgressionState.FirstLevel)
+            {
+                ShowFeedback(PrototypeFeedbackKind.Blocked, "No previous unlocked level is available.");
+                ProgressionChanged?.Invoke();
+                return false;
+            }
+
+            return TryNavigateToLevel(_progression.SelectedLevel - 1, "Previous");
+        }
+
+        public bool ReplaySelectedLevel()
+        {
+            if (!CanUseLevelNavigation)
+                return BlockLevelNavigation();
+
+            return TryNavigateToLevel(_progression.SelectedLevel, "Replay");
+        }
+
+        public bool SelectNextUnlockedLevel()
+        {
+            if (!CanUseLevelNavigation)
+                return BlockLevelNavigation();
+
+            if (_levels == null ||
+                _progression.SelectedLevel >= _progression.HighestUnlockedLevel ||
+                _progression.SelectedLevel >= _levels.Count)
+            {
+                ShowFeedback(PrototypeFeedbackKind.Blocked, "No next unlocked level is available. Claim rewards to unlock more.");
+                ProgressionChanged?.Invoke();
+                return false;
+            }
+
+            return TryNavigateToLevel(_progression.SelectedLevel + 1, "Next unlocked");
         }
 
         public bool ClaimReward()
@@ -402,6 +462,27 @@ namespace MergeShelter.Core
             }
 
             return started;
+        }
+
+        private bool TryNavigateToLevel(int levelId, string actionLabel)
+        {
+            var started = TryStartLevel(levelId);
+            if (!started)
+                return false;
+
+            ShowFeedback(PrototypeFeedbackKind.NextLevel, $"{actionLabel}: Level {_progression.SelectedLevel} ready. Build before the wave.");
+            ProgressionChanged?.Invoke();
+            return true;
+        }
+
+        private bool BlockLevelNavigation()
+        {
+            var message = _progression.HasPendingReward
+                ? "Claim the pending reward before changing levels."
+                : "Use the result action before changing levels.";
+            ShowFeedback(PrototypeFeedbackKind.Blocked, message);
+            ProgressionChanged?.Invoke();
+            return false;
         }
 
         public bool RetryLevel()

@@ -39,6 +39,9 @@ namespace MergeShelter.UI
         [SerializeField] private Button claimQuestButton;
         [SerializeField] private Button doubleRewardButton;
         [SerializeField] private Button reviveButton;
+        [SerializeField] private Button previousLevelButton;
+        [SerializeField] private Button replayLevelButton;
+        [SerializeField] private Button nextUnlockedLevelButton;
         [SerializeField] private Button resetSaveButton;
         [SerializeField] private Image actionPanelImage;
         [SerializeField] private int cellSize = 72;
@@ -298,6 +301,15 @@ namespace MergeShelter.UI
             if (reviveButton == null)
                 reviveButton = CreateActionButton("ReviveButton", "Revive", new Vector2(-210f, -330f), PrototypeVisualKit.GetActionButtonColor("ReviveButton", false));
 
+            if (previousLevelButton == null)
+                previousLevelButton = CreateActionButton("PreviousLevelButton", "Prev Level", new Vector2(-210f, -380f), PrototypeVisualKit.GetActionButtonColor("PreviousLevelButton", false));
+
+            if (replayLevelButton == null)
+                replayLevelButton = CreateActionButton("ReplayLevelButton", "Replay", new Vector2(0f, -380f), PrototypeVisualKit.GetActionButtonColor("ReplayLevelButton", false));
+
+            if (nextUnlockedLevelButton == null)
+                nextUnlockedLevelButton = CreateActionButton("NextUnlockedLevelButton", "Next Unlocked", new Vector2(210f, -380f), PrototypeVisualKit.GetActionButtonColor("NextUnlockedLevelButton", false));
+
             if (resetSaveButton == null)
                 resetSaveButton = CreateActionButton("ResetSaveButton", "Reset Save", new Vector2(0f, -380f), PrototypeVisualKit.GetActionButtonColor("ResetSaveButton", false));
 
@@ -317,6 +329,12 @@ namespace MergeShelter.UI
             doubleRewardButton.onClick.AddListener(OnDoubleRewardClicked);
             reviveButton.onClick.RemoveListener(OnReviveClicked);
             reviveButton.onClick.AddListener(OnReviveClicked);
+            previousLevelButton.onClick.RemoveListener(OnPreviousLevelClicked);
+            previousLevelButton.onClick.AddListener(OnPreviousLevelClicked);
+            replayLevelButton.onClick.RemoveListener(OnReplayLevelClicked);
+            replayLevelButton.onClick.AddListener(OnReplayLevelClicked);
+            nextUnlockedLevelButton.onClick.RemoveListener(OnNextUnlockedLevelClicked);
+            nextUnlockedLevelButton.onClick.AddListener(OnNextUnlockedLevelClicked);
             resetSaveButton.onClick.RemoveListener(OnResetSaveClicked);
             resetSaveButton.onClick.AddListener(OnResetSaveClicked);
             RefreshActionButtons();
@@ -461,6 +479,33 @@ namespace MergeShelter.UI
             RefreshActionButtons();
         }
 
+        private void OnPreviousLevelClicked()
+        {
+            PulseButton(previousLevelButton);
+            if (gameController != null && gameController.SelectPreviousUnlockedLevel())
+                RefreshCells();
+
+            RefreshActionButtons();
+        }
+
+        private void OnReplayLevelClicked()
+        {
+            PulseButton(replayLevelButton);
+            if (gameController != null && gameController.ReplaySelectedLevel())
+                RefreshCells();
+
+            RefreshActionButtons();
+        }
+
+        private void OnNextUnlockedLevelClicked()
+        {
+            PulseButton(nextUnlockedLevelButton);
+            if (gameController != null && gameController.SelectNextUnlockedLevel())
+                RefreshCells();
+
+            RefreshActionButtons();
+        }
+
         private void OnResetSaveClicked()
         {
             PulseButton(resetSaveButton);
@@ -551,6 +596,15 @@ namespace MergeShelter.UI
                 reviveButton.interactable = canRevive;
             }
 
+            if (previousLevelButton != null)
+                previousLevelButton.gameObject.SetActive(gameController.CanSelectPreviousUnlockedLevel);
+
+            if (replayLevelButton != null)
+                replayLevelButton.gameObject.SetActive(gameController.CanReplaySelectedLevel);
+
+            if (nextUnlockedLevelButton != null)
+                nextUnlockedLevelButton.gameObject.SetActive(gameController.CanSelectNextUnlockedLevel);
+
             if (resetSaveButton != null)
                 resetSaveButton.gameObject.SetActive(true);
 
@@ -587,6 +641,9 @@ namespace MergeShelter.UI
                 PlaceActionButton(claimRewardButton, 0, 2);
                 PlaceActionButton(nextLevelButton, 0, 2);
                 PlaceActionButton(retryButton, 0, 2);
+                PlaceActionButton(previousLevelButton, -1, 2);
+                PlaceActionButton(replayLevelButton, 0, 2);
+                PlaceActionButton(nextUnlockedLevelButton, 1, 2);
                 ConfigureActionPanel();
             }
             finally

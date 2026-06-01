@@ -51,6 +51,9 @@ namespace MergeShelter.Tests.PlayMode
             "ClaimQuestButton",
             "DoubleRewardButton",
             "ReviveButton",
+            "PreviousLevelButton",
+            "ReplayLevelButton",
+            "NextUnlockedLevelButton",
             "ResetSaveButton"
         };
 
@@ -805,6 +808,125 @@ namespace MergeShelter.Tests.PlayMode
             Assert.IsFalse(nextLevelButton.gameObject.activeSelf);
             Assert.IsTrue(startWaveButton.gameObject.activeSelf);
             AssertFeedback(controller, PrototypeFeedbackKind.NextLevel, "NEXT:");
+        }
+
+        [UnityTest]
+        public IEnumerator LevelNavigationButtons_SelectOnlyUnlockedLevelsAndPersistSelection()
+        {
+            yield return LoadPrototypeScene();
+
+            var controller = Object.FindObjectOfType<PrototypeGameController>();
+            Assert.NotNull(controller);
+
+            var previousButton = FindButton("PreviousLevelButton");
+            var replayButton = FindButton("ReplayLevelButton");
+            var nextUnlockedButton = FindButton("NextUnlockedLevelButton");
+            Assert.NotNull(previousButton);
+            Assert.NotNull(replayButton);
+            Assert.NotNull(nextUnlockedButton);
+
+            Assert.IsFalse(controller.CanSelectPreviousUnlockedLevel);
+            Assert.IsTrue(controller.CanReplaySelectedLevel);
+            Assert.IsFalse(controller.CanSelectNextUnlockedLevel);
+            Assert.IsFalse(previousButton.gameObject.activeSelf);
+            Assert.IsTrue(replayButton.gameObject.activeSelf);
+            Assert.IsFalse(nextUnlockedButton.gameObject.activeSelf);
+
+            Assert.IsFalse(controller.TryStartLevel(2));
+            Assert.AreEqual(1, controller.SelectedLevel);
+            Assert.That(GetResultText().text, Does.Contain("locked"));
+            AssertFeedback(controller, PrototypeFeedbackKind.Blocked, "BLOCKED:");
+
+            SetStrongLevelOneBoard(controller);
+            controller.StartWave();
+            yield return null;
+
+            Assert.IsTrue(controller.HasPendingReward);
+            Assert.IsFalse(controller.TryStartLevel(1));
+            Assert.AreEqual(1, controller.SelectedLevel);
+            Assert.That(GetResultText().text, Does.Contain("pending reward"));
+            Assert.IsFalse(previousButton.gameObject.activeSelf);
+            Assert.IsFalse(replayButton.gameObject.activeSelf);
+            Assert.IsFalse(nextUnlockedButton.gameObject.activeSelf);
+
+            Assert.IsTrue(controller.ClaimReward());
+            yield return null;
+
+            Assert.AreEqual(2, controller.HighestUnlockedLevel);
+            Assert.IsFalse(controller.HasPendingReward);
+            Assert.IsTrue(controller.CanStartNextLevel);
+            Assert.IsFalse(previousButton.gameObject.activeSelf);
+            Assert.IsFalse(replayButton.gameObject.activeSelf);
+            Assert.IsFalse(nextUnlockedButton.gameObject.activeSelf);
+
+            Assert.IsTrue(controller.StartNextLevel());
+            yield return null;
+
+            Assert.AreEqual(2, controller.CurrentLevelId);
+            Assert.AreEqual(2, controller.SelectedLevel);
+            Assert.IsTrue(previousButton.gameObject.activeSelf);
+            Assert.IsTrue(replayButton.gameObject.activeSelf);
+            Assert.IsFalse(nextUnlockedButton.gameObject.activeSelf);
+
+            Assert.IsTrue(controller.TryPlaceNextTile(0, 0));
+            yield return null;
+            Assert.IsFalse(controller.GetTileAt(0, 0).IsEmpty);
+
+            previousButton.onClick.Invoke();
+            yield return null;
+
+            Assert.AreEqual(1, controller.CurrentLevelId);
+            Assert.AreEqual(1, controller.SelectedLevel);
+            Assert.IsTrue(controller.GetTileAt(0, 0).IsEmpty);
+            Assert.That(GetResultText().text, Does.Contain("Previous"));
+            AssertFeedback(controller, PrototypeFeedbackKind.NextLevel, "NEXT:");
+            Assert.IsFalse(previousButton.gameObject.activeSelf);
+            Assert.IsTrue(replayButton.gameObject.activeSelf);
+            Assert.IsTrue(nextUnlockedButton.gameObject.activeSelf);
+
+            nextUnlockedButton.onClick.Invoke();
+            yield return null;
+
+            Assert.AreEqual(2, controller.CurrentLevelId);
+            Assert.AreEqual(2, controller.SelectedLevel);
+            Assert.IsTrue(previousButton.gameObject.activeSelf);
+            Assert.IsTrue(replayButton.gameObject.activeSelf);
+            Assert.IsFalse(nextUnlockedButton.gameObject.activeSelf);
+
+            Assert.IsTrue(controller.TryPlaceNextTile(0, 0));
+            yield return null;
+            Assert.IsFalse(controller.GetTileAt(0, 0).IsEmpty);
+
+            replayButton.onClick.Invoke();
+            yield return null;
+
+            Assert.AreEqual(2, controller.CurrentLevelId);
+            Assert.AreEqual(2, controller.SelectedLevel);
+            Assert.IsTrue(controller.GetTileAt(0, 0).IsEmpty);
+            Assert.That(GetResultText().text, Does.Contain("Replay"));
+
+            yield return LoadPrototypeScene();
+
+            controller = Object.FindObjectOfType<PrototypeGameController>();
+            Assert.NotNull(controller);
+            Assert.AreEqual(2, controller.CurrentLevelId);
+            Assert.AreEqual(2, controller.SelectedLevel);
+            Assert.AreEqual(2, controller.HighestUnlockedLevel);
+
+            previousButton = FindButton("PreviousLevelButton");
+            replayButton = FindButton("ReplayLevelButton");
+            nextUnlockedButton = FindButton("NextUnlockedLevelButton");
+            Assert.IsTrue(previousButton.gameObject.activeSelf);
+            Assert.IsTrue(replayButton.gameObject.activeSelf);
+            Assert.IsFalse(nextUnlockedButton.gameObject.activeSelf);
+
+            FindButton("ResetSaveButton").onClick.Invoke();
+            yield return null;
+
+            AssertNewPlayerState(controller);
+            Assert.IsFalse(previousButton.gameObject.activeSelf);
+            Assert.IsTrue(replayButton.gameObject.activeSelf);
+            Assert.IsFalse(nextUnlockedButton.gameObject.activeSelf);
         }
 
         [UnityTest]
