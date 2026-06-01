@@ -51,6 +51,9 @@ namespace MergeShelter.Tests.PlayMode
             "ClaimQuestButton",
             "DoubleRewardButton",
             "ReviveButton",
+            "PreviousLevelButton",
+            "ReplayLevelButton",
+            "NextUnlockedLevelButton",
             "ResetSaveButton"
         };
 
@@ -207,6 +210,9 @@ namespace MergeShelter.Tests.PlayMode
             {
                 Assert.IsTrue(controller.TryPlaceNextTile(i % controller.BoardWidth, i / controller.BoardWidth));
                 yield return null;
+
+                if (i == 0)
+                    Assert.That(GetResultText().text, Does.Contain("Quest: Place 10 Tiles 1/10"));
             }
 
             AssertVisibleActionButton("ClaimQuestButton");
@@ -454,6 +460,14 @@ namespace MergeShelter.Tests.PlayMode
             var claimQuestButton = FindButton("ClaimQuestButton");
             Assert.NotNull(claimQuestButton);
             Assert.IsFalse(claimQuestButton.gameObject.activeSelf);
+            Assert.That(GetQuestText().text, Does.Contain("Place 10 Tiles: 0/10"));
+            Assert.That(GetQuestText().text, Does.Contain("Complete 1 Level: 0/1"));
+            Assert.That(GetQuestText().text, Does.Contain("Claim 1 Reward: 0/1"));
+
+            Assert.IsFalse(controller.ClaimQuest());
+            Assert.That(GetResultText().text, Does.Contain("No quest ready"));
+            Assert.That(GetResultText().text, Does.Contain("claimed quests pay once"));
+            AssertFeedback(controller, PrototypeFeedbackKind.Blocked, "BLOCKED:");
 
             for (var i = 0; i < 10; i++)
             {
@@ -466,7 +480,10 @@ namespace MergeShelter.Tests.PlayMode
             Assert.IsFalse(placeQuest.Claimed);
             Assert.IsTrue(controller.CanClaimQuest);
             Assert.IsTrue(claimQuestButton.gameObject.activeSelf);
-            Assert.That(GetQuestText().text, Does.Contain("Tiles 10/10 ready"));
+            Assert.That(GetQuestText().text, Does.Contain("Place 10 Tiles: 10/10 READY"));
+            Assert.That(GetQuestText().text, Does.Contain("+40c"));
+            Assert.That(GetResultText().text, Does.Contain("Quest ready: Place 10 Tiles"));
+            Assert.That(GetResultText().text, Does.Contain("+40c"));
 
             var startingCoins = controller.Coins;
             var startingParts = controller.Parts;
@@ -480,8 +497,16 @@ namespace MergeShelter.Tests.PlayMode
             Assert.IsFalse(controller.CanClaimQuest);
             Assert.IsFalse(claimQuestButton.gameObject.activeSelf);
             Assert.That(GetResultText().text, Does.Contain("Quest claimed"));
+            Assert.That(GetResultText().text, Does.Contain("+40 coins"));
+            Assert.That(GetResultText().text, Does.Contain("+0 parts"));
             AssertFeedback(controller, PrototypeFeedbackKind.QuestClaim, "QUEST:");
-            Assert.That(GetQuestText().text, Does.Contain("Tiles 10/10 claimed"));
+            Assert.That(GetQuestText().text, Does.Contain("Place 10 Tiles: 10/10 claimed"));
+            Assert.That(GetQuestText().text, Does.Not.Contain("Place 10 Tiles: 10/10 READY"));
+
+            Assert.IsFalse(controller.ClaimQuest());
+            Assert.AreEqual(startingCoins + placeQuest.RewardCoins, controller.Coins);
+            Assert.AreEqual(startingParts + placeQuest.RewardParts, controller.Parts);
+            Assert.That(GetResultText().text, Does.Contain("No quest ready"));
         }
 
         [UnityTest]
@@ -531,7 +556,9 @@ namespace MergeShelter.Tests.PlayMode
             Assert.IsFalse(controller.CanClaimDailyReward);
             Assert.That(GetShelterUpgradeText().text, Does.Contain("Lv 2"));
             Assert.That(GetRewardText().text, Does.Contain("claimed"));
-            Assert.That(GetQuestText().text, Does.Contain("Tiles 10/10 claimed"));
+            Assert.That(GetQuestText().text, Does.Contain("Place 10 Tiles: 10/10 claimed"));
+            Assert.That(GetQuestText().text, Does.Contain("Complete 1 Level: 1/1 READY"));
+            Assert.That(GetQuestText().text, Does.Contain("Claim 1 Reward: 1/1 READY"));
 
             var placeQuest = GetQuest(controller, DailyQuestModel.PlaceTilesQuestId);
             Assert.AreEqual(10, placeQuest.Progress);
@@ -568,6 +595,9 @@ namespace MergeShelter.Tests.PlayMode
             AssertNewPlayerState(controller);
             Assert.IsFalse(new LocalJsonSaveService(_tempSaveDirectory).HasSave());
             Assert.That(GetResultText().text, Does.Contain("Save reset"));
+            Assert.That(GetQuestText().text, Does.Contain("Place 10 Tiles: 0/10"));
+            Assert.That(GetQuestText().text, Does.Contain("Complete 1 Level: 0/1"));
+            Assert.That(GetQuestText().text, Does.Contain("Claim 1 Reward: 0/1"));
             AssertFeedback(controller, PrototypeFeedbackKind.ResetSave, "RESET:");
 
             yield return LoadPrototypeScene();
@@ -575,6 +605,9 @@ namespace MergeShelter.Tests.PlayMode
             controller = Object.FindObjectOfType<PrototypeGameController>();
             Assert.NotNull(controller);
             AssertNewPlayerState(controller);
+            Assert.That(GetQuestText().text, Does.Contain("Place 10 Tiles: 0/10"));
+            Assert.That(GetQuestText().text, Does.Contain("Complete 1 Level: 0/1"));
+            Assert.That(GetQuestText().text, Does.Contain("Claim 1 Reward: 0/1"));
         }
 
         [UnityTest]
@@ -775,6 +808,125 @@ namespace MergeShelter.Tests.PlayMode
             Assert.IsFalse(nextLevelButton.gameObject.activeSelf);
             Assert.IsTrue(startWaveButton.gameObject.activeSelf);
             AssertFeedback(controller, PrototypeFeedbackKind.NextLevel, "NEXT:");
+        }
+
+        [UnityTest]
+        public IEnumerator LevelNavigationButtons_SelectOnlyUnlockedLevelsAndPersistSelection()
+        {
+            yield return LoadPrototypeScene();
+
+            var controller = Object.FindObjectOfType<PrototypeGameController>();
+            Assert.NotNull(controller);
+
+            var previousButton = FindButton("PreviousLevelButton");
+            var replayButton = FindButton("ReplayLevelButton");
+            var nextUnlockedButton = FindButton("NextUnlockedLevelButton");
+            Assert.NotNull(previousButton);
+            Assert.NotNull(replayButton);
+            Assert.NotNull(nextUnlockedButton);
+
+            Assert.IsFalse(controller.CanSelectPreviousUnlockedLevel);
+            Assert.IsTrue(controller.CanReplaySelectedLevel);
+            Assert.IsFalse(controller.CanSelectNextUnlockedLevel);
+            Assert.IsFalse(previousButton.gameObject.activeSelf);
+            Assert.IsTrue(replayButton.gameObject.activeSelf);
+            Assert.IsFalse(nextUnlockedButton.gameObject.activeSelf);
+
+            Assert.IsFalse(controller.TryStartLevel(2));
+            Assert.AreEqual(1, controller.SelectedLevel);
+            Assert.That(GetResultText().text, Does.Contain("locked"));
+            AssertFeedback(controller, PrototypeFeedbackKind.Blocked, "BLOCKED:");
+
+            SetStrongLevelOneBoard(controller);
+            controller.StartWave();
+            yield return null;
+
+            Assert.IsTrue(controller.HasPendingReward);
+            Assert.IsFalse(controller.TryStartLevel(1));
+            Assert.AreEqual(1, controller.SelectedLevel);
+            Assert.That(GetResultText().text, Does.Contain("pending reward"));
+            Assert.IsFalse(previousButton.gameObject.activeSelf);
+            Assert.IsFalse(replayButton.gameObject.activeSelf);
+            Assert.IsFalse(nextUnlockedButton.gameObject.activeSelf);
+
+            Assert.IsTrue(controller.ClaimReward());
+            yield return null;
+
+            Assert.AreEqual(2, controller.HighestUnlockedLevel);
+            Assert.IsFalse(controller.HasPendingReward);
+            Assert.IsTrue(controller.CanStartNextLevel);
+            Assert.IsFalse(previousButton.gameObject.activeSelf);
+            Assert.IsFalse(replayButton.gameObject.activeSelf);
+            Assert.IsFalse(nextUnlockedButton.gameObject.activeSelf);
+
+            Assert.IsTrue(controller.StartNextLevel());
+            yield return null;
+
+            Assert.AreEqual(2, controller.CurrentLevelId);
+            Assert.AreEqual(2, controller.SelectedLevel);
+            Assert.IsTrue(previousButton.gameObject.activeSelf);
+            Assert.IsTrue(replayButton.gameObject.activeSelf);
+            Assert.IsFalse(nextUnlockedButton.gameObject.activeSelf);
+
+            Assert.IsTrue(controller.TryPlaceNextTile(0, 0));
+            yield return null;
+            Assert.IsFalse(controller.GetTileAt(0, 0).IsEmpty);
+
+            previousButton.onClick.Invoke();
+            yield return null;
+
+            Assert.AreEqual(1, controller.CurrentLevelId);
+            Assert.AreEqual(1, controller.SelectedLevel);
+            Assert.IsTrue(controller.GetTileAt(0, 0).IsEmpty);
+            Assert.That(GetResultText().text, Does.Contain("Previous"));
+            AssertFeedback(controller, PrototypeFeedbackKind.NextLevel, "NEXT:");
+            Assert.IsFalse(previousButton.gameObject.activeSelf);
+            Assert.IsTrue(replayButton.gameObject.activeSelf);
+            Assert.IsTrue(nextUnlockedButton.gameObject.activeSelf);
+
+            nextUnlockedButton.onClick.Invoke();
+            yield return null;
+
+            Assert.AreEqual(2, controller.CurrentLevelId);
+            Assert.AreEqual(2, controller.SelectedLevel);
+            Assert.IsTrue(previousButton.gameObject.activeSelf);
+            Assert.IsTrue(replayButton.gameObject.activeSelf);
+            Assert.IsFalse(nextUnlockedButton.gameObject.activeSelf);
+
+            Assert.IsTrue(controller.TryPlaceNextTile(0, 0));
+            yield return null;
+            Assert.IsFalse(controller.GetTileAt(0, 0).IsEmpty);
+
+            replayButton.onClick.Invoke();
+            yield return null;
+
+            Assert.AreEqual(2, controller.CurrentLevelId);
+            Assert.AreEqual(2, controller.SelectedLevel);
+            Assert.IsTrue(controller.GetTileAt(0, 0).IsEmpty);
+            Assert.That(GetResultText().text, Does.Contain("Replay"));
+
+            yield return LoadPrototypeScene();
+
+            controller = Object.FindObjectOfType<PrototypeGameController>();
+            Assert.NotNull(controller);
+            Assert.AreEqual(2, controller.CurrentLevelId);
+            Assert.AreEqual(2, controller.SelectedLevel);
+            Assert.AreEqual(2, controller.HighestUnlockedLevel);
+
+            previousButton = FindButton("PreviousLevelButton");
+            replayButton = FindButton("ReplayLevelButton");
+            nextUnlockedButton = FindButton("NextUnlockedLevelButton");
+            Assert.IsTrue(previousButton.gameObject.activeSelf);
+            Assert.IsTrue(replayButton.gameObject.activeSelf);
+            Assert.IsFalse(nextUnlockedButton.gameObject.activeSelf);
+
+            FindButton("ResetSaveButton").onClick.Invoke();
+            yield return null;
+
+            AssertNewPlayerState(controller);
+            Assert.IsFalse(previousButton.gameObject.activeSelf);
+            Assert.IsTrue(replayButton.gameObject.activeSelf);
+            Assert.IsFalse(nextUnlockedButton.gameObject.activeSelf);
         }
 
         [UnityTest]

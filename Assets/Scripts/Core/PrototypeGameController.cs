@@ -124,6 +124,16 @@ namespace MergeShelter.Core
             _progression.SelectedLevel < _progression.HighestUnlockedLevel &&
             _progression.SelectedLevel < _levels.Count;
         public bool CanRetryLevel => _levelEnded && _lastLevelFailed;
+        public bool CanUseLevelNavigation => !_levelEnded && !_progression.HasPendingReward;
+        public bool CanSelectPreviousUnlockedLevel =>
+            CanUseLevelNavigation &&
+            _progression.SelectedLevel > SessionProgressionState.FirstLevel;
+        public bool CanReplaySelectedLevel => CanUseLevelNavigation;
+        public bool CanSelectNextUnlockedLevel =>
+            CanUseLevelNavigation &&
+            _levels != null &&
+            _progression.SelectedLevel < _progression.HighestUnlockedLevel &&
+            _progression.SelectedLevel < _levels.Count;
         public PrototypeTutorialStep TutorialStep => _tutorialStep;
         public int TutorialTilesPlaced => _tutorialTilesPlaced;
         public bool IsTutorialComplete => _tutorialStep == PrototypeTutorialStep.Complete;
@@ -160,7 +170,17 @@ namespace MergeShelter.Core
 
         public bool TryStartLevel(int levelId)
         {
-            if (!_progression.TrySelectLevel(levelId))
+            if (_progression.HasPendingReward)
+            {
+                ShowFeedback(PrototypeFeedbackKind.Blocked, "Claim the pending reward before changing levels.");
+                ProgressionChanged?.Invoke();
+                return false;
+            }
+
+            if (_levels == null ||
+                levelId < SessionProgressionState.FirstLevel ||
+                levelId > _levels.Count ||
+                !_progression.TrySelectLevel(levelId))
             {
                 ShowFeedback(PrototypeFeedbackKind.Blocked, $"Level {levelId} is locked. Claim rewards to unlock it.");
                 ProgressionChanged?.Invoke();
@@ -176,6 +196,46 @@ namespace MergeShelter.Core
             StartSelectedLevel();
             SaveProgression();
             return true;
+        }
+
+        public bool SelectPreviousUnlockedLevel()
+        {
+            if (!CanUseLevelNavigation)
+                return BlockLevelNavigation();
+
+            if (_progression.SelectedLevel <= SessionProgressionState.FirstLevel)
+            {
+                ShowFeedback(PrototypeFeedbackKind.Blocked, "No previous unlocked level is available.");
+                ProgressionChanged?.Invoke();
+                return false;
+            }
+
+            return TryNavigateToLevel(_progression.SelectedLevel - 1, "Previous");
+        }
+
+        public bool ReplaySelectedLevel()
+        {
+            if (!CanUseLevelNavigation)
+                return BlockLevelNavigation();
+
+            return TryNavigateToLevel(_progression.SelectedLevel, "Replay");
+        }
+
+        public bool SelectNextUnlockedLevel()
+        {
+            if (!CanUseLevelNavigation)
+                return BlockLevelNavigation();
+
+            if (_levels == null ||
+                _progression.SelectedLevel >= _progression.HighestUnlockedLevel ||
+                _progression.SelectedLevel >= _levels.Count)
+            {
+                ShowFeedback(PrototypeFeedbackKind.Blocked, "No next unlocked level is available. Claim rewards to unlock more.");
+                ProgressionChanged?.Invoke();
+                return false;
+            }
+
+            return TryNavigateToLevel(_progression.SelectedLevel + 1, "Next unlocked");
         }
 
         public bool ClaimReward()
@@ -212,7 +272,7 @@ namespace MergeShelter.Core
             RefreshHud();
             var nextLevelMessage = CanStartNextLevel ? $" Level {_progression.SelectedLevel + 1} unlocked." : string.Empty;
             var upgradePrompt = FormatUpgradePrompt();
-            ShowFeedback(PrototypeFeedbackKind.RewardClaim, $"Reward claimed: +{reward.Coins} coins, +{reward.Parts} parts.{nextLevelMessage}{upgradePrompt}{FormatQuestCompletionSuffix(questProgress)}{FormatTutorialSuffix(tutorialAdvanced)}");
+            ShowFeedback(PrototypeFeedbackKind.RewardClaim, $"Reward claimed: +{reward.Coins} coins, +{reward.Parts} parts.{nextLevelMessage}{upgradePrompt}{FormatQuestProgressSuffix(questProgress)}{FormatTutorialSuffix(tutorialAdvanced)}");
             ProgressionChanged?.Invoke();
             return true;
         }
@@ -246,7 +306,7 @@ namespace MergeShelter.Core
             if (!_progression.TryClaimDailyQuest(out var reward))
             {
                 RefreshHud();
-                ShowFeedback(PrototypeFeedbackKind.Blocked, "No completed daily quest is ready to claim.");
+                ShowFeedback(PrototypeFeedbackKind.Blocked, "No quest ready. Finish progress first; claimed quests pay once.");
                 ProgressionChanged?.Invoke();
                 return false;
             }
@@ -404,6 +464,27 @@ namespace MergeShelter.Core
             return started;
         }
 
+        private bool TryNavigateToLevel(int levelId, string actionLabel)
+        {
+            var started = TryStartLevel(levelId);
+            if (!started)
+                return false;
+
+            ShowFeedback(PrototypeFeedbackKind.NextLevel, $"{actionLabel}: Level {_progression.SelectedLevel} ready. Build before the wave.");
+            ProgressionChanged?.Invoke();
+            return true;
+        }
+
+        private bool BlockLevelNavigation()
+        {
+            var message = _progression.HasPendingReward
+                ? "Claim the pending reward before changing levels."
+                : "Use the result action before changing levels.";
+            ShowFeedback(PrototypeFeedbackKind.Blocked, message);
+            ProgressionChanged?.Invoke();
+            return false;
+        }
+
         public bool RetryLevel()
         {
             if (!CanRetryLevel)
@@ -517,7 +598,7 @@ namespace MergeShelter.Core
             var questProgress = RecordQuestProgress(DailyQuestModel.PlaceTilesQuestId, 1);
             _nextTile = _tileGenerator.GenerateNextTile();
             RefreshHud();
-            ShowFeedback(feedbackKind, $"{resultMessage}{FormatQuestCompletionSuffix(questProgress)}");
+            ShowFeedback(feedbackKind, $"{resultMessage}{FormatQuestProgressSuffix(questProgress)}");
             BoardChanged?.Invoke();
             ProgressionChanged?.Invoke();
             return true;
@@ -591,7 +672,7 @@ namespace MergeShelter.Core
             var rewardMessage = rewardStored
                 ? $" Reward pending: +{_currentLevel.CoinReward} coins, +{_currentLevel.PartsReward} parts."
                 : " Reward is already pending.";
-            ShowFeedback(PrototypeFeedbackKind.WaveVictory, $"{explanation}{objectiveSuffix}{rewardMessage}{FormatQuestCompletionSuffix(questProgress)}");
+            ShowFeedback(PrototypeFeedbackKind.WaveVictory, $"{explanation}{objectiveSuffix}{rewardMessage}{FormatQuestProgressSuffix(questProgress)}");
             PreviewAvailableAdOffers();
             ProgressionChanged?.Invoke();
         }
@@ -916,9 +997,23 @@ namespace MergeShelter.Core
             return progress;
         }
 
-        private static string FormatQuestCompletionSuffix(DailyQuestProgressResult progress)
+        private static string FormatQuestProgressSuffix(DailyQuestProgressResult progress)
         {
-            return progress.NewlyCompleted ? $" Quest complete: {progress.Title}." : string.Empty;
+            if (progress.IsEmpty)
+                return string.Empty;
+
+            if (progress.NewlyCompleted)
+                return $" Quest ready: {progress.Title} ({FormatQuestReward(progress.RewardCoins, progress.RewardParts)}).";
+
+            return $" Quest: {progress.Title} {progress.Progress}/{progress.Target}.";
+        }
+
+        private static string FormatQuestReward(int coins, int parts)
+        {
+            if (parts > 0)
+                return $"+{coins}c, +{parts}p";
+
+            return $"+{coins}c";
         }
 
         private bool ShowMockRewardedAd(AdPlacement placement)
