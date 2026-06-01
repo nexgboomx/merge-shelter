@@ -306,6 +306,29 @@ This checklist is the minimum quality gate for the first playable prototype.
 - P0/P1 blockers: none observed. `adb logcat -d` was not run because the app did not crash, freeze, or fail to launch.
 - Security note: Testing was limited to the Merge Shelter app and no personal apps/data were accessed. Only allowed ADB commands were used; screenshots and input were performed only after foreground verification showed `com.DefaultCompany.mergeshelter`.
 
+## Sprint 9 Android Physical Device Smoke Notes - 2026-06-01
+
+- Machine OS: Linux 6.17.0-1017-oem x86_64 GNU/Linux.
+- Unity version: 6000.3.16f1 (a56f230f6470).
+- Device manufacturer/model: not recorded; no physical Android device was detected by ADB during this QA pass.
+- Android version/API: not recorded; no physical Android device was detected by ADB during this QA pass.
+- APK filename: `merge-shelter-sprint9-retention-loop-device-debug.apk`.
+- APK output path: `Builds/Android/merge-shelter-sprint9-retention-loop-device-debug.apk`.
+- EditMode tests: passed 67/67 (`Logs/sprint9-qa-editmode-results.xml`).
+- PlayMode tests: passed 18/18 (`Logs/sprint9-qa-playmode-results.xml`).
+- Install result: not run. Unity embedded ADB was available at `/home/phung-truong/Unity/Hub/Editor/6000.3.16f1/Editor/Data/PlaybackEngines/AndroidPlayer/SDK/platform-tools/adb`, but `adb devices -l` returned no attached devices.
+- Launch result: not run because no Android device was detected.
+- Daily reward result: not run on physical device. Automated PlayMode coverage passed for daily reward one-use claim and claimed HUD state.
+- Daily quest result: not run on physical device. Automated PlayMode coverage passed for quest title/progress display, ready/claimed states, one-time reward grant, blocked claim feedback, save/load persistence, and reset behavior.
+- Level navigation result: not run on physical device. Automated PlayMode coverage passed for Previous Level, Replay, Next Unlocked, locked future-level blocking, pending-reward navigation blocking, selected-level persistence, and reset returning navigation to Level 1.
+- Session resume/save-load result: not run on physical device. Automated PlayMode coverage passed for selected/current level, highest unlocked level, coins/parts, shelter upgrade, daily reward, quest state, and tutorial persistence across scene reload.
+- Reset Save result: not run on physical device. Automated PlayMode coverage passed for return to new-player Level 1, reset quest progress, reset claimed state, empty board, and daily reward availability.
+- Tutorial/objective/wave roster regression: not run on physical device. Automated tests passed for existing Sprint 8 objective/wave roster and tutorial flows.
+- Reward double/revive regression: not run on physical device. Automated PlayMode coverage passed for one-use Reward Double, Revive hiding after use, stale Revive click safety, retry, and no black-screen state in the tested scene flow.
+- UI/HUD result: not run on physical device. Automated PlayMode phone-safe layout coverage passed with the Sprint 9 level navigation controls included.
+- P0/P1 blockers: QA environment blocker only: physical Android smoke could not be completed because no device was visible to ADB. No app P0/P1 device result can be certified until a physical device is connected and authorized.
+- Security note: Testing was limited to local Unity tests/build plus the allowed `adb devices -l` device check. No Merge Shelter install/launch, screenshots, input automation, personal apps, or personal device data were accessed.
+
 ## Severity Rules
 
 | Severity | Definition |
