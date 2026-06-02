@@ -329,6 +329,40 @@ This checklist is the minimum quality gate for the first playable prototype.
 - P0/P1 blockers: none observed in the physical Sprint 9 smoke paths tested. Remaining coverage gap: physical Revive was not revalidated in this run because the normal unlocked flow did not reach a defeat state.
 - Security note: Testing was limited to the Merge Shelter app and no personal apps/data were accessed. Only allowed ADB commands were used; screenshots and input were performed only after foreground verification showed `com.DefaultCompany.mergeshelter`.
 
+## Sprint 10 MVP RC Android Physical Device Smoke Notes - 2026-06-02
+
+- Machine OS: Linux 6.17.0-1017-oem x86_64 GNU/Linux.
+- Unity version: 6000.3.16f1 (a56f230f6470).
+- Branch: `sprint-10-rc-hardening`.
+- Commit: `dad6b79`.
+- APK filename: `merge-shelter-mvp-rc-debug.apk`.
+- APK output path: `Builds/Android/merge-shelter-mvp-rc-debug.apk`.
+- APK verification: passed. APK exists at the RC runbook path with non-zero size (`40M`) and build log confirms `Android prototype APK built` at the expected output path.
+- Device manufacturer/model: samsung SM-S918B.
+- Android version/API: Android 16 / API 36.
+- EditMode tests: passed 67/67 (`TestResults/mvp-rc-editmode-results.xml`, `Logs/mvp-rc-editmode.log`).
+- PlayMode tests: passed 18/18 (`TestResults/mvp-rc-playmode-results.xml`, `Logs/mvp-rc-playmode.log`).
+- Build result: passed through `MergeShelter.EditorTools.PrototypeAndroidBuild.BuildDebugApk` with `-buildOutputPath "Builds/Android/merge-shelter-mvp-rc-debug.apk"` (`Logs/android-mvp-rc-build.log`).
+- Install result: passed with `adb install -r Builds/Android/merge-shelter-mvp-rc-debug.apk`; no uninstall was required.
+- Launch result: passed. Initial post-install launch was blocked by Android Settings remaining foreground, so no screenshots/input were used until the user manually returned Merge Shelter to foreground. After correction, foreground verification showed `com.DefaultCompany.mergeshelter/com.unity3d.player.UnityPlayerGameActivity` and smoke testing continued.
+- MVP RC checklist result: passed with one P2 copy issue recorded below; no P0/P1 blockers observed.
+- First-session tutorial result: passed. Reset/new-player Level 1 showed first-tile guidance, three Wood placements merged into Wood T2, tutorial advanced to Start Wave, victory prompted Claim Reward, and reward claim prompted Next Level/Daily Reward guidance.
+- Core loop result: passed. Board tap placed tiles, merge 3 worked, invalid occupied-cell tap gave actionable feedback, Start Wave resolved, victory created pending reward, Claim Reward granted currency/unlocked the next level, and action buttons remained tappable.
+- Levels 1-3 progression: passed. Level 1 completed and unlocked Level 2, Level 2 completed and unlocked Level 3, Level 3 started cleanly, wallet/shelter state remained coherent, and pending rewards blocked navigation until claimed.
+- 30-level catalog: passed by automated tests. EditMode validates 30 sequential levels, Level 1 tutorial support, Level 10 Retry/Revive usefulness, and Level 30 strong-board beatability. Physical smoke reached Level 10 through normal unlocked progression.
+- Level 10 Retry/Revive regression: passed physically on the no-upgrade path. Empty-board Level 10 produced a defeat with readable hint text and no raw fail-reason constants, Retry returned to playable Level 10, Revive restored a playable Level 10 state and hid Revive, a second empty-board defeat showed Retry only, and no black screen/input lock occurred.
+- Reward Double result: passed. Reward Double appeared only with pending victory reward, doubled the Level 1 pending reward once, removed the Double Reward action after use, and Claim Reward granted the doubled pending amount.
+- Daily Reward result: passed. Daily reward available state was readable, claim granted +75 coins and +1 parts, claimed state was readable, and Reset Save restored daily reward to available.
+- Daily Quest result: passed. Quest titles/progress were readable, Complete 1 Level and Claim 1 Reward showed READY, Claim Quest granted their rewards once and changed them to claimed, and Reset Save cleared quest progress/claimed state.
+- Level Navigation result: passed. New-player Level 1 had no Previous or Next Unlocked controls, Replay was available, pending reward hid navigation, Previous/Replay/Next Unlocked worked within the unlocked range after Level 3 was unlocked, and locked future levels were not exposed in normal flow.
+- Save/load/force-stop/relaunch result: passed. After force-stopping and relaunching only Merge Shelter, selected Level 3, highest unlocked level, coins/parts, Shelter Lv 2, daily reward claimed state, quest claimed/progress state, tutorial/decision prompt, wave roster, and navigation state persisted.
+- Reset Save result: passed. Final Reset Save returned to new-player Level 1 with coins/parts 0, Shelter Lv 1, HP 100/100, daily reward available, quests 0 progress/unclaimed, empty board, first tutorial prompt, and no Previous/Next Unlocked controls.
+- UI/HUD result: passed on SM-S918B portrait. Objective, wave roster, decision prompts, quest text, wallet, HP, board, result/status panel, and action buttons remained readable/tappable with no observed overlap, ghosting/redraw regression, black screen, crash, or freeze.
+- Known limitations: P2 copy issue observed on survivable-damage victories: Level 2 displayed `WIN:` but the explanation text included `Defeat. Your attack power was too low.` before the objective-complete/reward text. Gameplay, reward claim, and progression continued normally. Existing prototype limitations also remain: debug/development APK only, local save only, mock Reward Double/Revive, no backend/cloud save/real ad SDK/IAP/production signing/store submission.
+- P0/P1 blockers: none observed.
+- Security note: Testing was limited to the Merge Shelter app and no personal apps/data were accessed. Screenshots and input were used only after foreground verification showed `com.DefaultCompany.mergeshelter`; when Android Settings was foreground, testing stopped until the user manually returned Merge Shelter to the foreground. No `adb pull`, storage browsing, notification inspection, personal-app access, privileged operations, or logcat capture were used.
+- Final MVP RC APK path: `Builds/Android/merge-shelter-mvp-rc-debug.apk`.
+
 ## Severity Rules
 
 | Severity | Definition |
