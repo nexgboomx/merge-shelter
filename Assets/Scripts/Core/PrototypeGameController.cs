@@ -665,7 +665,7 @@ namespace MergeShelter.Core
             var questProgress = RecordQuestProgress(DailyQuestModel.CompleteLevelQuestId, 1);
             AdvanceTutorialAfterWaveCompleted();
             RefreshHud();
-            var explanation = _lastBoardEvaluation?.ResultExplanation ?? "Victory!";
+            var explanation = PrototypeBoardEvaluator.GetVictoryExplanation(_lastBoardEvaluation);
             var objectiveSuffix = !string.IsNullOrWhiteSpace(_currentLevel.Objective)
                 ? $" Objective complete: {_currentLevel.Objective}."
                 : string.Empty;

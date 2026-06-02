@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using MergeShelter.Board;
+using MergeShelter.Combat;
 using MergeShelter.Core;
 using MergeShelter.Meta;
 using MergeShelter.Save;
@@ -395,6 +396,7 @@ namespace MergeShelter.Tests.PlayMode
             Assert.That(weakResult, Does.Not.Contain("weak_wall"));
             Assert.That(weakResult, Does.Not.Contain("low_attack"));
             Assert.That(weakResult, Does.Not.Contain("overwhelmed"));
+            AssertDefeatCopyHasActionableHint(weakResult);
             AssertFeedback(controller, PrototypeFeedbackKind.WaveDefeat, "DEFEAT:");
             Assert.IsTrue(controller.HasShownFeedback(PrototypeFeedbackKind.WaveStart));
 
@@ -412,9 +414,41 @@ namespace MergeShelter.Tests.PlayMode
             var strongResult = GetResultText().text;
             Assert.That(strongResult, Does.Contain("Victory"));
             Assert.That(strongResult, Does.Contain("Objective complete"));
+            AssertVictoryCopyDoesNotContainDefeatLanguage(strongResult);
             AssertFeedback(controller, PrototypeFeedbackKind.WaveVictory, "WIN:");
             Assert.IsTrue(controller.HasShownFeedback(PrototypeFeedbackKind.WaveStart));
             Assert.AreNotEqual(weakResult, strongResult);
+        }
+
+        [UnityTest]
+        public IEnumerator SurvivableDamageVictory_UsesVictoryCopyOnly()
+        {
+            yield return LoadPrototypeScene();
+
+            var controller = Object.FindObjectOfType<PrototypeGameController>();
+            Assert.NotNull(controller);
+
+            controller.StartLevel(1);
+            yield return null;
+            Assert.AreEqual(2, controller.CurrentLevelId);
+
+            controller.StartWave();
+            yield return null;
+
+            Assert.IsTrue(controller.IsLevelEnded);
+            Assert.IsTrue(controller.CanClaimReward);
+            AssertFeedback(controller, PrototypeFeedbackKind.WaveVictory, "WIN:");
+
+            var result = GetResultText().text;
+            AssertVictoryCopyDoesNotContainDefeatLanguage(result);
+            Assert.That(result, Does.Contain("Objective complete"));
+            Assert.That(result, Does.Contain("Reward pending"));
+
+            Assert.IsTrue(controller.ClaimReward());
+            yield return null;
+            Assert.AreEqual(3, controller.HighestUnlockedLevel);
+            Assert.IsTrue(controller.CanStartNextLevel);
+            AssertFeedback(controller, PrototypeFeedbackKind.RewardClaim, "REWARD:");
         }
 
         [UnityTest]
@@ -1042,6 +1076,48 @@ namespace MergeShelter.Tests.PlayMode
             AssertResultPanelFlash(kind);
             AssertActiveButtonsRemainTappable();
             Assert.That(GetResultText().text, Does.StartWith(prefix));
+        }
+
+        private static void AssertVictoryCopyDoesNotContainDefeatLanguage(string result)
+        {
+            Assert.That(result, Does.Contain("Victory"));
+            Assert.That(result, Does.Not.Contain("Defeat"));
+            Assert.That(result, Does.Not.Contain("defeat"));
+            Assert.That(result, Does.Not.Contain("needed more Wood defense"));
+            Assert.That(result, Does.Not.Contain("attack power was too low"));
+            Assert.That(result, Does.Not.Contain("had no recovery"));
+            Assert.That(result, Does.Not.Contain("Emergency power was not charged"));
+            Assert.That(result, Does.Not.Contain("board was blocked"));
+            Assert.That(result, Does.Not.Contain("overwhelmed"));
+            Assert.That(result, Does.Not.Contain("Try merging more Wood tiles"));
+            Assert.That(result, Does.Not.Contain("Merge Metal tiles"));
+            Assert.That(result, Does.Not.Contain("Add Food tiles"));
+            Assert.That(result, Does.Not.Contain("Merge Energy tiles"));
+            Assert.That(result, Does.Not.Contain(PrototypeBoardEvaluator.WeakWall));
+            Assert.That(result, Does.Not.Contain(PrototypeBoardEvaluator.LowAttack));
+            Assert.That(result, Does.Not.Contain(PrototypeBoardEvaluator.NoHeal));
+            Assert.That(result, Does.Not.Contain(PrototypeBoardEvaluator.NoEnergy));
+            Assert.That(result, Does.Not.Contain(PrototypeBoardEvaluator.BoardBlocked));
+            Assert.That(result, Does.Not.Contain(PrototypeBoardEvaluator.Overwhelmed));
+        }
+
+        private static void AssertDefeatCopyHasActionableHint(string result)
+        {
+            Assert.IsTrue(
+                result.Contains("Try merging more Wood tiles") ||
+                result.Contains("Merge Metal tiles") ||
+                result.Contains("Add Food tiles") ||
+                result.Contains("Merge Energy tiles") ||
+                result.Contains("Leave empty spaces") ||
+                result.Contains("Upgrade your shelter") ||
+                result.Contains("Build a balanced board"),
+                $"Defeat copy should include an actionable hint. Result: {result}");
+            Assert.That(result, Does.Not.Contain(PrototypeBoardEvaluator.WeakWall));
+            Assert.That(result, Does.Not.Contain(PrototypeBoardEvaluator.LowAttack));
+            Assert.That(result, Does.Not.Contain(PrototypeBoardEvaluator.NoHeal));
+            Assert.That(result, Does.Not.Contain(PrototypeBoardEvaluator.NoEnergy));
+            Assert.That(result, Does.Not.Contain(PrototypeBoardEvaluator.BoardBlocked));
+            Assert.That(result, Does.Not.Contain(PrototypeBoardEvaluator.Overwhelmed));
         }
 
         private static Button FindCellButton(int x, int y)
