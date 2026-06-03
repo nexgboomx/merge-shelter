@@ -98,6 +98,11 @@ namespace MergeShelter.Combat
             }
         }
 
+        public static string GetVictoryExplanation(PrototypeBoardEvaluationResult result)
+        {
+            return BuildVictoryExplanation(result);
+        }
+
         private static int CalculateEnemyPressure(IReadOnlyList<EnemyData> enemies)
         {
             if (enemies == null || enemies.Count == 0)
@@ -165,6 +170,9 @@ namespace MergeShelter.Combat
 
         private static string BuildVictoryExplanation(PrototypeBoardEvaluationResult result)
         {
+            if (result == null || result.TotalProtection <= 0)
+                return "Victory! The shelter endured the wave.";
+
             var strongestValue = result.WoodDefense;
             var explanation = "Victory! Your upgraded walls absorbed the attack.";
 
