@@ -119,7 +119,7 @@ namespace MergeShelter.UI
                 EnsureSectionLabelsAndText();
                 EnsurePresentationPanels();
                 EnsureResultPanel();
-                ConfigureTopText(levelText, TopPadding, LevelHeight, 18, TextAnchor.UpperLeft);
+                ConfigureTopText(levelText, TopPadding, LevelHeight, 20, TextAnchor.UpperLeft);
                 ConfigureTopText(objectiveText, ObjectiveTop, ObjectiveHeight, 12, TextAnchor.UpperLeft);
                 ConfigureTopText(tutorialText, TutorialTop, TutorialHeight, 13, TextAnchor.UpperLeft);
                 ConfigureTopText(shelterLabelText, ShelterLabelTop, SectionLabelHeight, 11, TextAnchor.UpperLeft);
@@ -310,7 +310,7 @@ namespace MergeShelter.UI
                 else if (quest.Completed)
                     builder.Append(" READY");
 
-                if (!quest.Claimed)
+                if (!quest.Claimed && quest.Completed)
                 {
                     builder.Append(" +");
                     builder.Append(quest.RewardCoins);
@@ -380,7 +380,7 @@ namespace MergeShelter.UI
             text.horizontalOverflow = HorizontalWrapMode.Wrap;
             text.verticalOverflow = VerticalWrapMode.Truncate;
             text.alignment = alignment;
-            text.lineSpacing = 1.05f;
+            text.lineSpacing = 1.0f;
             text.raycastTarget = false;
             text.color = PrototypeVisualKit.PrimaryText;
         }
@@ -394,11 +394,13 @@ namespace MergeShelter.UI
             ApplySectionLabelStyle(rewardsLabelText);
             ApplySectionLabelStyle(questsLabelText);
 
-            ApplyTextColor(levelText, PrototypeVisualKit.PrimaryText);
+            ApplyTextColor(levelText, PrototypeVisualKit.TitleText);
             ApplyTextColor(objectiveText, PrototypeVisualKit.WaveReady);
             ApplyTextColor(waveRosterText, PrototypeVisualKit.SecondaryText);
             ApplyTextColor(tutorialText, PrototypeVisualKit.SecondaryText);
             ApplyTextColor(nextTileText, PrototypeVisualKit.SecondaryText);
+            ApplyLevelTitleStyle();
+            ApplyQuestTextStyle();
 
             if (resultText != null)
                 resultText.color = PrototypeVisualKit.GetFeedbackColor(CurrentFeedbackKind);
@@ -419,6 +421,27 @@ namespace MergeShelter.UI
         {
             if (text != null)
                 text.color = color;
+        }
+
+        private void ApplyLevelTitleStyle()
+        {
+            if (levelText == null)
+                return;
+
+            levelText.fontStyle = FontStyle.Bold;
+            levelText.lineSpacing = 1f;
+        }
+
+        private void ApplyQuestTextStyle()
+        {
+            if (questText == null)
+                return;
+
+            questText.fontSize = 10;
+            questText.resizeTextMinSize = 10;
+            questText.resizeTextMaxSize = 10;
+            questText.lineSpacing = 0.95f;
+            questText.color = PrototypeVisualKit.PrimaryText;
         }
 
         private void EnsureSectionLabelsAndText()
@@ -477,9 +500,10 @@ namespace MergeShelter.UI
 
             var outline = panel.GetComponent<Outline>() ?? panel.gameObject.AddComponent<Outline>();
             outline.effectColor = PrototypeVisualKit.HudPanelAccent;
-            outline.effectDistance = new Vector2(1f, -1f);
+            outline.effectDistance = new Vector2(2f, -2f);
             outline.useGraphicAlpha = false;
 
+            ConfigurePanelShadow(panel);
             MovePresentationPanelBehindText(panel);
         }
 
@@ -502,9 +526,33 @@ namespace MergeShelter.UI
 
             var outline = panel.GetComponent<Outline>() ?? panel.gameObject.AddComponent<Outline>();
             outline.effectColor = PrototypeVisualKit.HudPanelAccent;
-            outline.effectDistance = new Vector2(1f, -1f);
+            outline.effectDistance = new Vector2(2f, -2f);
             outline.useGraphicAlpha = false;
+            ConfigurePanelShadow(panel);
             MovePresentationPanelBehindText(panel);
+        }
+
+        private static void ConfigurePanelShadow(Image panel)
+        {
+            if (panel == null)
+                return;
+
+            var shadow = GetOrAddPlainShadow(panel.gameObject);
+            shadow.effectColor = PrototypeVisualKit.PanelShadow;
+            shadow.effectDistance = new Vector2(3f, -3f);
+            shadow.useGraphicAlpha = false;
+        }
+
+        private static Shadow GetOrAddPlainShadow(GameObject target)
+        {
+            var shadows = target.GetComponents<Shadow>();
+            foreach (var shadow in shadows)
+            {
+                if (shadow.GetType() == typeof(Shadow))
+                    return shadow;
+            }
+
+            return target.AddComponent<Shadow>();
         }
 
         private static Image ResolveOrCreatePanel(Transform parent, Image current, string name)
@@ -585,6 +633,12 @@ namespace MergeShelter.UI
                 else if (panelIndex > resultIndex)
                     resultPanelImage.transform.SetSiblingIndex(Mathf.Max(1, resultIndex));
             }
+
+            var outline = resultPanelImage.GetComponent<Outline>() ?? resultPanelImage.gameObject.AddComponent<Outline>();
+            outline.effectColor = Color.Lerp(PrototypeVisualKit.PanelBorder, PrototypeVisualKit.GetFeedbackColor(CurrentFeedbackKind), 0.35f);
+            outline.effectDistance = new Vector2(2f, -2f);
+            outline.useGraphicAlpha = false;
+            ConfigurePanelShadow(resultPanelImage);
         }
 
         private void ApplyResultPanelColor()

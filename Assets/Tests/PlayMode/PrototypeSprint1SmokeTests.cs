@@ -123,6 +123,7 @@ namespace MergeShelter.Tests.PlayMode
                 PrototypeVisualKit.GetTileFillColor(new TileData(TileType.Wood, 1)),
                 GetCellImage(0, 0).color);
             Assert.That(GameObject.Find("Cell_0_0/Label")?.GetComponent<Text>()?.text, Does.Contain("[W]"));
+            AssertFilledCellUsesHighlightBorder(0, 0);
 
             var startWaveButton = GameObject.Find("StartWaveButton")?.GetComponent<Button>();
             Assert.NotNull(startWaveButton);
@@ -215,6 +216,7 @@ namespace MergeShelter.Tests.PlayMode
             yield return null;
             AssertPhoneSafeLayout();
             Assert.That(GetRewardText().text, Does.Contain("claimed"));
+            AssertQuestTextIsCompact();
 
             for (var i = 0; i < 10; i++)
             {
@@ -506,6 +508,8 @@ namespace MergeShelter.Tests.PlayMode
             Assert.That(GetQuestText().text, Does.Contain("Place 10 Tiles: 0/10"));
             Assert.That(GetQuestText().text, Does.Contain("Complete 1 Level: 0/1"));
             Assert.That(GetQuestText().text, Does.Contain("Claim 1 Reward: 0/1"));
+            Assert.That(GetQuestText().text, Does.Not.Contain("+40c"), "Quest rewards should stay hidden until a quest is ready to reduce visual density.");
+            AssertQuestTextIsCompact();
 
             Assert.IsFalse(controller.ClaimQuest());
             Assert.That(GetResultText().text, Does.Contain("No quest ready"));
@@ -1212,6 +1216,7 @@ namespace MergeShelter.Tests.PlayMode
             var outline = panel.GetComponent<Outline>();
             Assert.NotNull(outline, $"{panelName} should have a visible border.");
             AssertColorApproximately(PrototypeVisualKit.HudPanelAccent, outline.effectColor);
+            AssertPlainShadow(panel, $"{panelName} should have subtle depth.");
         }
 
         private static void AssertBoardPanelStyle()
@@ -1226,9 +1231,10 @@ namespace MergeShelter.Tests.PlayMode
 
             var outline = boardGrid.GetComponent<Outline>();
             Assert.NotNull(outline, "BoardGrid should have a visible border.");
-            AssertColorApproximately(PrototypeVisualKit.PanelBorder, outline.effectColor);
-            Assert.That(outline.effectDistance.x, Is.EqualTo(4f).Within(0.01f));
-            Assert.That(outline.effectDistance.y, Is.EqualTo(-4f).Within(0.01f));
+            AssertColorApproximately(PrototypeVisualKit.BoardFrameAccent, outline.effectColor);
+            Assert.That(outline.effectDistance.x, Is.EqualTo(5f).Within(0.01f));
+            Assert.That(outline.effectDistance.y, Is.EqualTo(-5f).Within(0.01f));
+            AssertPlainShadow(boardGrid, "BoardGrid should have subtle depth.");
 
             var rectTransform = boardGrid.GetComponent<RectTransform>();
             Assert.NotNull(rectTransform);
@@ -1246,6 +1252,16 @@ namespace MergeShelter.Tests.PlayMode
             AssertColorApproximately(PrototypeVisualKit.CellBorder, outline.effectColor);
         }
 
+        private static void AssertFilledCellUsesHighlightBorder(int x, int y)
+        {
+            var cell = GameObject.Find($"Cell_{x}_{y}");
+            Assert.NotNull(cell);
+
+            var outline = cell.GetComponent<Outline>();
+            Assert.NotNull(outline, $"Cell_{x}_{y} should have a filled-tile border.");
+            AssertColorApproximately(PrototypeVisualKit.CellHighlightBorder, outline.effectColor);
+        }
+
         private static void AssertActionPanelStyle()
         {
             var panel = GameObject.Find(PrototypeBoardView.ActionPanelName);
@@ -1259,6 +1275,7 @@ namespace MergeShelter.Tests.PlayMode
             var outline = panel.GetComponent<Outline>();
             Assert.NotNull(outline, "Action panel should have a visible border.");
             AssertColorApproximately(PrototypeVisualKit.HudPanelAccent, outline.effectColor);
+            AssertPlainShadow(panel, "Action panel should have subtle depth.");
 
             var rectTransform = panel.GetComponent<RectTransform>();
             Assert.NotNull(rectTransform);
@@ -1274,6 +1291,7 @@ namespace MergeShelter.Tests.PlayMode
             var image = panel.GetComponent<Image>();
             Assert.NotNull(image);
             Assert.IsFalse(image.raycastTarget);
+            AssertPlainShadow(panel, "Result panel should have subtle depth.");
 
             var hudView = Object.FindObjectOfType<PrototypeHudView>();
             Assert.NotNull(hudView);
@@ -1373,6 +1391,10 @@ namespace MergeShelter.Tests.PlayMode
             var outline = button.GetComponent<Outline>();
             Assert.NotNull(outline, $"{name} should keep a visible primary outline.");
             AssertColorApproximately(PrototypeVisualKit.PrimaryText, outline.effectColor);
+            Assert.Greater(
+                ColorDistance(PrototypeVisualKit.GetActionButtonColor(name, true), PrototypeVisualKit.GetActionButtonColor("ReplayLevelButton", false)),
+                0.28f,
+                $"{name} should read stronger than secondary navigation.");
         }
 
         private static void AssertPhoneSafeLayout()
@@ -1529,6 +1551,7 @@ namespace MergeShelter.Tests.PlayMode
                 AssertColorApproximately(
                     isPrimary ? PrototypeVisualKit.PrimaryText : PrototypeVisualKit.ButtonBorder,
                     outline.effectColor);
+                AssertPlainShadow(first.gameObject, $"{first.name} should keep subtle button depth.");
 
                 var firstRect = GetCanvasRect(canvas, (RectTransform)first.transform);
                 Assert.Greater(firstRect.width, 120f, $"{first.name} should keep a tappable width.");
@@ -1602,6 +1625,32 @@ namespace MergeShelter.Tests.PlayMode
             return $"({rect.xMin:F1},{rect.yMin:F1})-({rect.xMax:F1},{rect.yMax:F1})";
         }
 
+        private static void AssertPlainShadow(GameObject target, string message)
+        {
+            var shadows = target.GetComponents<Shadow>();
+            foreach (var shadow in shadows)
+            {
+                if (shadow.GetType() != typeof(Shadow))
+                    continue;
+
+                AssertColorApproximately(PrototypeVisualKit.PanelShadow, shadow.effectColor);
+                Assert.IsFalse(shadow.useGraphicAlpha);
+                return;
+            }
+
+            Assert.Fail(message);
+        }
+
+        private static void AssertQuestTextIsCompact()
+        {
+            var questText = GetQuestText().text;
+            var lines = questText.Split('\n');
+            Assert.LessOrEqual(lines.Length, 3, "Quest section should stay to one short line per quest.");
+
+            foreach (var line in lines)
+                Assert.LessOrEqual(line.Length, 48, $"Quest line should stay short for Android portrait: {line}");
+        }
+
         private static void AssertColorApproximately(Color expected, Color actual)
         {
             const float tolerance = 0.01f;
@@ -1609,6 +1658,14 @@ namespace MergeShelter.Tests.PlayMode
             Assert.That(actual.g, Is.EqualTo(expected.g).Within(tolerance));
             Assert.That(actual.b, Is.EqualTo(expected.b).Within(tolerance));
             Assert.That(actual.a, Is.EqualTo(expected.a).Within(tolerance));
+        }
+
+        private static float ColorDistance(Color first, Color second)
+        {
+            var red = first.r - second.r;
+            var green = first.g - second.g;
+            var blue = first.b - second.b;
+            return Mathf.Sqrt(red * red + green * green + blue * blue);
         }
 
         private static Text GetWalletText()

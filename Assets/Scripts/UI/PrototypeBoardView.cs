@@ -17,12 +17,12 @@ namespace MergeShelter.UI
         private const float ReferenceWidth = 720f;
         private const float ReferenceHeight = 1280f;
         private const float BoardVerticalOffset = 44f;
-        private const int BoardFramePadding = 10;
-        private const float ButtonWidth = 200f;
-        private const float ButtonHeight = 44f;
-        private const float PrimaryButtonWidth = 228f;
-        private const float PrimaryButtonHeight = 56f;
-        private const float ButtonColumnSpacing = 42f;
+        private const int BoardFramePadding = 12;
+        private const float ButtonWidth = 186f;
+        private const float ButtonHeight = 40f;
+        private const float PrimaryButtonWidth = 238f;
+        private const float PrimaryButtonHeight = 58f;
+        private const float ButtonColumnSpacing = 60f;
         private const float ButtonBottomRow = 32f;
         private const float ButtonRowSpacing = 58f;
         private const float CellFeedbackDuration = 0.28f;
@@ -210,9 +210,14 @@ namespace MergeShelter.UI
             image.raycastTarget = false;
 
             var outline = boardRoot.GetComponent<Outline>() ?? boardRoot.gameObject.AddComponent<Outline>();
-            outline.effectColor = PrototypeVisualKit.PanelBorder;
-            outline.effectDistance = new Vector2(4f, -4f);
+            outline.effectColor = PrototypeVisualKit.BoardFrameAccent;
+            outline.effectDistance = new Vector2(5f, -5f);
             outline.useGraphicAlpha = false;
+
+            var shadow = GetOrAddPlainShadow(boardRoot.gameObject);
+            shadow.effectColor = PrototypeVisualKit.PanelShadow;
+            shadow.effectDistance = new Vector2(5f, -5f);
+            shadow.useGraphicAlpha = false;
         }
 
         private CellView CreateCell(RectTransform parent, int x, int y)
@@ -225,7 +230,7 @@ namespace MergeShelter.UI
 
             var outline = cellObject.AddComponent<Outline>();
             outline.effectColor = PrototypeVisualKit.CellBorder;
-            outline.effectDistance = new Vector2(2f, -2f);
+            outline.effectDistance = new Vector2(2.5f, -2.5f);
             outline.useGraphicAlpha = false;
 
             var button = cellObject.AddComponent<Button>();
@@ -242,6 +247,7 @@ namespace MergeShelter.UI
                 Y = y,
                 Transform = (RectTransform)cellObject.transform,
                 Background = background,
+                Outline = outline,
                 Label = label
             };
         }
@@ -529,6 +535,29 @@ namespace MergeShelter.UI
                 cell.Label.text = FormatTileLabel(tile);
                 cell.Label.color = PrototypeVisualKit.GetTileTextColor(tile);
                 cell.Background.color = GetCellDisplayColor(cell, tile);
+                ApplyCellPresentation(cell, tile);
+            }
+        }
+
+        private static void ApplyCellPresentation(CellView cell, TileData tile)
+        {
+            if (cell.Label != null)
+            {
+                cell.Label.fontSize = tile.IsEmpty ? 22 : 17;
+                cell.Label.resizeTextMinSize = tile.IsEmpty ? 14 : 11;
+                cell.Label.resizeTextMaxSize = tile.IsEmpty ? 22 : 17;
+                cell.Label.lineSpacing = tile.IsEmpty ? 1f : 0.9f;
+                cell.Label.fontStyle = FontStyle.Bold;
+            }
+
+            if (cell.Outline != null)
+            {
+                cell.Outline.effectColor = tile.IsEmpty
+                    ? PrototypeVisualKit.CellBorder
+                    : PrototypeVisualKit.CellHighlightBorder;
+                cell.Outline.effectDistance = tile.IsEmpty
+                    ? new Vector2(2.5f, -2.5f)
+                    : new Vector2(3f, -3f);
             }
         }
 
@@ -715,11 +744,13 @@ namespace MergeShelter.UI
             var label = button.GetComponentInChildren<Text>(true);
             if (label != null)
             {
-                label.fontSize = isPrimary ? 22 : 20;
+                label.fontSize = isPrimary ? 22 : 18;
                 label.resizeTextMaxSize = label.fontSize;
                 label.color = PrototypeVisualKit.ButtonText;
                 label.fontStyle = FontStyle.Bold;
             }
+
+            ConfigureButtonShadow(button, isPrimary);
         }
 
         private void EnsureActionPanel()
@@ -780,6 +811,36 @@ namespace MergeShelter.UI
             outline.effectColor = PrototypeVisualKit.HudPanelAccent;
             outline.effectDistance = new Vector2(2f, -2f);
             outline.useGraphicAlpha = false;
+
+            var shadow = GetOrAddPlainShadow(panel.gameObject);
+            shadow.effectColor = PrototypeVisualKit.PanelShadow;
+            shadow.effectDistance = new Vector2(4f, -4f);
+            shadow.useGraphicAlpha = false;
+        }
+
+        private static void ConfigureButtonShadow(Button button, bool isPrimary)
+        {
+            if (button == null)
+                return;
+
+            var shadow = GetOrAddPlainShadow(button.gameObject);
+            shadow.effectColor = PrototypeVisualKit.PanelShadow;
+            shadow.effectDistance = isPrimary
+                ? new Vector2(4f, -4f)
+                : new Vector2(2f, -2f);
+            shadow.useGraphicAlpha = false;
+        }
+
+        private static Shadow GetOrAddPlainShadow(GameObject target)
+        {
+            var shadows = target.GetComponents<Shadow>();
+            foreach (var shadow in shadows)
+            {
+                if (shadow.GetType() == typeof(Shadow))
+                    return shadow;
+            }
+
+            return target.AddComponent<Shadow>();
         }
 
         private bool IsPrimaryAction(Button button)
@@ -854,6 +915,7 @@ namespace MergeShelter.UI
             public int Y;
             public RectTransform Transform;
             public Image Background;
+            public Outline Outline;
             public Text Label;
         }
     }

@@ -35,22 +35,26 @@ namespace MergeShelter.UI
 
     public static class PrototypeVisualKit
     {
-        public static readonly Color CanvasBackground = new(0.08f, 0.1f, 0.1f, 1f);
-        public static readonly Color PanelBackground = new(0.13f, 0.17f, 0.18f, 1f);
-        public static readonly Color PanelBorder = new(0.31f, 0.36f, 0.35f, 1f);
-        public static readonly Color HudPanelBackground = new(0.105f, 0.135f, 0.14f, 1f);
-        public static readonly Color HudPanelSecondaryBackground = new(0.09f, 0.115f, 0.12f, 1f);
-        public static readonly Color HudPanelAccent = new(0.22f, 0.31f, 0.29f, 1f);
-        public static readonly Color BoardPanelBackground = new(0.1f, 0.13f, 0.14f, 1f);
-        public static readonly Color CellBorder = new(0.34f, 0.41f, 0.39f, 1f);
-        public static readonly Color ActionPanelBackground = new(0.09f, 0.12f, 0.13f, 1f);
-        public static readonly Color ResultPanelBackground = new(0.11f, 0.14f, 0.15f, 1f);
-        public static readonly Color ButtonBorder = new(0.49f, 0.54f, 0.5f, 1f);
+        public static readonly Color CanvasBackground = new(0.055f, 0.073f, 0.07f, 1f);
+        public static readonly Color PanelBackground = new(0.13f, 0.17f, 0.155f, 1f);
+        public static readonly Color PanelBorder = new(0.42f, 0.5f, 0.45f, 1f);
+        public static readonly Color PanelShadow = new(0f, 0f, 0f, 0.42f);
+        public static readonly Color HudPanelBackground = new(0.12f, 0.155f, 0.145f, 1f);
+        public static readonly Color HudPanelSecondaryBackground = new(0.085f, 0.112f, 0.105f, 1f);
+        public static readonly Color HudPanelAccent = new(0.34f, 0.47f, 0.4f, 1f);
+        public static readonly Color BoardPanelBackground = new(0.085f, 0.105f, 0.095f, 1f);
+        public static readonly Color BoardFrameAccent = new(0.48f, 0.58f, 0.52f, 1f);
+        public static readonly Color CellBorder = new(0.39f, 0.48f, 0.43f, 1f);
+        public static readonly Color CellHighlightBorder = new(0.82f, 0.88f, 0.76f, 1f);
+        public static readonly Color ActionPanelBackground = new(0.06f, 0.078f, 0.074f, 1f);
+        public static readonly Color ResultPanelBackground = new(0.075f, 0.098f, 0.095f, 1f);
+        public static readonly Color ButtonBorder = new(0.57f, 0.64f, 0.58f, 1f);
+        public static readonly Color TitleText = new(0.98f, 0.96f, 0.86f, 1f);
         public static readonly Color PrimaryText = new(0.94f, 0.94f, 0.88f, 1f);
-        public static readonly Color SecondaryText = new(0.74f, 0.76f, 0.72f, 1f);
-        public static readonly Color SectionText = new(0.66f, 0.7f, 0.66f, 1f);
-        public static readonly Color EmptyCell = new(0.15f, 0.19f, 0.2f, 1f);
-        public static readonly Color EmptyCellText = new(0.78f, 0.82f, 0.8f, 1f);
+        public static readonly Color SecondaryText = new(0.72f, 0.76f, 0.7f, 1f);
+        public static readonly Color SectionText = new(0.7f, 0.78f, 0.68f, 1f);
+        public static readonly Color EmptyCell = new(0.12f, 0.155f, 0.155f, 1f);
+        public static readonly Color EmptyCellText = new(0.72f, 0.78f, 0.74f, 1f);
         public static readonly Color ShelterHealthy = new(0.78f, 0.9f, 0.78f, 1f);
         public static readonly Color ShelterWarning = new(0.94f, 0.75f, 0.42f, 1f);
         public static readonly Color ShelterDefeated = new(0.96f, 0.47f, 0.38f, 1f);
@@ -61,18 +65,19 @@ namespace MergeShelter.UI
         public static readonly Color ResultNeutral = new(0.86f, 0.88f, 0.85f, 1f);
         public static readonly Color ButtonText = new(0.98f, 0.98f, 0.94f, 1f);
 
-        private static readonly Color WoodFill = new(0.56f, 0.35f, 0.16f, 1f);
-        private static readonly Color MetalFill = new(0.32f, 0.4f, 0.46f, 1f);
-        private static readonly Color FoodFill = new(0.22f, 0.47f, 0.28f, 1f);
-        private static readonly Color EnergyFill = new(0.2f, 0.43f, 0.7f, 1f);
+        private static readonly Color WoodFill = new(0.62f, 0.38f, 0.16f, 1f);
+        private static readonly Color MetalFill = new(0.28f, 0.43f, 0.52f, 1f);
+        private static readonly Color FoodFill = new(0.2f, 0.46f, 0.25f, 1f);
+        private static readonly Color EnergyFill = new(0.18f, 0.45f, 0.82f, 1f);
         private static readonly Color TileText = new(0.98f, 0.96f, 0.9f, 1f);
-        private static readonly Color PrimaryButton = new(0.18f, 0.53f, 0.41f, 1f);
-        private static readonly Color SecondaryButton = new(0.28f, 0.31f, 0.32f, 1f);
-        private static readonly Color RewardButton = new(0.32f, 0.5f, 0.72f, 1f);
-        private static readonly Color DangerButton = new(0.64f, 0.34f, 0.28f, 1f);
-        private static readonly Color UpgradeButton = new(0.52f, 0.41f, 0.16f, 1f);
-        private static readonly Color QuestButton = new(0.38f, 0.5f, 0.24f, 1f);
-        private static readonly Color ResetButton = new(0.27f, 0.28f, 0.28f, 1f);
+        private static readonly Color PrimaryButton = new(0.08f, 0.45f, 0.32f, 1f);
+        private static readonly Color PrimaryButtonFocus = new(0.32f, 0.78f, 0.48f, 1f);
+        private static readonly Color SecondaryButton = new(0.21f, 0.24f, 0.235f, 1f);
+        private static readonly Color RewardButton = new(0.25f, 0.48f, 0.76f, 1f);
+        private static readonly Color DangerButton = new(0.62f, 0.28f, 0.24f, 1f);
+        private static readonly Color UpgradeButton = new(0.55f, 0.41f, 0.13f, 1f);
+        private static readonly Color QuestButton = new(0.34f, 0.52f, 0.23f, 1f);
+        private static readonly Color ResetButton = new(0.2f, 0.215f, 0.21f, 1f);
 
         public static PrototypeTileVisualStyle GetTileStyle(TileType tileType)
         {
@@ -118,7 +123,7 @@ namespace MergeShelter.UI
         public static Color GetActionButtonColor(PrototypeButtonVisualRole role, bool isPrimary)
         {
             var color = GetBaseButtonColor(role);
-            return isPrimary ? Color.Lerp(color, PrimaryText, 0.18f) : color;
+            return isPrimary ? Color.Lerp(color, PrimaryButtonFocus, 0.3f) : color;
         }
 
         public static PrototypeButtonVisualRole GetActionButtonRole(string buttonName)
@@ -211,14 +216,14 @@ namespace MergeShelter.UI
         {
             return kind == PrototypeFeedbackKind.None
                 ? ResultPanelBackground
-                : Color.Lerp(ResultPanelBackground, GetFeedbackColor(kind), 0.16f);
+                : Color.Lerp(ResultPanelBackground, GetFeedbackColor(kind), 0.24f);
         }
 
         public static Color GetResultPanelFlashColor(PrototypeFeedbackKind kind)
         {
             return kind == PrototypeFeedbackKind.None
                 ? ResultPanelBackground
-                : Color.Lerp(ResultPanelBackground, GetFeedbackColor(kind), 0.42f);
+                : Color.Lerp(ResultPanelBackground, GetFeedbackColor(kind), 0.54f);
         }
 
         private static Color GetBaseButtonColor(PrototypeButtonVisualRole role)
