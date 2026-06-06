@@ -22,8 +22,15 @@ namespace MergeShelter.UI
         public const string ObjectiveTextName = "ObjectiveText";
         public const string WaveRosterTextName = "WaveRosterText";
         public const string ResultPanelName = "ResultStatusPanel";
+        public const string HeaderPanelName = "HeaderInfoPanel";
+        public const string ShelterPanelName = "ShelterStatusPanel";
+        public const string RewardsPanelName = "RewardsStatusPanel";
+        public const string QuestsPanelName = "QuestsStatusPanel";
+        public const string BoardInfoPanelName = "BoardInfoPanel";
 
         private const float HorizontalPadding = 24f;
+        private const float PanelHorizontalPadding = 16f;
+        private const float ResultPanelBleed = 32f;
         private const float TopPadding = 16f;
         private const float LevelHeight = 24f;
         private const float ObjectiveTop = 42f;
@@ -66,6 +73,11 @@ namespace MergeShelter.UI
         [SerializeField] private Text resultText;
         [SerializeField] private Text walletText;
         [SerializeField] private Image resultPanelImage;
+        [SerializeField] private Image headerPanelImage;
+        [SerializeField] private Image shelterPanelImage;
+        [SerializeField] private Image rewardsPanelImage;
+        [SerializeField] private Image questsPanelImage;
+        [SerializeField] private Image boardInfoPanelImage;
 
         private bool _isApplyingLayout;
         private float _resultEffectClearTime;
@@ -79,6 +91,7 @@ namespace MergeShelter.UI
         {
             EnsureOpaqueCanvasBackground();
             EnsureSectionLabelsAndText();
+            EnsurePresentationPanels();
             EnsureResultPanel();
             ApplyPhoneSafeLayout();
         }
@@ -104,8 +117,9 @@ namespace MergeShelter.UI
             try
             {
                 EnsureSectionLabelsAndText();
+                EnsurePresentationPanels();
                 EnsureResultPanel();
-                ConfigureTopText(levelText, TopPadding, LevelHeight, 18, TextAnchor.UpperLeft);
+                ConfigureTopText(levelText, TopPadding, LevelHeight, 20, TextAnchor.UpperLeft);
                 ConfigureTopText(objectiveText, ObjectiveTop, ObjectiveHeight, 12, TextAnchor.UpperLeft);
                 ConfigureTopText(tutorialText, TutorialTop, TutorialHeight, 13, TextAnchor.UpperLeft);
                 ConfigureTopText(shelterLabelText, ShelterLabelTop, SectionLabelHeight, 11, TextAnchor.UpperLeft);
@@ -121,6 +135,7 @@ namespace MergeShelter.UI
                 ConfigureTopText(waveRosterText, WaveRosterTop, WaveRosterHeight, 11, TextAnchor.UpperLeft);
                 ConfigureBottomText(resultText, ResultBottom, ResultHeight, 14, TextAnchor.UpperLeft);
                 ConfigureBottomText(actionsLabelText, ActionsLabelBottom, SectionLabelHeight, 11, TextAnchor.UpperLeft);
+                ConfigurePresentationPanels();
                 ConfigureResultPanel();
                 ApplyHudVisualStyles();
             }
@@ -295,7 +310,7 @@ namespace MergeShelter.UI
                 else if (quest.Completed)
                     builder.Append(" READY");
 
-                if (!quest.Claimed)
+                if (!quest.Claimed && quest.Completed)
                 {
                     builder.Append(" +");
                     builder.Append(quest.RewardCoins);
@@ -365,24 +380,27 @@ namespace MergeShelter.UI
             text.horizontalOverflow = HorizontalWrapMode.Wrap;
             text.verticalOverflow = VerticalWrapMode.Truncate;
             text.alignment = alignment;
-            text.lineSpacing = 1.05f;
+            text.lineSpacing = 1.0f;
             text.raycastTarget = false;
             text.color = PrototypeVisualKit.PrimaryText;
         }
 
         private void ApplyHudVisualStyles()
         {
+            ApplyPresentationPanelStyles();
             ApplySectionLabelStyle(shelterLabelText);
             ApplySectionLabelStyle(boardLabelText);
             ApplySectionLabelStyle(actionsLabelText);
             ApplySectionLabelStyle(rewardsLabelText);
             ApplySectionLabelStyle(questsLabelText);
 
-            ApplyTextColor(levelText, PrototypeVisualKit.PrimaryText);
+            ApplyTextColor(levelText, PrototypeVisualKit.TitleText);
             ApplyTextColor(objectiveText, PrototypeVisualKit.WaveReady);
             ApplyTextColor(waveRosterText, PrototypeVisualKit.SecondaryText);
             ApplyTextColor(tutorialText, PrototypeVisualKit.SecondaryText);
             ApplyTextColor(nextTileText, PrototypeVisualKit.SecondaryText);
+            ApplyLevelTitleStyle();
+            ApplyQuestTextStyle();
 
             if (resultText != null)
                 resultText.color = PrototypeVisualKit.GetFeedbackColor(CurrentFeedbackKind);
@@ -405,6 +423,27 @@ namespace MergeShelter.UI
                 text.color = color;
         }
 
+        private void ApplyLevelTitleStyle()
+        {
+            if (levelText == null)
+                return;
+
+            levelText.fontStyle = FontStyle.Bold;
+            levelText.lineSpacing = 1f;
+        }
+
+        private void ApplyQuestTextStyle()
+        {
+            if (questText == null)
+                return;
+
+            questText.fontSize = 10;
+            questText.resizeTextMinSize = 10;
+            questText.resizeTextMaxSize = 10;
+            questText.lineSpacing = 0.95f;
+            questText.color = PrototypeVisualKit.PrimaryText;
+        }
+
         private void EnsureSectionLabelsAndText()
         {
             var canvas = GetComponentInParent<Canvas>();
@@ -421,6 +460,128 @@ namespace MergeShelter.UI
             shelterUpgradeText = ResolveOrCreateText(canvas.transform, shelterUpgradeText, ShelterUpgradeTextName, "Lv 1 | Upgrade 100");
             rewardText = ResolveOrCreateText(canvas.transform, rewardText, RewardTextName, "Daily: available");
             questText = ResolveOrCreateText(canvas.transform, questText, QuestTextName, "Place 10 Tiles: 0/10");
+        }
+
+        private void EnsurePresentationPanels()
+        {
+            var canvas = GetComponentInParent<Canvas>();
+            if (canvas == null)
+                return;
+
+            headerPanelImage = ResolveOrCreatePanel(canvas.transform, headerPanelImage, HeaderPanelName);
+            shelterPanelImage = ResolveOrCreatePanel(canvas.transform, shelterPanelImage, ShelterPanelName);
+            rewardsPanelImage = ResolveOrCreatePanel(canvas.transform, rewardsPanelImage, RewardsPanelName);
+            questsPanelImage = ResolveOrCreatePanel(canvas.transform, questsPanelImage, QuestsPanelName);
+            boardInfoPanelImage = ResolveOrCreatePanel(canvas.transform, boardInfoPanelImage, BoardInfoPanelName);
+        }
+
+        private void ConfigurePresentationPanels()
+        {
+            ConfigureTopPanel(headerPanelImage, 8f, 84f, PrototypeVisualKit.HudPanelBackground);
+            ConfigureTopPanel(shelterPanelImage, 92f, 52f, PrototypeVisualKit.HudPanelSecondaryBackground);
+            ConfigureTopPanel(rewardsPanelImage, 142f, 54f, PrototypeVisualKit.HudPanelSecondaryBackground);
+            ConfigureTopPanel(questsPanelImage, 210f, 76f, PrototypeVisualKit.HudPanelBackground);
+            ConfigureTopPanel(boardInfoPanelImage, 292f, 52f, PrototypeVisualKit.HudPanelSecondaryBackground);
+        }
+
+        private static void ConfigureTopPanel(Image panel, float top, float height, Color color)
+        {
+            if (panel == null)
+                return;
+
+            var rectTransform = (RectTransform)panel.transform;
+            rectTransform.anchorMin = new Vector2(0f, 1f);
+            rectTransform.anchorMax = new Vector2(1f, 1f);
+            rectTransform.pivot = new Vector2(0.5f, 1f);
+            rectTransform.offsetMin = new Vector2(PanelHorizontalPadding, -top - height);
+            rectTransform.offsetMax = new Vector2(-PanelHorizontalPadding, -top);
+            panel.color = color;
+            panel.raycastTarget = false;
+
+            var outline = panel.GetComponent<Outline>() ?? panel.gameObject.AddComponent<Outline>();
+            outline.effectColor = PrototypeVisualKit.HudPanelAccent;
+            outline.effectDistance = new Vector2(2f, -2f);
+            outline.useGraphicAlpha = false;
+
+            ConfigurePanelShadow(panel);
+            MovePresentationPanelBehindText(panel);
+        }
+
+        private void ApplyPresentationPanelStyles()
+        {
+            ApplyPanelStyle(headerPanelImage, PrototypeVisualKit.HudPanelBackground);
+            ApplyPanelStyle(shelterPanelImage, PrototypeVisualKit.HudPanelSecondaryBackground);
+            ApplyPanelStyle(rewardsPanelImage, PrototypeVisualKit.HudPanelSecondaryBackground);
+            ApplyPanelStyle(questsPanelImage, PrototypeVisualKit.HudPanelBackground);
+            ApplyPanelStyle(boardInfoPanelImage, PrototypeVisualKit.HudPanelSecondaryBackground);
+        }
+
+        private static void ApplyPanelStyle(Image panel, Color color)
+        {
+            if (panel == null)
+                return;
+
+            panel.color = color;
+            panel.raycastTarget = false;
+
+            var outline = panel.GetComponent<Outline>() ?? panel.gameObject.AddComponent<Outline>();
+            outline.effectColor = PrototypeVisualKit.HudPanelAccent;
+            outline.effectDistance = new Vector2(2f, -2f);
+            outline.useGraphicAlpha = false;
+            ConfigurePanelShadow(panel);
+            MovePresentationPanelBehindText(panel);
+        }
+
+        private static void ConfigurePanelShadow(Image panel)
+        {
+            if (panel == null)
+                return;
+
+            var shadow = GetOrAddPlainShadow(panel.gameObject);
+            shadow.effectColor = PrototypeVisualKit.PanelShadow;
+            shadow.effectDistance = new Vector2(3f, -3f);
+            shadow.useGraphicAlpha = false;
+        }
+
+        private static Shadow GetOrAddPlainShadow(GameObject target)
+        {
+            var shadows = target.GetComponents<Shadow>();
+            foreach (var shadow in shadows)
+            {
+                if (shadow.GetType() == typeof(Shadow))
+                    return shadow;
+            }
+
+            return target.AddComponent<Shadow>();
+        }
+
+        private static Image ResolveOrCreatePanel(Transform parent, Image current, string name)
+        {
+            if (current != null)
+                return current;
+
+            var existing = parent.Find(name);
+            if (existing != null && existing.TryGetComponent<Image>(out var existingImage))
+            {
+                existingImage.raycastTarget = false;
+                MovePresentationPanelBehindText(existingImage);
+                return existingImage;
+            }
+
+            var panelObject = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(Outline));
+            panelObject.transform.SetParent(parent, false);
+            var image = panelObject.GetComponent<Image>();
+            image.raycastTarget = false;
+            MovePresentationPanelBehindText(image);
+            return image;
+        }
+
+        private static void MovePresentationPanelBehindText(Image panel)
+        {
+            if (panel == null)
+                return;
+
+            panel.transform.SetSiblingIndex(Mathf.Min(1, panel.transform.parent.childCount - 1));
         }
 
         private void EnsureResultPanel()
@@ -460,8 +621,8 @@ namespace MergeShelter.UI
             rectTransform.anchorMin = new Vector2(0f, 0f);
             rectTransform.anchorMax = new Vector2(1f, 0f);
             rectTransform.pivot = new Vector2(0.5f, 0f);
-            rectTransform.offsetMin = new Vector2(-32f, ResultBottom - 8f);
-            rectTransform.offsetMax = new Vector2(32f, ResultBottom + ResultHeight + 8f);
+            rectTransform.offsetMin = new Vector2(-ResultPanelBleed, ResultBottom - 8f);
+            rectTransform.offsetMax = new Vector2(ResultPanelBleed, ResultBottom + ResultHeight + 8f);
 
             if (resultText != null)
             {
@@ -472,6 +633,12 @@ namespace MergeShelter.UI
                 else if (panelIndex > resultIndex)
                     resultPanelImage.transform.SetSiblingIndex(Mathf.Max(1, resultIndex));
             }
+
+            var outline = resultPanelImage.GetComponent<Outline>() ?? resultPanelImage.gameObject.AddComponent<Outline>();
+            outline.effectColor = Color.Lerp(PrototypeVisualKit.PanelBorder, PrototypeVisualKit.GetFeedbackColor(CurrentFeedbackKind), 0.35f);
+            outline.effectDistance = new Vector2(2f, -2f);
+            outline.useGraphicAlpha = false;
+            ConfigurePanelShadow(resultPanelImage);
         }
 
         private void ApplyResultPanelColor()

@@ -396,6 +396,31 @@ This checklist is the minimum quality gate for the first playable prototype.
 - Security note: Testing was limited to the Merge Shelter app and no personal apps/data were accessed. The device initially showed `unauthorized`, so testing stopped until the user accepted the USB debugging prompt and `adb devices -l` showed `device`. Screenshots and input were used only after foreground verification showed `com.DefaultCompany.mergeshelter`; no notifications, personal apps, settings, storage browsing, `adb pull`, personal data, privileged operations, or logcat capture were used.
 - Final post-fix APK path: `Builds/Android/merge-shelter-mvp-rc-postfix-debug.apk`.
 
+## Sprint 12 Layout Pass Android Visual Smoke Notes - 2026-06-06
+
+- Machine OS: Linux phung-truong-137 6.17.0-1017-oem x86_64 GNU/Linux.
+- Unity version: 6000.3.16f1 (a56f230f6470).
+- Branch: `sprint-12-presentation-mvp`.
+- Commit: `b42d8a3`.
+- APK filename/path: `Builds/Android/merge-shelter-sprint12-layout-debug.apk`.
+- Device manufacturer/model: samsung SM-S918B.
+- Android version/API: Android 16 / API 36.
+- EditMode tests: passed 67/67 (`TestResults/sprint12-layout-editmode-results.xml`, `Logs/sprint12-layout-editmode.log`).
+- PlayMode tests: passed 19/19 (`TestResults/sprint12-layout-playmode-results.xml`, `Logs/sprint12-layout-playmode.log`).
+- Build/install/launch: passed. Android debug build completed through `MergeShelter.EditorTools.PrototypeAndroidBuild.BuildDebugApk`; APK verified at the expected path (`40M`), installed with `adb install -r`, launched with `adb shell monkey -p com.DefaultCompany.mergeshelter 1`, and foreground verification showed `com.DefaultCompany.mergeshelter/com.unity3d.player.UnityPlayerGameActivity` before screenshots/input.
+- Screenshot path: `docs/qa/sprint12-layout-android-smoke.png`.
+- Layout hierarchy result: passed. The screen no longer reads as loose debug text; top information is grouped into clear level/objective, shelter/resource, rewards/daily, quests, and board/wave panels.
+- Board presentation result: passed. The board remains centered, framed, and readable in portrait on SM-S918B. Empty cells and merged Wood T2 tile were readable.
+- Result panel result: passed. Placement, merge, victory, reward, and Next Level feedback appeared in a bounded panel with no observed ghosting/redraw issue.
+- Button hierarchy result: passed. Bottom action area is visually grouped. Start Wave, Claim Reward, and Next Level were visibly stronger than secondary actions. Daily Reward, Claim Quest, Upgrade Shelter, Replay/Previous, and Reset Save remained accessible.
+- Readability result: passed for the Sprint 12 layout pass. Objective, wave roster, daily reward, quest progress/READY state, wallet, HP, board, result panel, and action labels were readable with no major text overlap observed.
+- Core loop smoke result: passed. Reset/new-player state was available, board taps placed tiles, three Wood placements merged into Wood T2, Start Wave resolved Level 1, Claim Reward granted +50 coins and unlocked Level 2, and Next Level started Level 2.
+- Victory-copy regression: passed. Level 1 victory text used `WIN:` and victory/objective/reward language only; no `Defeat` wording or defeat hint text appeared in the tested victory result.
+- P0/P1 blockers: none observed. No crash, freeze, launch failure, black screen, input lock, severe HUD overlap, ghosting/redraw regression, or core-loop blocker occurred. `adb logcat -d` was not run because the app did not crash, freeze, or fail to launch.
+- P2/P3 visual issues: still prototype/simple visually. The layout is cleaner and demo-readable, but the style remains flat and utilitarian, quest text is dense, and the bottom action area can feel busy when several secondary actions are visible.
+- Recommendation: proceed to a styling pass rather than fixing layout first. Sprint 12 first-pass hierarchy is stable enough for the next visual UX polish step, with no P0/P1 layout blockers found.
+- Security note: Testing was limited to the Merge Shelter app and no personal apps/data were accessed. The device initially showed `unauthorized`, so testing stopped until the user accepted the USB debugging prompt and `adb devices -l` showed `device`. Screenshots and input were used only after foreground verification showed `com.DefaultCompany.mergeshelter`; no notifications, personal apps, settings, storage browsing, `adb pull`, personal data, privileged operations, or logcat capture were used.
+
 ## Severity Rules
 
 | Severity | Definition |

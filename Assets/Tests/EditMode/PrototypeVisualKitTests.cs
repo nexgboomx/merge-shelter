@@ -15,12 +15,23 @@ namespace MergeShelter.Tests.EditMode
             Assert.GreaterOrEqual(PrototypeVisualKit.CanvasBackground.a, 0.99f);
             Assert.GreaterOrEqual(PrototypeVisualKit.PanelBackground.a, 0.99f);
             Assert.GreaterOrEqual(PrototypeVisualKit.PanelBorder.a, 0.99f);
+            Assert.Greater(PrototypeVisualKit.PanelShadow.a, 0.1f);
+            Assert.GreaterOrEqual(PrototypeVisualKit.HudPanelBackground.a, 0.99f);
+            Assert.GreaterOrEqual(PrototypeVisualKit.HudPanelSecondaryBackground.a, 0.99f);
+            Assert.GreaterOrEqual(PrototypeVisualKit.HudPanelAccent.a, 0.99f);
             Assert.GreaterOrEqual(PrototypeVisualKit.BoardPanelBackground.a, 0.99f);
+            Assert.GreaterOrEqual(PrototypeVisualKit.BoardFrameAccent.a, 0.99f);
             Assert.GreaterOrEqual(PrototypeVisualKit.CellBorder.a, 0.99f);
+            Assert.GreaterOrEqual(PrototypeVisualKit.CellHighlightBorder.a, 0.99f);
             Assert.GreaterOrEqual(PrototypeVisualKit.ActionPanelBackground.a, 0.99f);
             Assert.GreaterOrEqual(PrototypeVisualKit.ResultPanelBackground.a, 0.99f);
+            Assert.GreaterOrEqual(PrototypeVisualKit.TitleText.a, 0.99f);
             Assert.Greater(ColorDistance(PrototypeVisualKit.CanvasBackground, PrototypeVisualKit.PanelBackground), 0.04f);
+            Assert.Greater(ColorDistance(PrototypeVisualKit.HudPanelBackground, PrototypeVisualKit.HudPanelAccent), 0.08f);
+            Assert.Greater(ColorDistance(PrototypeVisualKit.HudPanelSecondaryBackground, PrototypeVisualKit.HudPanelAccent), 0.08f);
             Assert.Greater(ColorDistance(PrototypeVisualKit.EmptyCell, PrototypeVisualKit.CellBorder), 0.08f);
+            Assert.Greater(ColorDistance(PrototypeVisualKit.BoardPanelBackground, PrototypeVisualKit.BoardFrameAccent), 0.35f);
+            Assert.Greater(ColorDistance(PrototypeVisualKit.CellBorder, PrototypeVisualKit.CellHighlightBorder), 0.2f);
             Assert.Greater(ColorDistance(PrototypeVisualKit.ActionPanelBackground, PrototypeVisualKit.PanelBorder), 0.18f);
             Assert.Greater(ColorDistance(PrototypeVisualKit.ShelterHealthy, PrototypeVisualKit.ShelterDefeated), 0.35f);
             Assert.Greater(ColorDistance(PrototypeVisualKit.WaveVictory, PrototypeVisualKit.WaveDefeat), 0.25f);
@@ -62,9 +73,13 @@ namespace MergeShelter.Tests.EditMode
 
             var normalStart = PrototypeVisualKit.GetActionButtonColor("StartWaveButton", false);
             var primaryStart = PrototypeVisualKit.GetActionButtonColor("StartWaveButton", true);
+            var secondaryReplay = PrototypeVisualKit.GetActionButtonColor("ReplayLevelButton", false);
             var revive = PrototypeVisualKit.GetActionButtonColor("ReviveButton", false);
             Assert.Greater(ColorDistance(normalStart, primaryStart), 0.04f);
+            Assert.Greater(ColorDistance(primaryStart, secondaryReplay), 0.28f);
             Assert.Greater(ColorDistance(normalStart, revive), 0.15f);
+            Assert.Greater(Contrast(primaryStart, PrototypeVisualKit.ButtonText), 1.9f);
+            Assert.Greater(Contrast(secondaryReplay, PrototypeVisualKit.ButtonText), 2.0f);
             Assert.AreNotEqual(
                 PrototypeVisualKit.GetFeedbackColor(PrototypeFeedbackKind.WaveVictory),
                 PrototypeVisualKit.GetFeedbackColor(PrototypeFeedbackKind.WaveDefeat));
