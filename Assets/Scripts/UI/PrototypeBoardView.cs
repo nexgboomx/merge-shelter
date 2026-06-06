@@ -16,14 +16,15 @@ namespace MergeShelter.UI
 
         private const float ReferenceWidth = 720f;
         private const float ReferenceHeight = 1280f;
-        private const float BoardVerticalOffset = 64f;
+        private const float BoardVerticalOffset = 44f;
+        private const int BoardFramePadding = 10;
         private const float ButtonWidth = 200f;
         private const float ButtonHeight = 44f;
-        private const float PrimaryButtonWidth = 220f;
-        private const float PrimaryButtonHeight = 52f;
-        private const float ButtonColumnSpacing = 24f;
+        private const float PrimaryButtonWidth = 228f;
+        private const float PrimaryButtonHeight = 56f;
+        private const float ButtonColumnSpacing = 42f;
         private const float ButtonBottomRow = 32f;
-        private const float ButtonRowSpacing = 56f;
+        private const float ButtonRowSpacing = 58f;
         private const float CellFeedbackDuration = 0.28f;
         private const float ButtonFeedbackDuration = 0.1f;
         private const float ButtonFeedbackScale = 1.04f;
@@ -160,6 +161,7 @@ namespace MergeShelter.UI
             grid.constraintCount = width;
             grid.cellSize = new Vector2(cellSize, cellSize);
             grid.spacing = new Vector2(cellSpacing, cellSpacing);
+            grid.padding = new RectOffset(BoardFramePadding, BoardFramePadding, BoardFramePadding, BoardFramePadding);
             grid.childAlignment = TextAnchor.MiddleCenter;
 
             for (var y = 0; y < height; y++)
@@ -191,7 +193,9 @@ namespace MergeShelter.UI
             boardRoot.anchorMax = new Vector2(0.5f, 0.5f);
             boardRoot.pivot = new Vector2(0.5f, 0.5f);
             boardRoot.anchoredPosition = new Vector2(0f, BoardVerticalOffset);
-            boardRoot.sizeDelta = new Vector2(totalWidth, totalHeight);
+            boardRoot.sizeDelta = new Vector2(
+                totalWidth + BoardFramePadding * 2f,
+                totalHeight + BoardFramePadding * 2f);
             ApplyBoardPanelStyle();
             return boardRoot;
         }
@@ -207,7 +211,7 @@ namespace MergeShelter.UI
 
             var outline = boardRoot.GetComponent<Outline>() ?? boardRoot.gameObject.AddComponent<Outline>();
             outline.effectColor = PrototypeVisualKit.PanelBorder;
-            outline.effectDistance = new Vector2(3f, -3f);
+            outline.effectDistance = new Vector2(4f, -4f);
             outline.useGraphicAlpha = false;
         }
 
@@ -724,6 +728,7 @@ namespace MergeShelter.UI
             {
                 actionPanelImage.color = PrototypeVisualKit.ActionPanelBackground;
                 actionPanelImage.raycastTarget = false;
+                ConfigureActionPanelOutline(actionPanelImage);
                 actionPanelImage.transform.SetAsFirstSibling();
                 return;
             }
@@ -733,16 +738,18 @@ namespace MergeShelter.UI
             {
                 actionPanelImage = existingImage;
                 actionPanelImage.raycastTarget = false;
+                ConfigureActionPanelOutline(actionPanelImage);
                 actionPanelImage.transform.SetAsFirstSibling();
                 return;
             }
 
-            var panelObject = new GameObject(ActionPanelName, typeof(RectTransform), typeof(Image));
+            var panelObject = new GameObject(ActionPanelName, typeof(RectTransform), typeof(Image), typeof(Outline));
             panelObject.transform.SetParent(transform, false);
             panelObject.transform.SetAsFirstSibling();
             actionPanelImage = panelObject.GetComponent<Image>();
             actionPanelImage.color = PrototypeVisualKit.ActionPanelBackground;
             actionPanelImage.raycastTarget = false;
+            ConfigureActionPanelOutline(actionPanelImage);
         }
 
         private void ConfigureActionPanel()
@@ -760,7 +767,19 @@ namespace MergeShelter.UI
                 ButtonRowSpacing * 2f + PrimaryButtonHeight + 28f);
             actionPanelImage.color = PrototypeVisualKit.ActionPanelBackground;
             actionPanelImage.raycastTarget = false;
+            ConfigureActionPanelOutline(actionPanelImage);
             actionPanelImage.transform.SetAsFirstSibling();
+        }
+
+        private static void ConfigureActionPanelOutline(Image panel)
+        {
+            if (panel == null)
+                return;
+
+            var outline = panel.GetComponent<Outline>() ?? panel.gameObject.AddComponent<Outline>();
+            outline.effectColor = PrototypeVisualKit.HudPanelAccent;
+            outline.effectDistance = new Vector2(2f, -2f);
+            outline.useGraphicAlpha = false;
         }
 
         private bool IsPrimaryAction(Button button)

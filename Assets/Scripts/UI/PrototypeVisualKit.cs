@@ -38,6 +38,9 @@ namespace MergeShelter.UI
         public static readonly Color CanvasBackground = new(0.08f, 0.1f, 0.1f, 1f);
         public static readonly Color PanelBackground = new(0.13f, 0.17f, 0.18f, 1f);
         public static readonly Color PanelBorder = new(0.31f, 0.36f, 0.35f, 1f);
+        public static readonly Color HudPanelBackground = new(0.105f, 0.135f, 0.14f, 1f);
+        public static readonly Color HudPanelSecondaryBackground = new(0.09f, 0.115f, 0.12f, 1f);
+        public static readonly Color HudPanelAccent = new(0.22f, 0.31f, 0.29f, 1f);
         public static readonly Color BoardPanelBackground = new(0.1f, 0.13f, 0.14f, 1f);
         public static readonly Color CellBorder = new(0.34f, 0.41f, 0.39f, 1f);
         public static readonly Color ActionPanelBackground = new(0.09f, 0.12f, 0.13f, 1f);

@@ -58,6 +58,15 @@ namespace MergeShelter.Tests.PlayMode
             "ResetSaveButton"
         };
 
+        private static readonly string[] HudPanelNames =
+        {
+            PrototypeHudView.HeaderPanelName,
+            PrototypeHudView.ShelterPanelName,
+            PrototypeHudView.RewardsPanelName,
+            PrototypeHudView.QuestsPanelName,
+            PrototypeHudView.BoardInfoPanelName
+        };
+
         private string _tempSaveDirectory;
 
         [SetUp]
@@ -1171,10 +1180,38 @@ namespace MergeShelter.Tests.PlayMode
             AssertActionPanelStyle();
             AssertResultPanelExists();
             AssertHudSectionLabelStyles();
+            AssertHudPresentationPanelsExist();
             AssertOpaqueCanvasBackground();
 
             foreach (var buttonName in ActionButtonNames)
                 Assert.NotNull(FindButton(buttonName), $"{buttonName} should exist.");
+        }
+
+        private static void AssertHudPresentationPanelsExist()
+        {
+            foreach (var panelName in HudPanelNames)
+                Assert.NotNull(GameObject.Find(panelName), $"{panelName} should exist.");
+
+            AssertHudPanelStyle(PrototypeHudView.HeaderPanelName, PrototypeVisualKit.HudPanelBackground);
+            AssertHudPanelStyle(PrototypeHudView.ShelterPanelName, PrototypeVisualKit.HudPanelSecondaryBackground);
+            AssertHudPanelStyle(PrototypeHudView.RewardsPanelName, PrototypeVisualKit.HudPanelSecondaryBackground);
+            AssertHudPanelStyle(PrototypeHudView.QuestsPanelName, PrototypeVisualKit.HudPanelBackground);
+            AssertHudPanelStyle(PrototypeHudView.BoardInfoPanelName, PrototypeVisualKit.HudPanelSecondaryBackground);
+        }
+
+        private static void AssertHudPanelStyle(string panelName, Color expectedColor)
+        {
+            var panel = GameObject.Find(panelName);
+            Assert.NotNull(panel, $"{panelName} should exist.");
+
+            var image = panel.GetComponent<Image>();
+            Assert.NotNull(image, $"{panelName} should have a visual background.");
+            Assert.IsFalse(image.raycastTarget, $"{panelName} should not block gameplay input.");
+            AssertColorApproximately(expectedColor, image.color);
+
+            var outline = panel.GetComponent<Outline>();
+            Assert.NotNull(outline, $"{panelName} should have a visible border.");
+            AssertColorApproximately(PrototypeVisualKit.HudPanelAccent, outline.effectColor);
         }
 
         private static void AssertBoardPanelStyle()
@@ -1190,6 +1227,13 @@ namespace MergeShelter.Tests.PlayMode
             var outline = boardGrid.GetComponent<Outline>();
             Assert.NotNull(outline, "BoardGrid should have a visible border.");
             AssertColorApproximately(PrototypeVisualKit.PanelBorder, outline.effectColor);
+            Assert.That(outline.effectDistance.x, Is.EqualTo(4f).Within(0.01f));
+            Assert.That(outline.effectDistance.y, Is.EqualTo(-4f).Within(0.01f));
+
+            var rectTransform = boardGrid.GetComponent<RectTransform>();
+            Assert.NotNull(rectTransform);
+            Assert.Greater(rectTransform.sizeDelta.x, 390f, "Board frame should include visible padding around cells.");
+            Assert.Greater(rectTransform.sizeDelta.y, 390f, "Board frame should include visible padding around cells.");
         }
 
         private static void AssertCellUsesVisualBorder(int x, int y)
@@ -1211,6 +1255,10 @@ namespace MergeShelter.Tests.PlayMode
             Assert.NotNull(image);
             Assert.IsFalse(image.raycastTarget);
             AssertColorApproximately(PrototypeVisualKit.ActionPanelBackground, image.color);
+
+            var outline = panel.GetComponent<Outline>();
+            Assert.NotNull(outline, "Action panel should have a visible border.");
+            AssertColorApproximately(PrototypeVisualKit.HudPanelAccent, outline.effectColor);
 
             var rectTransform = panel.GetComponent<RectTransform>();
             Assert.NotNull(rectTransform);
@@ -1376,9 +1424,75 @@ namespace MergeShelter.Tests.PlayMode
             }
 
             AssertHudSectionLabelStyles();
+            AssertHudPresentationPanels(canvas, hudRects);
             AssertResultPanelBounds(canvas, hudRects["ResultText"]);
             AssertActionPanelStyle();
             AssertActiveActionButtonsDoNotOverlap(canvas, hudRects["ResultText"]);
+        }
+
+        private static void AssertHudPresentationPanels(Canvas canvas, Dictionary<string, Rect> hudRects)
+        {
+            AssertHudPresentationPanelContains(
+                canvas,
+                hudRects,
+                PrototypeHudView.HeaderPanelName,
+                PrototypeVisualKit.HudPanelBackground,
+                "LevelText",
+                PrototypeHudView.ObjectiveTextName,
+                "TutorialText");
+            AssertHudPresentationPanelContains(
+                canvas,
+                hudRects,
+                PrototypeHudView.ShelterPanelName,
+                PrototypeVisualKit.HudPanelSecondaryBackground,
+                PrototypeHudView.ShelterSectionLabelName,
+                "ShelterHpText",
+                PrototypeHudView.ShelterUpgradeTextName);
+            AssertHudPresentationPanelContains(
+                canvas,
+                hudRects,
+                PrototypeHudView.RewardsPanelName,
+                PrototypeVisualKit.HudPanelSecondaryBackground,
+                PrototypeHudView.RewardsSectionLabelName,
+                "WalletText",
+                PrototypeHudView.RewardTextName);
+            AssertHudPresentationPanelContains(
+                canvas,
+                hudRects,
+                PrototypeHudView.QuestsPanelName,
+                PrototypeVisualKit.HudPanelBackground,
+                PrototypeHudView.QuestsSectionLabelName,
+                PrototypeHudView.QuestTextName);
+            AssertHudPresentationPanelContains(
+                canvas,
+                hudRects,
+                PrototypeHudView.BoardInfoPanelName,
+                PrototypeVisualKit.HudPanelSecondaryBackground,
+                PrototypeHudView.BoardSectionLabelName,
+                "NextTileText",
+                PrototypeHudView.WaveRosterTextName);
+        }
+
+        private static void AssertHudPresentationPanelContains(
+            Canvas canvas,
+            Dictionary<string, Rect> hudRects,
+            string panelName,
+            Color expectedColor,
+            params string[] textNames)
+        {
+            AssertHudPanelStyle(panelName, expectedColor);
+
+            var panelRectTransform = GameObject.Find(panelName)?.GetComponent<RectTransform>();
+            Assert.NotNull(panelRectTransform, $"{panelName} should have a rect transform.");
+            var panelRect = GetCanvasRect(canvas, panelRectTransform);
+
+            foreach (var textName in textNames)
+            {
+                Assert.IsTrue(hudRects.TryGetValue(textName, out var textRect), $"{textName} should be tracked in HUD layout.");
+                Assert.IsTrue(
+                    RectContains(panelRect, textRect),
+                    $"{panelName} should contain {textName}. panel={FormatRect(panelRect)} text={FormatRect(textRect)}");
+            }
         }
 
         private static bool IsCompactHudText(string textName)

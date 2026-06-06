@@ -15,11 +15,16 @@ namespace MergeShelter.Tests.EditMode
             Assert.GreaterOrEqual(PrototypeVisualKit.CanvasBackground.a, 0.99f);
             Assert.GreaterOrEqual(PrototypeVisualKit.PanelBackground.a, 0.99f);
             Assert.GreaterOrEqual(PrototypeVisualKit.PanelBorder.a, 0.99f);
+            Assert.GreaterOrEqual(PrototypeVisualKit.HudPanelBackground.a, 0.99f);
+            Assert.GreaterOrEqual(PrototypeVisualKit.HudPanelSecondaryBackground.a, 0.99f);
+            Assert.GreaterOrEqual(PrototypeVisualKit.HudPanelAccent.a, 0.99f);
             Assert.GreaterOrEqual(PrototypeVisualKit.BoardPanelBackground.a, 0.99f);
             Assert.GreaterOrEqual(PrototypeVisualKit.CellBorder.a, 0.99f);
             Assert.GreaterOrEqual(PrototypeVisualKit.ActionPanelBackground.a, 0.99f);
             Assert.GreaterOrEqual(PrototypeVisualKit.ResultPanelBackground.a, 0.99f);
             Assert.Greater(ColorDistance(PrototypeVisualKit.CanvasBackground, PrototypeVisualKit.PanelBackground), 0.04f);
+            Assert.Greater(ColorDistance(PrototypeVisualKit.HudPanelBackground, PrototypeVisualKit.HudPanelAccent), 0.08f);
+            Assert.Greater(ColorDistance(PrototypeVisualKit.HudPanelSecondaryBackground, PrototypeVisualKit.HudPanelAccent), 0.08f);
             Assert.Greater(ColorDistance(PrototypeVisualKit.EmptyCell, PrototypeVisualKit.CellBorder), 0.08f);
             Assert.Greater(ColorDistance(PrototypeVisualKit.ActionPanelBackground, PrototypeVisualKit.PanelBorder), 0.18f);
             Assert.Greater(ColorDistance(PrototypeVisualKit.ShelterHealthy, PrototypeVisualKit.ShelterDefeated), 0.35f);
