@@ -363,6 +363,39 @@ This checklist is the minimum quality gate for the first playable prototype.
 - Security note: Testing was limited to the Merge Shelter app and no personal apps/data were accessed. Screenshots and input were used only after foreground verification showed `com.DefaultCompany.mergeshelter`; when Android Settings was foreground, testing stopped until the user manually returned Merge Shelter to the foreground. No `adb pull`, storage browsing, notification inspection, personal-app access, privileged operations, or logcat capture were used.
 - Final MVP RC APK path: `Builds/Android/merge-shelter-mvp-rc-debug.apk`.
 
+## Sprint 11 Final Post-Fix Android Smoke Notes - 2026-06-06
+
+- Machine OS: Linux phung-truong-137 6.17.0-1017-oem x86_64 GNU/Linux.
+- Unity version: 6000.3.16f1 (a56f230f6470).
+- Branch: `sprint-11-demo-handoff`.
+- Commit: `103f899`.
+- APK filename: `merge-shelter-mvp-rc-postfix-debug.apk`.
+- APK output path: `Builds/Android/merge-shelter-mvp-rc-postfix-debug.apk`.
+- APK verification: passed. APK exists at the post-fix RC path with non-zero size (`40M`) and build log confirms `Android prototype APK built` at the expected output path.
+- Device manufacturer/model: samsung SM-S918B.
+- Android version/API: Android 16 / API 36.
+- EditMode tests: passed 67/67 (`TestResults/sprint11-postfix-editmode-results.xml`, `Logs/sprint11-postfix-editmode.log`).
+- PlayMode tests: passed 19/19 (`TestResults/sprint11-postfix-playmode-results.xml`, `Logs/sprint11-postfix-playmode.log`).
+- Build result: passed through `MergeShelter.EditorTools.PrototypeAndroidBuild.BuildDebugApk` with `-buildOutputPath "Builds/Android/merge-shelter-mvp-rc-postfix-debug.apk"` (`Logs/android-mvp-rc-postfix-build.log`).
+- Install result: passed with `adb install -r Builds/Android/merge-shelter-mvp-rc-postfix-debug.apk`; no uninstall was required.
+- Launch result: passed with `adb shell monkey -p com.DefaultCompany.mergeshelter 1`; foreground verification showed `com.DefaultCompany.mergeshelter/com.unity3d.player.UnityPlayerGameActivity` before screenshots and input.
+- Handoff docs review: passed. `README.md` includes setup, build, test, QA, and demo links. `docs/demo/MVP_DEMO_PLAYTEST_SCRIPT.md` includes a clear Level 1 through Level 3 path. `docs/production/MVP_RELEASE_NOTES.md` includes the PR #65 victory-copy fix. `docs/production/MVP_KNOWN_LIMITATIONS_AND_BACKLOG.md` separates accepted MVP limitations from future backlog and demo caveats. Android security boundaries remain documented in the README, runbook, and MVP RC checklist.
+- Victory-copy fix result: passed. Level 1 victory copy showed `WIN:` with objective/reward language and no `Defeat` wording or defeat hints. Level 2 empty-board survivable-damage victory showed `WIN: Victory! The shelter endured the wave. Objective complete: Survive with walls and turrets. Reward pending: +70 coins, +0 parts.` with no `Defeat`, low-attack, weak-wall, no-heal, no-energy, board-blocked, or overwhelmed hint text.
+- First-session tutorial result: passed. Reset/new-player Level 1 showed first-tile guidance; three Wood placements merged into Wood T2, tutorial advanced to Start Wave, victory prompted Claim Reward, and reward claim advanced to Next Level/Daily Reward guidance.
+- Core loop result: passed. Board tap placed tiles, merge 3 worked, Start Wave resolved, Reward Double doubled the pending Level 1 reward once, Claim Reward granted currency/unlocked Level 2, and action buttons remained tappable.
+- Levels 1-2/1-3 progression: passed. Level 1 completed and unlocked Level 2. Level 2 started cleanly, resolved as a survivable-damage victory without defeat copy, reward claim unlocked Level 3, and Level 3 started cleanly with upgraded shelter HP and readable objective/roster/prompt text.
+- Daily Reward result: passed. Daily reward available state was readable, claim granted +75 coins and +1 parts, claimed state remained readable, and Reset Save restored daily reward to available.
+- Daily Quest result: passed. Quest titles/progress were readable, Complete 1 Level and Claim 1 Reward reached READY, Claim Quest granted rewards once, claimed states were readable, and Reset Save cleared quest progress/claimed state.
+- Level Navigation result: passed. Previous Level returned from Level 3 to Level 2, Next Unlocked returned from Level 2 to Level 3, Replay remained available, and locked future levels were not exposed in the normal flow.
+- Save/load/force-stop/relaunch result: passed. After force-stopping and relaunching only Merge Shelter, selected Level 3, highest unlocked level, coins/parts, Shelter Lv 2, daily reward claimed state, quest claimed/progress state, tutorial/build prompt, wave roster, and navigation state persisted.
+- Reset Save result: passed. Final Reset Save returned to new-player Level 1 with coins/parts 0, Shelter Lv 1, HP 100/100, daily reward available, quests 0 progress/unclaimed, empty board, first tutorial prompt, and no Previous/Next Unlocked controls.
+- UI/HUD result: passed on SM-S918B portrait. Objective, wave roster, tutorial/result prompts, quest text, wallet, HP, board, result/status panel, and action buttons remained readable/tappable with no observed overlap, ghosting/redraw regression, black screen, crash, freeze, or input lock.
+- Level 10 Retry/Revive result: not physically re-run in this targeted post-fix Sprint 11 smoke. Existing Sprint 10 physical smoke passed Level 10 Retry/Revive on the no-upgrade path, and Sprint 11 PlayMode tests passed the revive/stale-click/no-black-screen regression coverage.
+- Known limitations: accepted MVP limitations remain documented in `docs/production/MVP_KNOWN_LIMITATIONS_AND_BACKLOG.md`: debug/development APK only, placeholder art, local-only save, local/session-only daily reward and quests, mock Reward Double/Revive, no backend/cloud save/real ad SDK/IAP/production analytics/production signing/store submission, prototype balance/content, and limited physical device coverage.
+- P0/P1 blockers: none observed. No crash, freeze, launch failure, black screen, input lock, save/load failure, reset failure, or severe HUD overlap occurred. `adb logcat -d` was not run because the app did not crash, freeze, or fail to launch.
+- Security note: Testing was limited to the Merge Shelter app and no personal apps/data were accessed. The device initially showed `unauthorized`, so testing stopped until the user accepted the USB debugging prompt and `adb devices -l` showed `device`. Screenshots and input were used only after foreground verification showed `com.DefaultCompany.mergeshelter`; no notifications, personal apps, settings, storage browsing, `adb pull`, personal data, privileged operations, or logcat capture were used.
+- Final post-fix APK path: `Builds/Android/merge-shelter-mvp-rc-postfix-debug.apk`.
+
 ## Severity Rules
 
 | Severity | Definition |
